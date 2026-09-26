@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PICKTRACK — 음악 이상형 월드컵",
-  description: "유튜브 재생목록으로 음악 이상형 월드컵을 만들고, 나의 우승곡과 전체 인기 랭킹을 확인하세요.",
+  title: "SOTERIA ROOM — 나의 음악 보관실",
+  description: "소테리아의 재생목록을 고르고, 음악을 찾고, 취향을 기록하는 공간.",
   other: {
     "codex-preview": "development",
   },
