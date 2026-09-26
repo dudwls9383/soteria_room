@@ -15,7 +15,7 @@ import {
   Trophy,
   X,
 } from "lucide-react";
-import { DEMO, type Playlist, type Track } from "../lib/music";
+import type { Playlist, Track } from "../lib/music";
 type Match = { left: string; right: string; winner: string; round: number };
 type Game = {
   id: string;
@@ -550,28 +550,16 @@ export default function Home({
             </section>
             <section className="playlist-panel">
               <div className="panel-top">
-                <span>{playlist ? "READY TO PLAY" : "A LITTLE PREVIEW"}</span>
+                <span>{playlist ? "READY TO PLAY" : "PLAYLIST STATUS"}</span>
                 <Headphones size={20} />
               </div>
               <div className="playlist-copy">
-                <h2>
-                  {playlist?.title || "익숙한 노래도,\n고르는 순간 새롭게."}
-                </h2>
+                <h2>{playlist?.title || "재생목록을 기다리고 있어요."}</h2>
                 <p>
                   {playlist
-                    ? `${playlist.tracks.length}곡 준비 완료${playlist.id === "demo" ? " · 체험용 재생목록" : ""}`
-                    : "듣고, 고민하고, 더 마음에 드는 곡을 선택하세요."}
+                    ? `${playlist.tracks.length}곡 준비 완료`
+                    : "유튜브 재생목록 링크를 넣으면 이곳에 준비 상태가 표시돼요."}
                 </p>
-              </div>
-              <div className="album-preview">
-                {(playlist?.tracks || DEMO.tracks)
-                  .slice(0, 4)
-                  .map((track, i) => (
-                    <div className={`album album-${i}`} key={track.id}>
-                      {cover(track)}
-                      <span>{track.title}</span>
-                    </div>
-                  ))}
               </div>
               {playlist ? (
                 <div className="loaded-summary">
@@ -580,30 +568,18 @@ export default function Home({
                   </span>
                   <div>
                     <strong>대진을 만들 준비가 됐어요</strong>
-                    <span>
-                      {playlist.id === "demo"
-                        ? "체험 결과는 전체 랭킹에 반영되지 않아요."
-                        : "불러온 곡 중 선택한 수만큼 무작위로 참여해요."}
-                    </span>
+                    <span>불러온 곡 중 선택한 수만큼 무작위로 참여해요.</span>
                   </div>
                 </div>
               ) : (
-                <div className="demo-row">
+                <div className="loaded-summary muted">
+                  <span className="ready-check">
+                    <ListMusic size={16} />
+                  </span>
                   <div>
-                    <strong>링크 없이 먼저 해볼까요?</strong>
-                    <p>8곡으로 가볍게 체험해 보세요.</p>
+                    <strong>재생목록을 먼저 가져와 주세요</strong>
+                    <span>공개 또는 일부 공개 목록을 사용할 수 있어요.</span>
                   </div>
-                  <button
-                    className="outline"
-                    onClick={() => {
-                      setPlaylist(DEMO);
-                      setSize(8);
-                      setError("");
-                    }}
-                  >
-                    체험하기
-                    <ArrowRight size={16} />
-                  </button>
                 </div>
               )}
             </section>

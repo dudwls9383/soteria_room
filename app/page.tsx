@@ -427,7 +427,7 @@ export default function Room() {
       await navigator.clipboard.writeText(
         items.map((t) => `https://youtu.be/${t.id}`).join("\n"),
       );
-      setNotice(`${items.length}곡의 공유링크를 복사했어요.`);
+      setNotice(`${items.length}곡의 YouTube 링크를 복사했어요.`);
     } catch {
       setError("클립보드 권한을 확인해 주세요.");
     }
@@ -437,7 +437,7 @@ export default function Room() {
       await navigator.clipboard.writeText(
         `https://www.youtube.com/playlist?list=${p.id}`,
       );
-      setNotice("재생목록 공유링크를 복사했어요.");
+      setNotice("재생목록 YouTube 링크를 복사했어요.");
     } catch {
       setError("클립보드 권한을 확인해 주세요.");
     }
@@ -1041,7 +1041,7 @@ export default function Room() {
                 onClick={() => void copyLinks(tracks)}
               >
                 <Copy size={16} />
-                공유링크 모두 복사
+                YouTube 링크 모두 복사
               </button>
             </div>
             <div className="track-list glass">
@@ -1320,7 +1320,7 @@ export default function Room() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  공유링크 열기
+                  YouTube에서 듣기
                   <ExternalLink size={16} />
                 </a>
                 <button
@@ -1337,7 +1337,7 @@ export default function Room() {
                   onClick={() => void copyPlaylistShare(selected)}
                 >
                   <Copy size={16} />
-                  공유링크 복사
+                  YouTube 링크 복사
                 </button>
                 <span>{selected.tracks.length}곡</span>
               </div>

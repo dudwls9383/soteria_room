@@ -79,7 +79,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
       await navigator.clipboard.writeText(
         songs.map((t) => `https://youtu.be/${t.id}`).join("\n"),
       );
-      setNotice(`${songs.length}곡의 공유링크를 복사했어요.`);
+      setNotice(`${songs.length}곡의 YouTube 링크를 복사했어요.`);
     } catch {
       setError("클립보드 권한을 확인해 주세요.");
     }
@@ -202,7 +202,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   onClick={() => void copy()}
                 >
                   <Copy size={16} />
-                  공유링크 복사
+                  YouTube 링크 복사
                 </button>
               </div>
               <div className="random-song-grid">
@@ -223,7 +223,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                         {t.artist}
                       </p>
                       <span>
-                        공유링크 열기 <ExternalLink size={13} />
+                        YouTube에서 듣기 <ExternalLink size={13} />
                       </span>
                     </div>
                   </a>
