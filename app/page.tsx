@@ -61,6 +61,289 @@ function clearGoogleTranslateCookie() {
   document.cookie = "googtrans=;path=/;max-age=0";
   document.cookie = `googtrans=;path=/;domain=${location.hostname};max-age=0`;
 }
+const uiDictionary: Record<
+  Exclude<TranslateLanguage, "ko">,
+  Record<string, string>
+> = {
+  en: {
+    "내 공간": "My room",
+    "음악 보관실": "Music archive",
+    "작은 프로젝트": "Small projects",
+    "연결된 공간": "Connected spaces",
+    관리: "Management",
+    "재생목록 픽": "Playlist picks",
+    "유튜브 재생목록 검색기": "YouTube playlist searcher",
+    "월별 수집 · 큐레이션": "Monthly archive · Curation",
+    "랜덤 디깅": "Random digging",
+    "음악 월드컵": "Music World Cup",
+    "블로그 포스트": "Blog posts",
+    "소무니아 갤러리": "Somunia Gallery",
+    "카와이 보이스 갤러리": "Kawaii Voice Gallery",
+    "가져오기 · 동기화": "Import · Sync",
+    "오늘은 어떤 음악일까요.": "What music fits today?",
+    "한 번 더 듣고, 고르고, 다듬어 둔 큐레이션.":
+      "Curations I replayed, picked, and polished.",
+    "모아 둔 음악, 골라 둔 음악.": "Collected music, selected music.",
+    "월별 수집 목록과 선별한 월의 픽을 나누어 살펴보세요.":
+      "Browse monthly collections separately from selected monthly picks.",
+    "나의 계절을 채운 음악.": "Music that filled my seasons.",
+    "My Recap 2026~2021 · 채널에서 묶어 둔 22개의 리캡.":
+      "My Recap 2026–2021 · 22 recap playlists from the channel.",
+    "카와이 보이스, 하나의 시리즈.": "Kawaii Voice as one series.",
+    "room부터 괴멸적 카와보 플리까지 · 10개의 큐레이션.":
+      "From room to intensely kawaii-voice playlists · 10 curations.",
+    "재생목록 추가": "Add playlist",
+    "YouTube 채널": "YouTube channel",
+    "PLAYLIST PICK": "PLAYLIST PICK",
+    "당신의 취향이\n머무는 곳.": "A place where\nyour taste stays.",
+    "채널에서 재생목록을 가져오면 이곳에 펼쳐져요.":
+      "Once channel playlists are imported, they will appear here.",
+    "재생목록 열기": "Open playlist",
+    "가져오는 중…": "Importing…",
+    "채널에서 가져오기": "Import from channel",
+    "개의 재생목록": "playlists",
+    "개의 곡": "tracks",
+    정렬: "Sort",
+    "재생목록 조회수": "Playlist views",
+    내림차순: "Descending",
+    오름차순: "Ascending",
+    "월의 픽": "Monthly picks",
+    "큐레이션 재생목록": "Curated playlists",
+    "월의 픽 · 큐레이션": "Monthly picks · Curation",
+    "한 달 동안 다시 듣고 선별한 재생목록":
+      "Playlists replayed and selected over the month",
+    "재생목록 찾기": "Find playlists",
+    "조건에 맞는 재생목록이 없어요.": "No playlists match these conditions.",
+    "첫 재생목록을 기다리고 있어요.": "Waiting for the first playlist.",
+    "검색어와 필터를 바꿔보세요.": "Try changing the search or filters.",
+    "공개 재생목록을 자동으로 가져와 이 PC에 보관합니다.":
+      "Public playlists are imported automatically and stored on this PC.",
+    "제목, 채널 이름, 재생목록 이름으로 모든 곡을 찾아요.":
+      "Search all songs by title, channel, or playlist name.",
+    "검색할 범위": "Search scope",
+    "곡 검색": "Song search",
+    "검색 결과": "Search results",
+    "YouTube 링크 모두 복사": "Copy all YouTube links",
+    "지금 전체 동기화": "Sync everything now",
+    "채널 동기화 중…": "Syncing channel…",
+    "실패한 것만 다시 가져오기": "Retry failed only",
+    "채널에서 발견한 공개 재생목록": "Public playlists found on the channel",
+    "다른 채널이나 일부 공개 재생목록도 링크로 추가할 수 있어요.":
+      "You can also add another channel or unlisted playlists by link.",
+    "YouTube 재생목록 주소": "YouTube playlist URL",
+    "선택한 재생목록": "Selected playlist",
+    "YouTube에서 듣기": "Listen on YouTube",
+    "이 목록으로 월드컵": "World Cup with this list",
+    "YouTube 링크 복사": "Copy YouTube link",
+    "아직 못 만난 취향을 찾아서.": "Find tastes you have not met yet.",
+    "보관실의 곡과 구독목록의 채널에서 무작위로 골라요.":
+      "Randomly pick songs from the room and channels from subscriptions.",
+    "곡 뽑기": "Pick songs",
+    "구독 채널 뽑기": "Pick channels",
+    "오늘 들을 곡을 뽑아볼까요?": "Pick songs to listen to today?",
+    "뽑을 범위": "Pick scope",
+    "곡 수": "Song count",
+    "무작위로 뽑기": "Pick randomly",
+    "이번에 만난 음악": "Music found this time",
+    "구독목록에서 다음 채널 찾기": "Find the next channel from subscriptions",
+    "채널 수": "Channel count",
+    "채널 뽑기": "Pick channels",
+    "채널에서 음악 찾아보기": "Find music on this channel",
+    "반년에 한 번, 구독목록 새로 넣기": "Refresh subscriptions every half year",
+    "마지막 가져오기:": "Last import:",
+    "아직 없음": "Not yet",
+    "6개월이 지났어요. 최신 구독목록으로 갱신해 주세요.":
+      "Six months have passed. Please refresh with the latest subscriptions.",
+    "연결된 시트 다시 가져오기": "Re-import connected sheet",
+    "새 CSV로 갱신": "Refresh with new CSV",
+    "원본 시트": "Original sheet",
+    "소테리아의 곡 디깅하는 법": "How Soteria digs for songs",
+    "재생목록을 만드는 법": "How to make playlists",
+    "한국어 원문으로 표시합니다.": "Showing the Korean original.",
+    "영어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다.":
+      "Switched to English UI. Song and playlist titles stay in the original language.",
+    "일본어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다.":
+      "Switched to Japanese UI. Song and playlist titles stay in the original language.",
+  },
+  ja: {
+    "내 공간": "マイルーム",
+    "음악 보관실": "音楽アーカイブ",
+    "작은 프로젝트": "小さなプロジェクト",
+    "연결된 공간": "つながる場所",
+    관리: "管理",
+    "재생목록 픽": "プレイリストピック",
+    "유튜브 재생목록 검색기": "YouTubeプレイリスト検索",
+    "월별 수집 · 큐레이션": "月別収集 · キュレーション",
+    "랜덤 디깅": "ランダムディグ",
+    "음악 월드컵": "音楽ワールドカップ",
+    "블로그 포스트": "ブログ記事",
+    "소무니아 갤러리": "ソムニアギャラリー",
+    "카와이 보이스 갤러리": "カワイイボイスギャラリー",
+    "가져오기 · 동기화": "取り込み · 同期",
+    "오늘은 어떤 음악일까요.": "今日はどんな音楽にしましょう。",
+    "한 번 더 듣고, 고르고, 다듬어 둔 큐레이션.":
+      "もう一度聴いて、選んで、整えたキュレーション。",
+    "모아 둔 음악, 골라 둔 음악.": "集めた音楽、選んだ音楽。",
+    "월별 수집 목록과 선별한 월의 픽을 나누어 살펴보세요.":
+      "月別の収集リストと選び抜いた月のピックを分けて見られます。",
+    "나의 계절을 채운 음악.": "私の季節を満たした音楽。",
+    "My Recap 2026~2021 · 채널에서 묶어 둔 22개의 리캡.":
+      "My Recap 2026〜2021 · チャンネルでまとめた22本のリキャップ。",
+    "카와이 보이스, 하나의 시리즈.": "カワイイボイス、ひとつのシリーズ。",
+    "room부터 괴멸적 카와보 플리까지 · 10개의 큐레이션.":
+      "roomから壊滅的カワボプレイリストまで · 10本のキュレーション。",
+    "재생목록 추가": "プレイリスト追加",
+    "YouTube 채널": "YouTubeチャンネル",
+    "PLAYLIST PICK": "PLAYLIST PICK",
+    "당신의 취향이\n머무는 곳.": "あなたの好みが\nとどまる場所。",
+    "채널에서 재생목록을 가져오면 이곳에 펼쳐져요.":
+      "チャンネルからプレイリストを取り込むと、ここに表示されます。",
+    "재생목록 열기": "プレイリストを開く",
+    "가져오는 중…": "取り込み中…",
+    "채널에서 가져오기": "チャンネルから取得",
+    "개의 재생목록": "件のプレイリスト",
+    "개의 곡": "曲",
+    정렬: "並び替え",
+    "재생목록 조회수": "プレイリスト再生数",
+    내림차순: "降順",
+    오름차순: "昇順",
+    "월의 픽": "月のピック",
+    "큐레이션 재생목록": "キュレーションプレイリスト",
+    "월의 픽 · 큐레이션": "月のピック · キュレーション",
+    "한 달 동안 다시 듣고 선별한 재생목록": "1か月聴き直して選んだプレイリスト",
+    "재생목록 찾기": "プレイリスト検索",
+    "조건에 맞는 재생목록이 없어요.": "条件に合うプレイリストがありません。",
+    "첫 재생목록을 기다리고 있어요.": "最初のプレイリストを待っています。",
+    "검색어와 필터를 바꿔보세요.": "検索語やフィルターを変えてみてください。",
+    "공개 재생목록을 자동으로 가져와 이 PC에 보관합니다.":
+      "公開プレイリストを自動で取得し、このPCに保存します。",
+    "제목, 채널 이름, 재생목록 이름으로 모든 곡을 찾아요.":
+      "曲名、チャンネル名、プレイリスト名で全曲を検索します。",
+    "검색할 범위": "検索範囲",
+    "곡 검색": "曲検索",
+    "검색 결과": "検索結果",
+    "YouTube 링크 모두 복사": "YouTubeリンクをすべてコピー",
+    "지금 전체 동기화": "今すぐ全体同期",
+    "채널 동기화 중…": "チャンネル同期中…",
+    "실패한 것만 다시 가져오기": "失敗分だけ再取得",
+    "채널에서 발견한 공개 재생목록": "チャンネルで見つけた公開プレイリスト",
+    "다른 채널이나 일부 공개 재생목록도 링크로 추가할 수 있어요.":
+      "別チャンネルや限定公開プレイリストもリンクで追加できます。",
+    "YouTube 재생목록 주소": "YouTubeプレイリストURL",
+    "선택한 재생목록": "選択中のプレイリスト",
+    "YouTube에서 듣기": "YouTubeで聴く",
+    "이 목록으로 월드컵": "このリストでワールドカップ",
+    "YouTube 링크 복사": "YouTubeリンクをコピー",
+    "아직 못 만난 취향을 찾아서.": "まだ出会っていない好みを探して。",
+    "보관실의 곡과 구독목록의 채널에서 무작위로 골라요.":
+      "保管室の曲と購読チャンネルからランダムに選びます。",
+    "곡 뽑기": "曲を引く",
+    "구독 채널 뽑기": "購読チャンネルを引く",
+    "오늘 들을 곡을 뽑아볼까요?": "今日聴く曲を選んでみましょうか。",
+    "뽑을 범위": "抽選範囲",
+    "곡 수": "曲数",
+    "무작위로 뽑기": "ランダムに選ぶ",
+    "이번에 만난 음악": "今回出会った音楽",
+    "구독목록에서 다음 채널 찾기": "購読リストから次のチャンネルを探す",
+    "채널 수": "チャンネル数",
+    "채널 뽑기": "チャンネル抽選",
+    "채널에서 음악 찾아보기": "このチャンネルで音楽を探す",
+    "반년에 한 번, 구독목록 새로 넣기": "半年に一度、購読リストを更新",
+    "마지막 가져오기:": "最終取り込み:",
+    "아직 없음": "まだありません",
+    "6개월이 지났어요. 최신 구독목록으로 갱신해 주세요.":
+      "6か月が経ちました。最新の購読リストに更新してください。",
+    "연결된 시트 다시 가져오기": "連携シートを再取得",
+    "새 CSV로 갱신": "新しいCSVで更新",
+    "원본 시트": "元シート",
+    "소테리아의 곡 디깅하는 법": "ソテリアの曲ディグ方法",
+    "재생목록을 만드는 법": "プレイリストの作り方",
+    "한국어 원문으로 표시합니다.": "韓国語の原文で表示します。",
+    "영어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다.":
+      "英語UIに切り替えました。曲名とプレイリスト名は原文のままです。",
+    "일본어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다.":
+      "日本語UIに切り替えました。曲名とプレイリスト名は原文のままです。",
+  },
+};
+const originalTextNodes = new WeakMap<Text, string>();
+function translatedStaticText(
+  value: string,
+  language: Exclude<TranslateLanguage, "ko">,
+) {
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+  const dictionary = uiDictionary[language];
+  let translated = dictionary[trimmed];
+  if (!translated) {
+    translated = trimmed
+      .replace(/^(\d+)곡$/, language === "ja" ? "$1曲" : "$1 songs")
+      .replace(
+        /^(\d+)개 가져오는 중$/,
+        language === "ja" ? "$1件を取得中" : "Importing $1 items",
+      )
+      .replace(
+        /^후보 ([\d,]+)곡 · 같은 영상은 한 번만\s*뽑아요\.$/,
+        language === "ja"
+          ? "候補 $1曲 · 同じ動画は一度だけ選びます。"
+          : "$1 candidates · each video is picked only once.",
+      )
+      .replace(
+        /^저장된 ([\d,]+)개 채널 안에서\s*뽑아요\. 구독자 수 기준의 필터는 적용하지 않아요\.$/,
+        language === "ja"
+          ? "保存済みの$1チャンネルから選びます。登録者数フィルターは使いません。"
+          : "Pick from $1 saved channels. Subscriber-count filters are not applied.",
+      )
+      .replace(
+        /^(\d+)곡 · SOTERIA ROOM$/,
+        language === "ja" ? "$1曲 · SOTERIA ROOM" : "$1 songs · SOTERIA ROOM",
+      );
+  }
+  if (!translated || translated === trimmed) return value;
+  const prefix = value.match(/^\s*/)?.[0] ?? "";
+  const suffix = value.match(/\s*$/)?.[0] ?? "";
+  return `${prefix}${translated}${suffix}`;
+}
+function shouldSkipTranslation(node: Node) {
+  const element = node.parentElement;
+  return Boolean(
+    element?.closest(
+      ".notranslate,[translate='no'],script,style,textarea,input,iframe",
+    ),
+  );
+}
+function applyUiLanguage(language: TranslateLanguage) {
+  if (typeof document === "undefined") return;
+  document.documentElement.lang = language;
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (
+    let node = walker.nextNode() as Text | null;
+    node;
+    node = walker.nextNode() as Text | null
+  ) {
+    if (shouldSkipTranslation(node)) continue;
+    const original = originalTextNodes.get(node) ?? node.nodeValue ?? "";
+    if (!originalTextNodes.has(node)) originalTextNodes.set(node, original);
+    node.nodeValue =
+      language === "ko" ? original : translatedStaticText(original, language);
+  }
+  for (const element of document.querySelectorAll<HTMLElement>(
+    "[placeholder],[aria-label]",
+  )) {
+    if (element.closest(".notranslate,[translate='no']")) continue;
+    for (const attr of ["placeholder", "aria-label"] as const) {
+      const current = element.getAttribute(attr);
+      if (!current) continue;
+      const key = `data-original-${attr}`;
+      const original = element.getAttribute(key) ?? current;
+      if (!element.hasAttribute(key)) element.setAttribute(key, original);
+      element.setAttribute(
+        attr,
+        language === "ko" ? original : translatedStaticText(original, language),
+      );
+    }
+  }
+}
+
 const pageCopy: Record<
   string,
   { eyebrow: string; title: string; description: string }
@@ -212,18 +495,15 @@ export default function Room() {
   }
   function selectLanguage(nextLanguage: TranslateLanguage) {
     setLanguage(nextLanguage);
-    if (nextLanguage === "ko") {
-      clearGoogleTranslateCookie();
-      document.documentElement.lang = "ko";
-      setNotice("한국어 원문으로 표시합니다.");
-      return;
-    }
-    const url = new URL("https://translate.google.com/translate");
-    url.searchParams.set("sl", "ko");
-    url.searchParams.set("tl", nextLanguage);
-    url.searchParams.set("u", location.href);
-    window.open(url.toString(), "_blank", "noopener,noreferrer");
-    setNotice("번역 페이지를 새 탭으로 열었어요.");
+    clearGoogleTranslateCookie();
+    applyUiLanguage(nextLanguage);
+    setNotice(
+      nextLanguage === "ko"
+        ? "한국어 원문으로 표시합니다."
+        : nextLanguage === "ja"
+          ? "일본어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다."
+          : "영어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다.",
+    );
   }
   async function reload() {
     const data = await request("/api/library");
@@ -354,6 +634,9 @@ export default function Room() {
   useEffect(() => {
     clearGoogleTranslateCookie();
   }, []);
+  useEffect(() => {
+    applyUiLanguage(language);
+  });
   useEffect(() => {
     if (!sources[tab]) return;
     let active = true;
@@ -537,7 +820,7 @@ export default function Room() {
             {modules.find((m) => m.id === tab)?.name}
           </div>
           <div className="top-actions">
-            <div className="language-switcher" aria-label="새 탭에서 번역">
+            <div className="language-switcher" aria-label="언어 선택">
               <Languages size={15} />
               {translateOptions.map((option) => (
                 <button
