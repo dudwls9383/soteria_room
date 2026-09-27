@@ -57,22 +57,9 @@ const translateOptions: { value: TranslateLanguage; label: string }[] = [
   { value: "ja", label: "日本語" },
   { value: "en", label: "EN" },
 ];
-declare global {
-  interface Window {
-    googleTranslateElementInit?: () => void;
-    google?: {
-      translate?: {
-        TranslateElement: new (
-          options: {
-            pageLanguage: string;
-            includedLanguages: string;
-            autoDisplay: boolean;
-          },
-          element: string,
-        ) => void;
-      };
-    };
-  }
+function clearGoogleTranslateCookie() {
+  document.cookie = "googtrans=;path=/;max-age=0";
+  document.cookie = `googtrans=;path=/;domain=${location.hostname};max-age=0`;
 }
 const pageCopy: Record<
   string,
@@ -225,13 +212,18 @@ export default function Room() {
   }
   function selectLanguage(nextLanguage: TranslateLanguage) {
     setLanguage(nextLanguage);
-    document.documentElement.lang = nextLanguage;
     if (nextLanguage === "ko") {
-      document.cookie = "googtrans=;path=/;max-age=0";
-    } else {
-      document.cookie = `googtrans=/ko/${nextLanguage};path=/;max-age=31536000;SameSite=Lax`;
+      clearGoogleTranslateCookie();
+      document.documentElement.lang = "ko";
+      setNotice("한국어 원문으로 표시합니다.");
+      return;
     }
-    window.location.reload();
+    const url = new URL("https://translate.google.com/translate");
+    url.searchParams.set("sl", "ko");
+    url.searchParams.set("tl", nextLanguage);
+    url.searchParams.set("u", location.href);
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
+    setNotice("번역 페이지를 새 탭으로 열었어요.");
   }
   async function reload() {
     const data = await request("/api/library");
@@ -360,31 +352,7 @@ export default function Room() {
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
-    const translated = document.cookie.match(
-      /(?:^|;\s*)googtrans=\/ko\/(ja|en)/,
-    );
-    if (translated?.[1] === "ja" || translated?.[1] === "en") {
-      setLanguage(translated[1]);
-      document.documentElement.lang = translated[1];
-    }
-    if (document.getElementById("google-translate-script")) return;
-    window.googleTranslateElementInit = () => {
-      if (!window.google?.translate?.TranslateElement) return;
-      new window.google.translate.TranslateElement(
-        {
-          pageLanguage: "ko",
-          includedLanguages: "ko,ja,en",
-          autoDisplay: false,
-        },
-        "google_translate_element",
-      );
-    };
-    const script = document.createElement("script");
-    script.id = "google-translate-script";
-    script.src =
-      "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    script.async = true;
-    document.body.appendChild(script);
+    clearGoogleTranslateCookie();
   }, []);
   useEffect(() => {
     if (!sources[tab]) return;
@@ -569,12 +537,7 @@ export default function Room() {
             {modules.find((m) => m.id === tab)?.name}
           </div>
           <div className="top-actions">
-            <div
-              id="google_translate_element"
-              className="translate-widget"
-              aria-hidden="true"
-            />
-            <div className="language-switcher" aria-label="번역 언어 선택">
+            <div className="language-switcher" aria-label="새 탭에서 번역">
               <Languages size={15} />
               {translateOptions.map((option) => (
                 <button
