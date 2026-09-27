@@ -33,6 +33,14 @@ SOTERIA ROOM은 YouTube 재생목록을 중심으로 음악을 고르고, 찾고
 - YouTube 링크 일괄 복사
 - 같은 영상 ID는 하나로 합쳐서 표시
 
+### Playlist Link Extractor
+
+커뮤니티에 재생목록을 공유하기 쉽게 영상 링크를 한 번에 뽑습니다.
+
+- 저장된 재생목록 선택
+- 링크만, 제목+링크, 마크다운 형식 전환
+- 공유용 텍스트 한 번에 복사
+
 ### Digging
 
 수집한 음악과 구독 채널을 더 가볍게 탐색하는 공간입니다.
@@ -46,6 +54,10 @@ SOTERIA ROOM은 YouTube 재생목록을 중심으로 음악을 고르고, 찾고
 - 태그별 채널 필터와 앨범형 바둑판 목록
 
 현재 Pick은 수집 시점과 재생목록 문맥을 기준으로 고릅니다. 영상별 조회수, 발매일, 장르 점수까지 반영하는 추천 DB는 다음 단계에서 붙일 수 있도록 분리해 두었습니다.
+
+### Song Bottle Light
+
+Song-Bottle 프로젝트를 참고한 가벼운 곡추천 탭입니다. 로그인 없이 곡 제목, YouTube 링크, 짧은 메모를 남기고 최신 추천을 함께 볼 수 있습니다.
 
 ### Music World Cup
 
@@ -114,6 +126,7 @@ node scripts/local-start.mjs
 - 재생목록 표지, 조회수, 갱신일 메타데이터
 - 월드컵 게임과 결과
 - 구독 채널 JSON에서 만든 채널 보관실 데이터
+- 곡추천 병에 남긴 최신 추천
 
 브라우저별 설정과 일부 상태는 브라우저 로컬 저장소에 남습니다.
 
@@ -124,7 +137,9 @@ node scripts/local-start.mjs
 | 화면 흐름, 메뉴, 재생목록 UI | `app/page.tsx` |
 | Liquid Glass 스타일, 반응형 UI | `app/room.css` |
 | Pick 추천 선반 | `components/pick-discovery.tsx`, `lib/picks.ts` |
+| 공유용 재생목록 링크 추출 | `components/playlist-share-tool.tsx` |
 | 랜덤 곡/채널 디깅 | `components/random-discovery.tsx` |
+| 가벼운 곡추천 탭 | `components/song-bottle-lite.tsx`, `app/api/recommendations/route.ts` |
 | 채널 보관실과 태그 | `components/channel-tag-explorer.tsx`, `lib/channel-tags.ts` |
 | YouTube 재생목록 수집 | `lib/youtube.ts`, `lib/channel.ts` |
 | 재생목록 표지와 조회수 | `lib/youtube-metadata.ts`, `app/api/playlist-meta/route.ts` |

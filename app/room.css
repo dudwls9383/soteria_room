@@ -1795,6 +1795,163 @@ body {
   flex-wrap: wrap;
   margin: 23px 0;
 }
+.share-tool {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+  gap: 22px;
+  border-radius: 25px;
+  padding: 24px;
+}
+.share-tool-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.share-tool-panel h2,
+.bottle-form h2 {
+  font-size: 21px;
+  letter-spacing: -0.5px;
+}
+.share-tool-panel p {
+  color: #617b88;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.share-tool-panel label,
+.bottle-form label {
+  display: grid;
+  gap: 7px;
+  color: #617482;
+  font-size: 12px;
+  font-weight: 700;
+}
+.share-tool-panel select,
+.bottle-form input,
+.bottle-form textarea {
+  width: 100%;
+  border: 1px solid #cbdce3;
+  border-radius: 13px;
+  background: #ffffffbd;
+  color: #263f4c;
+  padding: 11px 13px;
+  font-size: 13px;
+  outline-offset: 3px;
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.share-output-panel {
+  min-width: 0;
+}
+.share-output {
+  width: 100%;
+  min-height: 440px;
+  resize: vertical;
+  border: 1px solid #ffffff;
+  border-radius: 19px;
+  background: #f8fcffc9;
+  color: #244657;
+  padding: 17px;
+  font: 13px/1.75 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre;
+}
+.bottle-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: 24px;
+  align-items: start;
+}
+.bottle-form {
+  display: grid;
+  gap: 14px;
+  border-radius: 24px;
+  padding: 25px;
+  position: sticky;
+  top: 24px;
+}
+.bottle-form textarea {
+  min-height: 110px;
+  resize: vertical;
+  line-height: 1.7;
+}
+.bottle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.bottle-card {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 15px;
+  min-width: 0;
+  border-radius: 20px;
+  padding: 13px;
+}
+.bottle-card img,
+.bottle-fallback {
+  width: 100%;
+  aspect-ratio: 16/10;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid #ffffffd9;
+  background: linear-gradient(145deg, #e4e8ff, #d7edf0);
+}
+.bottle-fallback {
+  display: grid;
+  place-items: center;
+  color: #536c8a;
+  font-size: 26px;
+}
+.bottle-card small {
+  color: #8498a2;
+  font-size: 10px;
+}
+.bottle-card h3 {
+  margin: 5px 0 3px;
+  color: #294f61;
+  font-size: 15px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bottle-card p {
+  margin: 0 0 6px;
+  color: #6b828d;
+  font-size: 12px;
+}
+.bottle-card blockquote {
+  margin: 8px 0 10px;
+  color: #556f7c;
+  font-size: 12px;
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bottle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.bottle-actions a,
+.bottle-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #4e7b90;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0;
+  cursor: pointer;
+}
 /* 월드컵: 동작은 기존 모듈을 유지하고 이 영역 안에서만 밝은 색을 적용합니다. */
 .worldcup-module .app-shell {
   --primary: #26799c;
@@ -1992,6 +2149,16 @@ body {
   .channel-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .share-tool,
+  .bottle-layout {
+    grid-template-columns: 1fr;
+  }
+  .bottle-form {
+    position: static;
+  }
+  .bottle-grid {
+    grid-template-columns: 1fr;
+  }
   .archive-types button {
     padding: 18px;
     gap: 12px;
@@ -2078,6 +2245,16 @@ body {
   .subscription-settings .control-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .share-tool {
+    padding: 18px;
+  }
+  .share-output {
+    min-height: 320px;
+  }
+  .bottle-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 12px;
   }
 }
 /* 바깥 세로 탐색 탭의 방향이 랜덤 디깅의 내부 가로 탭에 전파되지 않도록 고정합니다. */

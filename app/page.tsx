@@ -33,6 +33,8 @@ import {
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
+import PlaylistShareTool from "../components/playlist-share-tool";
+import SongBottleLite from "../components/song-bottle-lite";
 import {
   inScope,
   kindOf,
@@ -74,8 +76,10 @@ const uiDictionary: Record<
     관리: "Management",
     "재생목록 픽": "Playlist picks",
     "유튜브 재생목록 검색기": "YouTube playlist searcher",
+    "재생목록 링크 추출기": "Playlist link extractor",
     "월별 수집 · 큐레이션": "Monthly archive · Curation",
     "디깅": "Digging",
+    "곡추천 병": "Song bottle",
     "음악 월드컵": "Music World Cup",
     "블로그 포스트": "Blog posts",
     "소무니아 갤러리": "Somunia Gallery",
@@ -123,6 +127,34 @@ const uiDictionary: Record<
       "Public playlists are imported automatically and stored on this PC.",
     "제목, 채널 이름, 재생목록 이름으로 모든 곡을 찾아요.":
       "Search all songs by title, channel, or playlist name.",
+    "붙여넣기 좋은 재생목록 링크.": "Playlist links ready to paste.",
+    "커뮤니티에 바로 공유할 수 있게 영상 링크를 한 번에 뽑아요.":
+      "Extract video links so they are easy to share in a community.",
+    "재생목록 선택": "Choose a playlist",
+    "복사 형식": "Copy format",
+    "링크만": "Links only",
+    "제목 + 링크": "Title + link",
+    "마크다운": "Markdown",
+    "공유 텍스트 복사": "Copy share text",
+    "복사 완료": "Copied",
+    "추출 결과": "Extracted links",
+    "곡추천을 가볍게 남기는 병.": "A light bottle for song recommendations.",
+    "좋았던 곡 하나와 짧은 메모만 남겨도 충분해요.":
+      "One good song and a short note are enough.",
+    "추천 남기기": "Leave a recommendation",
+    "이름": "Name",
+    "익명도 괜찮아요": "Anonymous is fine",
+    "곡 제목": "Song title",
+    "추천하고 싶은 곡": "A song to recommend",
+    "아티스트": "Artist",
+    선택: "Optional",
+    "YouTube 링크": "YouTube link",
+    "짧은 메모": "Short note",
+    "어떤 순간에 들으면 좋은지 남겨주세요":
+      "Tell us when this song feels right.",
+    "추천 보내기": "Send recommendation",
+    "도착한 추천": "Arrived recommendations",
+    "아직 도착한 추천이 없어요.": "No recommendations have arrived yet.",
     "검색할 범위": "Search scope",
     "곡 검색": "Song search",
     "검색 결과": "Search results",
@@ -191,8 +223,10 @@ const uiDictionary: Record<
     관리: "管理",
     "재생목록 픽": "プレイリストピック",
     "유튜브 재생목록 검색기": "YouTubeプレイリスト検索",
+    "재생목록 링크 추출기": "プレイリストリンク抽出",
     "월별 수집 · 큐레이션": "月別収集 · キュレーション",
     "디깅": "ディグ",
+    "곡추천 병": "曲おすすめボトル",
     "음악 월드컵": "音楽ワールドカップ",
     "블로그 포스트": "ブログ記事",
     "소무니아 갤러리": "ソムニアギャラリー",
@@ -239,6 +273,38 @@ const uiDictionary: Record<
       "公開プレイリストを自動で取得し、このPCに保存します。",
     "제목, 채널 이름, 재생목록 이름으로 모든 곡을 찾아요.":
       "曲名、チャンネル名、プレイリスト名で全曲を検索します。",
+    "붙여넣기 좋은 재생목록 링크.": "貼り付けやすいプレイリストリンク。",
+    "커뮤니티에 바로 공유할 수 있게 영상 링크를 한 번에 뽑아요。":
+      "コミュニティに共有しやすいように動画リンクをまとめて抽出します。",
+    "커뮤니티에 바로 공유할 수 있게 영상 링크를 한 번에 뽑아요.":
+      "コミュニティに共有しやすいように動画リンクをまとめて抽出します。",
+    "재생목록 선택": "プレイリスト選択",
+    "복사 형식": "コピー形式",
+    "링크만": "リンクのみ",
+    "제목 + 링크": "タイトル + リンク",
+    "마크다운": "Markdown",
+    "공유 텍스트 복사": "共有テキストをコピー",
+    "복사 완료": "コピー完了",
+    "추출 결과": "抽出結果",
+    "곡추천을 가볍게 남기는 병.": "曲のおすすめを軽く残すボトル。",
+    "좋았던 곡 하나와 짧은 메모만 남겨도 충분해요。":
+      "好きだった曲ひとつと短いメモだけで十分です。",
+    "좋았던 곡 하나와 짧은 메모만 남겨도 충분해요.":
+      "好きだった曲ひとつと短いメモだけで十分です。",
+    "추천 남기기": "おすすめを書く",
+    "이름": "名前",
+    "익명도 괜찮아요": "匿名でも大丈夫",
+    "곡 제목": "曲名",
+    "추천하고 싶은 곡": "おすすめしたい曲",
+    "아티스트": "アーティスト",
+    선택: "任意",
+    "YouTube 링크": "YouTubeリンク",
+    "짧은 메모": "短いメモ",
+    "어떤 순간에 들으면 좋은지 남겨주세요":
+      "どんな時に聴くと良いかを書いてください。",
+    "추천 보내기": "おすすめを送る",
+    "도착한 추천": "届いたおすすめ",
+    "아직 도착한 추천이 없어요.": "まだおすすめは届いていません。",
     "검색할 범위": "検索範囲",
     "곡 검색": "曲検索",
     "검색 결과": "検索結果",
@@ -408,10 +474,12 @@ const pageCopy: Record<
 const modules = [
   { id: "pick", name: "재생목록 픽", icon: Sparkles, group: "음악 보관실" },
   { id: "search", name: "유튜브 재생목록 검색기", icon: Search },
+  { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
   { id: "archive", name: "월별 수집 · 큐레이션", icon: CalendarDays },
   { id: "recap", name: "My Recap", icon: AudioLines },
   { id: "kawaii", name: "Kawaii Voice 시리즈", icon: ListMusic },
   { id: "random", name: "디깅", icon: Shuffle, group: "작은 프로젝트" },
+  { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "asmr", name: "채널 보관실", icon: Headphones },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
   { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결된 공간" },
@@ -1380,8 +1448,14 @@ export default function Room() {
               </p>
             )}
           </TabsContent>
+          <TabsContent value="extract">
+            <PlaylistShareTool library={library} />
+          </TabsContent>
           <TabsContent value="random">
             <RandomDiscovery library={library} />
+          </TabsContent>
+          <TabsContent value="bottle">
+            <SongBottleLite />
           </TabsContent>
           <TabsContent value="asmr">
             <ChannelTagExplorer initialTag="ASMR" />
