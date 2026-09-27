@@ -152,9 +152,9 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
     <div>
       <div className="room-heading">
         <div>
-          <div className="room-eyebrow">A LITTLE SERENDIPITY</div>
-          <h1>아직 못 만난 취향을 찾아서.</h1>
-          <p>보관실의 곡과 구독목록의 채널에서 무작위로 골라요.</p>
+          <div className="room-eyebrow">DIGGING ROOM</div>
+          <h1>오늘의 음악을 다시 발견하는 방.</h1>
+          <p>모아둔 음악에서는 Pick을, 구독목록에서는 랜덤 채널을 꺼내요.</p>
         </div>
       </div>
       {error && (
@@ -170,17 +170,17 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
       <Tabs defaultValue="songs">
         <TabsList className="discovery-tabs">
           <TabsTrigger value="songs">
-            <Music2 size={16} />곡 뽑기
+            <Music2 size={16} />Random Pick
           </TabsTrigger>
           <TabsTrigger value="channels">
             <Users size={16} />
-            구독 채널 뽑기
+            랜덤 채널
           </TabsTrigger>
         </TabsList>
         <TabsContent value="songs">
           <section className="discovery-control glass">
             <div>
-              <h2>오늘 들을 곡을 뽑아볼까요?</h2>
+              <h2>오늘의 Pick을 골라볼까요?</h2>
               <p>
                 후보 {musicSnapshot.total.toLocaleString()}곡 · 같은 영상은 한
                 번만 뽑아요.{musicLoading ? " 새로 고르는 중…" : ""}
@@ -283,7 +283,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                 }}
               >
                 <Shuffle size={17} />
-                무작위로 뽑기
+                Random Pick
               </button>
             </div>
           </section>
@@ -322,7 +322,9 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                       <button
                         className="room-button subtle"
                         onClick={() => {
-                          const index = songs.findIndex((t) => t.id === playing.id);
+                          const index = songs.findIndex(
+                            (t) => t.id === playing.id,
+                          );
                           setPlaying(songs[(index + 1) % songs.length]);
                         }}
                       >
@@ -341,7 +343,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
               )}
               <div className="section-title">
                 <h2>
-                  이번에 만난 음악<span>{songs.length}곡</span>
+                  이번 Pick<span>{songs.length}곡</span>
                 </h2>
                 <button
                   className="room-button subtle"
@@ -354,7 +356,9 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
               <div className="random-song-grid">
                 {songs.map((t) => (
                   <article
-                    className={`random-song glass ${playing?.id === t.id ? "active" : ""}`}
+                    className={`random-song glass ${
+                      playing?.id === t.id ? "active" : ""
+                    }`}
                     key={t.id}
                   >
                     <img src={t.thumbnail} alt="" loading="lazy" />
@@ -390,7 +394,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
         <TabsContent value="channels">
           <section className="discovery-control glass">
             <div>
-              <h2>구독목록에서 다음 채널 찾기</h2>
+              <h2>구독목록에서 랜덤 채널 찾기</h2>
               <p>
                 저장된 {snapshot.channels.length.toLocaleString()}개 채널 안에서
                 뽑아요. 구독자 수 기준의 필터는 적용하지 않아요.
