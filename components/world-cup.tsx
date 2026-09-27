@@ -584,23 +584,6 @@ export default function Home({
               )}
             </section>
           </div>
-          <div className="how-strip">
-            <div>
-              <span>01</span>
-              <p>재생목록을 넣고</p>
-            </div>
-            <i />
-            <div>
-              <span>02</span>
-              <p>더 좋아하는 곡을 고르면</p>
-            </div>
-            <i />
-            <div>
-              <span>03</span>
-              <p>나의 우승곡이 전체 랭킹에</p>
-              <Trophy size={17} />
-            </div>
-          </div>
         </main>
       )}
       {view === "play" && game && (

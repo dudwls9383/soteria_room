@@ -432,7 +432,7 @@ export default function Room() {
     [postError, setPostError] = useState("");
   const [direction, setDirection] = useState<"asc" | "desc">("desc");
   const [searchScope, setSearchScope] = useState<Scope>("picks");
-  const [archiveScope, setArchiveScope] = useState<Scope>("monthly");
+  const [archiveScope, setArchiveScope] = useState<Scope>("picks");
   const [year, setYear] = useState("all");
   const [homeKind, setHomeKind] = useState("all");
   const [language, setLanguage] = useState<TranslateLanguage>("ko");
@@ -478,10 +478,13 @@ export default function Room() {
   const latestPick = [...library]
     .filter((p) => p.title.includes("픽") && monthOf(p.title).startsWith("20"))
     .sort((a, b) => monthOf(b.title).localeCompare(monthOf(a.title)))[0];
+  const featuredCandidates = tab === "pick" ? visible : baseLibrary;
   const featured =
-    library.find((p) => p.id === featuredId) ||
-    latestPick ||
-    visible[0] ||
+    featuredCandidates.find((p) => p.id === featuredId) ||
+    (featuredCandidates.some((p) => p.id === latestPick?.id)
+      ? latestPick
+      : undefined) ||
+    featuredCandidates[0] ||
     baseLibrary[0];
   function navigate(id: string) {
     setTab(id);
@@ -842,7 +845,6 @@ export default function Room() {
               <Link2 size={15} />
               link
             </a>
-            <span className="local-badge">LOCAL ROOM</span>
             <button
               className="icon-button"
               onClick={() => navigate("settings")}
@@ -945,16 +947,17 @@ export default function Room() {
                         </button>
                         <button
                           className="glass-circle"
-                          disabled={!library.length}
+                          disabled={!featuredCandidates.length}
                           onClick={() => {
-                            const other = baseLibrary.filter(
+                            const candidates = featuredCandidates.filter(
                               (p) => p.id !== featured?.id,
                             );
-                            if (other.length)
-                              setFeaturedId(
-                                other[Math.floor(Math.random() * other.length)]
-                                  .id,
-                              );
+                            const pool = candidates.length
+                              ? candidates
+                              : featuredCandidates;
+                            const next =
+                              pool[Math.floor(Math.random() * pool.length)];
+                            if (next) setFeaturedId(next.id);
                           }}
                           aria-label="다른 재생목록 뽑기"
                         >
@@ -1064,6 +1067,22 @@ export default function Room() {
                   <div className="archive-types">
                     <button
                       className={
+                        archiveScope === "picks" ? "active glass" : "glass"
+                      }
+                      onClick={() => {
+                        setArchiveScope("picks");
+                        setYear("all");
+                        setFilter("all");
+                      }}
+                    >
+                      <Sparkles size={22} />
+                      <span>
+                        <strong>월의 픽 · 큐레이션</strong>
+                        <small>한 달 동안 다시 듣고 선별한 재생목록</small>
+                      </span>
+                    </button>
+                    <button
+                      className={
                         archiveScope === "monthly" ? "active glass" : "glass"
                       }
                       onClick={() => {
@@ -1079,22 +1098,6 @@ export default function Room() {
                           202X.XX · a bundle of songs · 들었던 곡을 다시 찾는
                           보관함
                         </small>
-                      </span>
-                    </button>
-                    <button
-                      className={
-                        archiveScope === "picks" ? "active glass" : "glass"
-                      }
-                      onClick={() => {
-                        setArchiveScope("picks");
-                        setYear("all");
-                        setFilter("all");
-                      }}
-                    >
-                      <Sparkles size={22} />
-                      <span>
-                        <strong>월의 픽 · 큐레이션</strong>
-                        <small>한 달 동안 다시 듣고 선별한 재생목록</small>
                       </span>
                     </button>
                   </div>
