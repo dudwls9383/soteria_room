@@ -451,7 +451,7 @@ export default function Home({
             </h1>
             <p>내 재생목록으로 시작하는 음악 이상형 월드컵</p>
           </div>
-          <div className="setup-grid compact">
+          <div className="setup-grid worldcup-setup-grid">
             <section className="setup-card setup-card-wide">
               <div className="setup-steps">
                 <section className="setup-step-block">
@@ -576,6 +576,16 @@ export default function Home({
                     {size}곡 · {size - 1}번의 선택 · 단 하나의 우승곡
                   </div>
                 </section>
+              </div>
+            </section>
+            <section className="trophy-panel" aria-hidden="true">
+              <div className="trophy-glow" />
+              <div className="trophy-image">
+                <Trophy size={118} strokeWidth={1.35} />
+              </div>
+              <div>
+                <span>MUSIC WORLD CUP</span>
+                <strong>SOTERIA CUP</strong>
               </div>
             </section>
           </div>

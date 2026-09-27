@@ -2015,9 +2015,6 @@ body {
   flex: initial;
 }
 
-.worldcup-module .setup-grid.compact {
-  display: block;
-}
 .worldcup-module .setup-card-wide {
   max-width: 760px;
   margin: 0 auto;
@@ -2039,4 +2036,74 @@ body {
 }
 .worldcup-module .how-strip {
   padding-bottom: 10px;
+}
+
+.worldcup-module .worldcup-setup-grid {
+  grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
+  align-items: stretch;
+}
+.worldcup-module .setup-card-wide {
+  max-width: none;
+  margin: 0;
+}
+.worldcup-module .trophy-panel {
+  position: relative;
+  min-height: 100%;
+  border: 1px solid #496a72;
+  border-radius: 17px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 48% 34%, #ffffffa6 0 9%, transparent 38%),
+    linear-gradient(145deg, #d9edf3, #e7eef9 58%, #f3e8f4);
+  box-shadow: inset 0 1px 0 #ffffffd0;
+  display: grid;
+  place-items: center;
+  padding: 34px 24px;
+  text-align: center;
+  isolation: isolate;
+}
+.worldcup-module .trophy-glow {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border-radius: 999px;
+  background: #ffffff95;
+  filter: blur(10px);
+  z-index: -1;
+}
+.worldcup-module .trophy-image {
+  width: min(78%, 230px);
+  aspect-ratio: 1;
+  border-radius: 42px;
+  display: grid;
+  place-items: center;
+  color: #2a7897;
+  background: linear-gradient(145deg, #ffffffd8, #d7edf3b8);
+  border: 1px solid #ffffffdf;
+  box-shadow: 0 22px 45px #315a6f1a;
+  transform: rotate(-5deg);
+}
+.worldcup-module .trophy-panel div:last-child {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+.worldcup-module .trophy-panel span {
+  color: #6a8797;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 2px;
+}
+.worldcup-module .trophy-panel strong {
+  color: #26495d;
+  font-size: 21px;
+  letter-spacing: -0.6px;
+}
+@media (max-width: 1000px) {
+  .worldcup-module .worldcup-setup-grid {
+    grid-template-columns: 1fr;
+  }
+  .worldcup-module .trophy-panel {
+    min-height: 260px;
+  }
 }
