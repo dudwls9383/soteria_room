@@ -99,3 +99,28 @@ test("metadata uses custom playlist cover and playlist views, never video statis
   assert.equal(parseMeta({ header: { text: "1.2만회" } }).views, 12000);
   assert.equal(parseMeta({ contents: { text: "12,300 views" } }).views, null);
 });
+import { buildChannelTagDataset } from "../lib/channel-tags.ts";
+
+test("channel tag JSON import merges extension tags and metadata", () => {
+  const dataset = buildChannelTagDataset(
+    {
+      ASMR: ["UC1234567890123456789012", "UC1234567890123456789012"],
+      ASMR_ysm_1: ["UCabcdefghijklmnopqrstuv"],
+      KawaVo: ["UCabcdefghijklmnopqrstuv"],
+      ysc_channel_metadata: {
+        UC1234567890123456789012: { title: "ASMR One", img: "avatar" },
+      },
+      ysc_subs_count: {
+        UC1234567890123456789012: { sc: "1200", t: ["Music"] },
+      },
+    },
+    "fixture.json",
+  );
+  assert.equal(dataset.collections.ASMR.length, 2);
+  assert.equal(dataset.collections.KawaVo.length, 1);
+  assert.equal(dataset.channels.UC1234567890123456789012.title, "ASMR One");
+  assert.equal(
+    dataset.channels.UC1234567890123456789012.subscriberCount,
+    "1200",
+  );
+});

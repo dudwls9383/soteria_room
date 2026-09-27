@@ -2107,3 +2107,118 @@ body {
     min-height: 260px;
   }
 }
+.tag-dashboard,
+.tag-categories {
+  border-radius: 24px;
+  padding: 26px;
+  margin-bottom: 22px;
+}
+.tag-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+  gap: 24px;
+  align-items: end;
+}
+.tag-dashboard h2,
+.tag-categories h2 {
+  margin: 6px 0 7px;
+  font-size: 24px;
+  letter-spacing: -0.8px;
+}
+.tag-dashboard p,
+.tag-categories p {
+  color: #6f8490;
+  font-size: 13px;
+}
+.tag-actions {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tag-actions label:not(.upload-label) {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+  color: #69808b;
+  font-size: 11px;
+  font-weight: 750;
+}
+.tag-actions select,
+.tag-search-field {
+  min-height: 39px;
+  border: 1px solid #ffffff;
+  border-radius: 15px;
+  background: #ffffff8a;
+  color: #365b6c;
+  box-shadow: inset 0 1px 0 #ffffffad;
+}
+.tag-actions select {
+  padding: 0 12px;
+}
+.tag-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+}
+.tag-search-field input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  width: 180px;
+  min-width: 0;
+  color: inherit;
+}
+.tag-categories {
+  display: grid;
+  grid-template-columns: minmax(0, 0.55fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+}
+.category-chip-grid {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.category-chip-grid span {
+  border: 1px solid #ffffff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #ffffff78;
+  color: #496a78;
+  font-size: 12px;
+  font-weight: 750;
+}
+.category-chip-grid span.active {
+  background: #dceef5;
+  color: #266987;
+  border-color: #9bc8d8;
+}
+.category-chip-grid span.muted {
+  color: #7e8f98;
+  background: #f7fbff78;
+}
+.tagged-channel-grid {
+  margin-bottom: 34px;
+}
+.tag-list {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 18px;
+  margin: -7px 0 13px;
+  color: #78909b;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 950px) {
+  .tag-dashboard,
+  .tag-categories {
+    grid-template-columns: 1fr;
+  }
+  .tag-actions {
+    justify-content: flex-start;
+  }
+}

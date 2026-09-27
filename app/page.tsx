@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AudioLines,
+  Headphones,
   ArrowUpRight,
   BookOpen,
   CalendarDays,
@@ -31,6 +32,7 @@ import {
 } from "../components/ui/tabs";
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
+import ChannelTagExplorer from "../components/channel-tag-explorer";
 import {
   inScope,
   kindOf,
@@ -380,6 +382,7 @@ const modules = [
   { id: "recap", name: "My Recap", icon: AudioLines },
   { id: "kawaii", name: "Kawaii Voice 시리즈", icon: ListMusic },
   { id: "random", name: "랜덤 디깅", icon: Shuffle, group: "작은 프로젝트" },
+  { id: "asmr", name: "ASMR 채널", icon: Headphones },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
   { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결된 공간" },
   { id: "somunia", name: "소무니아 갤러리", icon: MessageCircle },
@@ -1352,6 +1355,9 @@ export default function Room() {
           </TabsContent>
           <TabsContent value="random">
             <RandomDiscovery library={library} />
+          </TabsContent>
+          <TabsContent value="asmr">
+            <ChannelTagExplorer initialTag="ASMR" />
           </TabsContent>
           <TabsContent
             value="worldcup"
