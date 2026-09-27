@@ -10,19 +10,37 @@ import {
   Users,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import type { Playlist, Track } from "../lib/music";
-import { searchLibrary } from "../lib/archive";
-import { inScope, scopes, sampleUnique, type Scope } from "../lib/collections";
+import type { Playlist } from "../lib/music";
+import type { MusicRecord } from "../lib/music-index";
+import { scopes, sampleUnique, type Scope } from "../lib/collections";
 import { SHEET_URL, type Channel } from "../lib/subscriptions";
 type Snapshot = {
   channels: Channel[];
   updatedAt: number | null;
   source: string | null;
 };
+type MusicSnapshot = {
+  total: number;
+  music: MusicRecord[];
+  available: {
+    years: string[];
+    months: string[];
+    collections: string[];
+  };
+};
 export default function RandomDiscovery({ library }: { library: Playlist[] }) {
   const [scope, setScope] = useState<Scope>("picks"),
+    [year, setYear] = useState("all"),
+    [month, setMonth] = useState("all"),
+    [songQuery, setSongQuery] = useState(""),
     [count, setCount] = useState(10),
-    [songs, setSongs] = useState<Track[]>([]);
+    [songs, setSongs] = useState<MusicRecord[]>([]);
+  const [musicSnapshot, setMusicSnapshot] = useState<MusicSnapshot>({
+      total: 0,
+      music: [],
+      available: { years: [], months: [], collections: [] },
+    }),
+    [musicLoading, setMusicLoading] = useState(false);
   const [snapshot, setSnapshot] = useState<Snapshot>({
       channels: [],
       updatedAt: null,
@@ -33,10 +51,10 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
-  const pool = searchLibrary(
-    library.filter((p) => inScope(p, scope)),
-    "",
-  );
+  const pool = musicSnapshot.music;
+  const monthChoices = [
+    ...new Set(musicSnapshot.available.months.map((item) => item.slice(-2))),
+  ].sort((a, b) => Number(a) - Number(b));
   useEffect(() => {
     fetch("/api/subscriptions")
       .then(async (r) => {
@@ -46,6 +64,28 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
       })
       .catch((e) => setError(e.message));
   }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      scope,
+      year,
+      month,
+      q: songQuery,
+      limit: "5000",
+    });
+    setMusicLoading(true);
+    fetch(`/api/music?${params.toString()}`, { signal: controller.signal })
+      .then(async (r) => {
+        const d: any = await r.json();
+        if (!r.ok) throw Error(d.error);
+        setMusicSnapshot(d);
+      })
+      .catch((e) => {
+        if (e.name !== "AbortError") setError(e.message);
+      })
+      .finally(() => setMusicLoading(false));
+    return () => controller.abort();
+  }, [scope, year, month, songQuery, library.length]);
   async function update(input: object) {
     setBusy(true);
     setError("");
@@ -138,8 +178,8 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
             <div>
               <h2>오늘 들을 곡을 뽑아볼까요?</h2>
               <p>
-                후보 {pool.length.toLocaleString()}곡 · 같은 영상은 한 번만
-                뽑아요.
+                후보 {musicSnapshot.total.toLocaleString()}곡 · 같은 영상은 한
+                번만 뽑아요.{musicLoading ? " 새로 고르는 중…" : ""}
               </p>
             </div>
             <div className="control-row">
@@ -160,6 +200,51 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                 </select>
               </label>
               <label>
+                연도
+                <select
+                  value={year}
+                  onChange={(e) => {
+                    setYear(e.target.value);
+                    setSongs([]);
+                  }}
+                >
+                  <option value="all">전체</option>
+                  {musicSnapshot.available.years.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                월
+                <select
+                  value={month}
+                  onChange={(e) => {
+                    setMonth(e.target.value);
+                    setSongs([]);
+                  }}
+                >
+                  <option value="all">전체</option>
+                  {monthChoices.map((item) => (
+                    <option key={item} value={item}>
+                      {Number(item)}월
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="wide">
+                검색어
+                <input
+                  value={songQuery}
+                  onChange={(e) => {
+                    setSongQuery(e.target.value);
+                    setSongs([]);
+                  }}
+                  placeholder="곡, 채널, 재생목록"
+                />
+              </label>
+              <label>
                 곡 수
                 <input
                   type="number"
@@ -173,6 +258,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                 className="room-button"
                 disabled={
                   !pool.length ||
+                  musicLoading ||
                   !Number.isInteger(count) ||
                   count < 1 ||
                   count > 100
@@ -182,7 +268,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   setNotice(
                     pool.length < count
                       ? `후보가 ${pool.length}곡이라 모두 뽑았어요.`
-                      : "새로운 곡을 뽑았어요.",
+                      : `${pool.length.toLocaleString()}곡 후보에서 골랐어요.`,
                   );
                 }}
               >
@@ -222,6 +308,9 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                       <p className="notranslate" translate="no">
                         {t.artist}
                       </p>
+                      <small className="notranslate" translate="no">
+                        {t.playlists.slice(0, 2).join(" / ")}
+                      </small>
                       <span>
                         YouTube에서 듣기 <ExternalLink size={13} />
                       </span>

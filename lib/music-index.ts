@@ -70,11 +70,23 @@ export function buildMusicIndex(
 export function filterMusicIndex(items: MusicRecord[], filters: MusicFilters) {
   const q = filters.q?.trim().toLowerCase() || "";
   return items.filter((item) => {
-    if (filters.scope && filters.scope !== "all" && !item.scopes.includes(filters.scope))
+    if (
+      filters.scope &&
+      filters.scope !== "all" &&
+      !item.scopes.includes(filters.scope)
+    )
       return false;
-    if (filters.year && filters.year !== "all" && !item.years.includes(filters.year))
+    if (
+      filters.year &&
+      filters.year !== "all" &&
+      !item.years.includes(filters.year)
+    )
       return false;
-    if (filters.month && filters.month !== "all" && !item.months.some((m) => m.endsWith(`.${filters.month!.padStart(2, "0")}`)))
+    if (
+      filters.month &&
+      filters.month !== "all" &&
+      !item.months.some((m) => m.endsWith(`.${filters.month!.padStart(2, "0")}`))
+    )
       return false;
     if (
       filters.collection &&

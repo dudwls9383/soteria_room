@@ -1569,6 +1569,13 @@ body {
 .discovery-control .room-button {
   margin-left: auto;
 }
+.discovery-control label.wide {
+  min-width: min(260px, 100%);
+}
+.discovery-control input:not([type="file"]),
+.discovery-control select {
+  min-height: 39px;
+}
 .random-song-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1603,6 +1610,16 @@ body {
   font-size: 11px;
   color: #73838b;
   margin: 4px 0;
+}
+.random-song small {
+  display: block;
+  color: #8aa0aa;
+  font-size: 10px;
+  line-height: 1.45;
+  margin: -1px 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .random-song span,
 .channel-card span:not(.channel-monogram) {
