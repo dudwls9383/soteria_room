@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Check, Copy, ExternalLink, LoaderCircle, Send } from "lucide-react";
+import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, X } from "lucide-react";
 
 type Recommendation = {
   id: string;
@@ -40,6 +40,7 @@ export default function SongBottleLite() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [copiedId, setCopiedId] = useState("");
+  const [playing, setPlaying] = useState<Recommendation | null>(null);
 
   async function load() {
     setError("");
@@ -90,6 +91,52 @@ export default function SongBottleLite() {
     await navigator.clipboard.writeText(shareLine(item));
     setCopiedId(item.id);
     window.setTimeout(() => setCopiedId(""), 1500);
+  }
+
+  function playerPanel() {
+    const id = playing ? videoId(playing.url) : "";
+    if (!playing || !id) return null;
+    return (
+      <section className="room-player bottle-player glass">
+        <div className="room-player-frame">
+          <iframe
+            title={playing.title}
+            src={`https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        </div>
+        <div className="room-player-copy">
+          <span className="room-eyebrow">NOW PLAYING</span>
+          <h3 className="notranslate" translate="no">
+            {playing.title}
+          </h3>
+          {playing.artist && (
+            <p className="notranslate" translate="no">
+              {playing.artist}
+            </p>
+          )}
+          {playing.note && <small>{playing.note}</small>}
+          <div className="player-actions">
+            <a
+              className="room-button subtle"
+              href={playing.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              YouTube에서 듣기 <ExternalLink size={14} />
+            </a>
+            <button
+              className="icon-button"
+              aria-label="플레이어 닫기"
+              onClick={() => setPlaying(null)}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -185,17 +232,27 @@ export default function SongBottleLite() {
               도착한 추천<span>{items.length}곡</span>
             </h2>
           </div>
+          {playerPanel()}
           <div className="bottle-grid">
             {items.map((item) => {
               const id = videoId(item.url);
               return (
                 <article className="bottle-card glass" key={item.id}>
                   {id ? (
-                    <img
-                      src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
-                      alt=""
-                      loading="lazy"
-                    />
+                    <button
+                      className="bottle-cover"
+                      onClick={() => setPlaying(item)}
+                      aria-label={`${item.title} 사이트에서 재생`}
+                    >
+                      <img
+                        src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+                        alt=""
+                        loading="lazy"
+                      />
+                      <span>
+                        <Play size={13} />
+                      </span>
+                    </button>
                   ) : (
                     <div className="bottle-fallback">♪</div>
                   )}
@@ -214,6 +271,12 @@ export default function SongBottleLite() {
                     )}
                     {item.note && <blockquote>{item.note}</blockquote>}
                     <div className="bottle-actions">
+                      {id && (
+                        <button onClick={() => setPlaying(item)}>
+                          <Play size={12} />
+                          재생
+                        </button>
+                      )}
                       <a href={item.url} target="_blank" rel="noreferrer">
                         YouTube <ExternalLink size={12} />
                       </a>

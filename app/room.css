@@ -698,22 +698,6 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.playlist-mini-play {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin: 9px 1px 0;
-  border: 0;
-  background: transparent;
-  color: #4e7b90;
-  font-size: 10px;
-  font-weight: 850;
-  cursor: pointer;
-}
-.playlist-mini-play:disabled {
-  color: #9aa9b0;
-  cursor: not-allowed;
-}
 .card-meta {
   display: flex;
   align-items: center;
@@ -1670,8 +1654,9 @@ body {
   padding: 18px;
   margin-bottom: 26px;
 }
-.global-player {
-  margin: 0 0 32px;
+.inline-context-player,
+.bottle-player {
+  margin: 0 0 24px;
 }
 .room-player-frame {
   aspect-ratio: 16 / 9;
@@ -2001,6 +1986,7 @@ body {
   border-radius: 20px;
   padding: 13px;
 }
+.bottle-cover,
 .bottle-card img,
 .bottle-fallback {
   width: 100%;
@@ -2009,6 +1995,34 @@ body {
   object-fit: cover;
   border: 1px solid #ffffffd9;
   background: linear-gradient(145deg, #e4e8ff, #d7edf0);
+}
+.bottle-cover {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+.bottle-cover img {
+  height: 100%;
+  display: block;
+}
+.bottle-cover span {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #ffffffc7;
+  border-radius: 50%;
+  background: #245d76dc;
+  color: white;
+}
+.bottle-cover:focus-visible {
+  outline: 3px solid #26799c;
+  outline-offset: 2px;
 }
 .bottle-fallback {
   display: grid;

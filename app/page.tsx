@@ -871,6 +871,52 @@ export default function Room() {
     if (!track) return;
     setPlaying(track);
   }
+  function playerPanel() {
+    if (!playing) return null;
+    return (
+      <section className="room-player inline-context-player glass">
+        <div className="room-player-frame">
+          <iframe
+            title={playing.title}
+            src={`https://www.youtube.com/embed/${playing.id}?autoplay=1&playsinline=1`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        </div>
+        <div className="room-player-copy">
+          <span className="room-eyebrow">NOW PLAYING</span>
+          <h3 className="notranslate" translate="no">
+            {playing.title}
+          </h3>
+          <p className="notranslate" translate="no">
+            {playing.artist}
+          </p>
+          {playing.playlists?.length ? (
+            <small className="notranslate" translate="no">
+              {playing.playlists.slice(0, 3).join(" / ")}
+            </small>
+          ) : null}
+          <div className="player-actions">
+            <a
+              className="room-button subtle"
+              href={`https://youtu.be/${playing.id}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              YouTube에서 듣기 <ExternalLink size={14} />
+            </a>
+            <button
+              className="icon-button"
+              aria-label="플레이어 닫기"
+              onClick={() => setPlaying(null)}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
   useEffect(() => {
     if (selected)
       document
@@ -909,14 +955,6 @@ export default function Room() {
             <Play size={18} />
           </button>
         </div>
-        <button
-          className="playlist-mini-play"
-          disabled={!firstTrack}
-          onClick={() => playTrack(firstTrack)}
-        >
-          <Play size={12} />
-          사이트에서 첫 곡 듣기
-        </button>
         <div className="card-meta">
           <span>
             {kindOf(p) === "recap"
@@ -1121,49 +1159,6 @@ export default function Room() {
                 <progress value={progress.done} max={progress.total} />
               )}
             </div>
-          )}
-          {playing && (
-            <section className="room-player global-player glass">
-              <div className="room-player-frame">
-                <iframe
-                  title={playing.title}
-                  src={`https://www.youtube.com/embed/${playing.id}?autoplay=1&playsinline=1`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              </div>
-              <div className="room-player-copy">
-                <span className="room-eyebrow">NOW PLAYING</span>
-                <h3 className="notranslate" translate="no">
-                  {playing.title}
-                </h3>
-                <p className="notranslate" translate="no">
-                  {playing.artist}
-                </p>
-                {playing.playlists?.length ? (
-                  <small className="notranslate" translate="no">
-                    {playing.playlists.slice(0, 3).join(" / ")}
-                  </small>
-                ) : null}
-                <div className="player-actions">
-                  <a
-                    className="room-button subtle"
-                    href={`https://youtu.be/${playing.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    YouTube에서 듣기 <ExternalLink size={14} />
-                  </a>
-                  <button
-                    className="icon-button"
-                    aria-label="플레이어 닫기"
-                    onClick={() => setPlaying(null)}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
-            </section>
           )}
           {["pick", "archive", "recap", "kawaii"].map((id) => (
             <TabsContent value={id} key={id}>
@@ -1460,43 +1455,49 @@ export default function Room() {
                   </div>
                 ) : visible.length ? (
                   id === "archive" && sort === "month" ? (
-                    <div className="archive-groups">
-                      {[
-                        ...new Set(
-                          visible.map(
-                            (p) =>
-                              p.title.match(/20\d{2}/)?.[0] || "기간 미분류",
+                    <>
+                      {!selected && playerPanel()}
+                      <div className="archive-groups">
+                        {[
+                          ...new Set(
+                            visible.map(
+                              (p) =>
+                                p.title.match(/20\d{2}/)?.[0] || "기간 미분류",
+                            ),
                           ),
-                        ),
-                      ].map((y) => (
-                        <section key={y}>
-                          <h3>
-                            {y}
-                            <span>
-                              {
-                                visible.filter(
+                        ].map((y) => (
+                          <section key={y}>
+                            <h3>
+                              {y}
+                              <span>
+                                {
+                                  visible.filter(
+                                    (p) =>
+                                      (p.title.match(/20\d{2}/)?.[0] ||
+                                        "기간 미분류") === y,
+                                  ).length
+                                }
+                                개 목록
+                              </span>
+                            </h3>
+                            <div className="playlist-grid">
+                              {visible
+                                .filter(
                                   (p) =>
                                     (p.title.match(/20\d{2}/)?.[0] ||
                                       "기간 미분류") === y,
-                                ).length
-                              }
-                              개 목록
-                            </span>
-                          </h3>
-                          <div className="playlist-grid">
-                            {visible
-                              .filter(
-                                (p) =>
-                                  (p.title.match(/20\d{2}/)?.[0] ||
-                                    "기간 미분류") === y,
-                              )
-                              .map(card)}
-                          </div>
-                        </section>
-                      ))}
-                    </div>
+                                )
+                                .map(card)}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    </>
                   ) : (
-                    <div className="playlist-grid">{visible.map(card)}</div>
+                    <>
+                      {!selected && playerPanel()}
+                      <div className="playlist-grid">{visible.map(card)}</div>
+                    </>
                   )
                 ) : (
                   <div className="room-empty glass">
@@ -1569,6 +1570,7 @@ export default function Room() {
                 YouTube 링크 모두 복사
               </button>
             </div>
+            {playerPanel()}
             <div className="track-list glass">
               {tracks.slice(0, 200).map((t, i) => trackRow(t, i, "search"))}
               {!tracks.length && (
@@ -1851,6 +1853,7 @@ export default function Room() {
                 </button>
                 <span>{selected.tracks.length}곡</span>
               </div>
+              {playerPanel()}
               <div className="detail-tracks">
                 {selected.tracks.map((t, i) => trackRow(t, i, "detail"))}
               </div>
