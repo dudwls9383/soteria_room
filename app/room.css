@@ -1825,7 +1825,15 @@ body {
   font-size: 12px;
   font-weight: 700;
 }
+.share-url-form {
+  display: grid;
+  gap: 12px;
+}
+.share-url-form .room-button {
+  width: fit-content;
+}
 .share-tool-panel select,
+.share-tool-panel input,
 .bottle-form input,
 .bottle-form textarea {
   width: 100%;
@@ -1836,6 +1844,21 @@ body {
   padding: 11px 13px;
   font-size: 13px;
   outline-offset: 3px;
+}
+.saved-playlist-helper {
+  border: 1px solid #ffffffd9;
+  border-radius: 16px;
+  background: #ffffff57;
+  padding: 12px;
+}
+.saved-playlist-helper summary {
+  color: #5d7885;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+.saved-playlist-helper select {
+  margin-top: 10px;
 }
 .share-actions {
   display: flex;

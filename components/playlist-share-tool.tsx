@@ -1,6 +1,14 @@
 "use client";
-import { useMemo, useState } from "react";
-import { Check, Copy, ExternalLink, Link2, ListMusic } from "lucide-react";
+import { useState } from "react";
+import type { FormEvent } from "react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Link2,
+  ListMusic,
+  LoaderCircle,
+} from "lucide-react";
 import type { Playlist } from "../lib/music";
 import { displayTitle } from "../lib/collections";
 
@@ -29,14 +37,34 @@ export default function PlaylistShareTool({
 }: {
   library: Playlist[];
 }) {
-  const [playlistId, setPlaylistId] = useState(library[0]?.id || "");
+  const [url, setUrl] = useState("");
   const [format, setFormat] = useState<Format>("urls");
+  const [selected, setSelected] = useState<Playlist | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const selected = useMemo(
-    () => library.find((playlist) => playlist.id === playlistId) || library[0],
-    [library, playlistId],
-  );
-  const shareText = buildShareText(selected, format);
+  const shareText = buildShareText(selected || undefined, format);
+
+  async function extract(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    setBusy(true);
+    setError("");
+    setCopied(false);
+    try {
+      const response = await fetch("/api/playlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, force: false }),
+      });
+      const data = (await response.json()) as Playlist & { error?: string };
+      if (!response.ok) throw new Error(data.error);
+      setSelected(data);
+    } catch (event) {
+      setError((event as Error).message || "재생목록을 읽지 못했어요.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function copyShareText() {
     if (!shareText) return;
@@ -61,22 +89,47 @@ export default function PlaylistShareTool({
           </div>
           <h2>재생목록 선택</h2>
           <p>
-            Python으로 쓰던 링크 추출기를 웹 안으로 옮겼어요. 저장된
-            재생목록에서 영상 단축 링크만 꺼냅니다.
+            Python으로 쓰던 링크 추출기를 웹 안으로 옮겼어요. 공유하고 싶은
+            재생목록 주소를 붙여넣으면 영상 단축 링크만 꺼냅니다.
           </p>
-          <label>
-            재생목록
+          <form className="share-url-form" onSubmit={extract}>
+            <label>
+              재생목록 URL
+              <input
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder="https://youtube.com/playlist?list=..."
+                type="url"
+                required
+              />
+            </label>
+            <button className="room-button" disabled={busy || !url.trim()}>
+              {busy ? <LoaderCircle className="spin" size={16} /> : <Link2 size={16} />}
+              링크 추출
+            </button>
+          </form>
+          <details className="saved-playlist-helper">
+            <summary>저장된 재생목록에서 고르기</summary>
             <select
               value={selected?.id || ""}
-              onChange={(event) => setPlaylistId(event.target.value)}
+              onChange={(event) => {
+                const playlist = library.find(
+                  (item) => item.id === event.target.value,
+                );
+                if (playlist) {
+                  setSelected(playlist);
+                  setUrl(`https://www.youtube.com/playlist?list=${playlist.id}`);
+                }
+              }}
             >
+              <option value="">선택 안 함</option>
               {library.map((playlist) => (
                 <option key={playlist.id} value={playlist.id}>
                   {displayTitle(playlist)} · {playlist.tracks.length}곡
                 </option>
               ))}
             </select>
-          </label>
+          </details>
           <label>
             복사 형식
             <select
@@ -108,6 +161,11 @@ export default function PlaylistShareTool({
               </a>
             )}
           </div>
+          {error && (
+            <p className="room-message error" role="alert">
+              {error}
+            </p>
+          )}
         </div>
         <div className="share-output-panel">
           <div className="section-title compact-title">
@@ -127,7 +185,7 @@ export default function PlaylistShareTool({
           ) : (
             <div className="room-empty">
               <Link2 size={30} />
-              <h3>재생목록을 먼저 가져와 주세요.</h3>
+              <h3>재생목록 링크를 붙여넣어 주세요.</h3>
             </div>
           )}
         </div>
