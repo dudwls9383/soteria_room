@@ -78,8 +78,10 @@ const uiDictionary: Record<
     "유튜브 재생목록 검색기": "YouTube playlist searcher",
     "재생목록 링크 추출기": "Playlist link extractor",
     "월별 수집 · 큐레이션": "Monthly archive · Curation",
+    "Kawaii Voice 시리즈": "Kawaii Voice series",
     "디깅": "Digging",
     "곡추천 병": "Song bottle",
+    "채널 보관실": "Channel archive",
     "음악 월드컵": "Music World Cup",
     "블로그 포스트": "Blog posts",
     "소무니아 갤러리": "Somunia Gallery",
@@ -97,6 +99,18 @@ const uiDictionary: Record<
     "카와이 보이스, 하나의 시리즈.": "Kawaii Voice as one series.",
     "room부터 괴멸적 카와보 플리까지 · 10개의 큐레이션.":
       "From room to intensely kawaii-voice playlists · 10 curations.",
+    "채널 보관실.": "Channel archive.",
+    "태그": "Tag",
+    "검색": "Search",
+    "채널명 또는 태그": "Channel name or tag",
+    "랜덤 불러오기": "Random",
+    "전체 불러오기": "Show all",
+    "태그 JSON 갱신": "Update tag JSON",
+    "이번 랜덤 채널": "Random channels",
+    "전체 채널 목록": "All channels",
+    "불러오는 중…": "Loading…",
+    "채널 열기": "Open channel",
+    "조건에 맞는 채널이 없어요.": "No channels match these conditions.",
     "재생목록 추가": "Add playlist",
     "YouTube 채널": "YouTube channel",
     "링크 프로필": "Link profile",
@@ -225,8 +239,10 @@ const uiDictionary: Record<
     "유튜브 재생목록 검색기": "YouTubeプレイリスト検索",
     "재생목록 링크 추출기": "プレイリストリンク抽出",
     "월별 수집 · 큐레이션": "月別収集 · キュレーション",
+    "Kawaii Voice 시리즈": "カワイイボイスシリーズ",
     "디깅": "ディグ",
     "곡추천 병": "曲おすすめボトル",
+    "채널 보관실": "チャンネル保管庫",
     "음악 월드컵": "音楽ワールドカップ",
     "블로그 포스트": "ブログ記事",
     "소무니아 갤러리": "ソムニアギャラリー",
@@ -244,6 +260,18 @@ const uiDictionary: Record<
     "카와이 보이스, 하나의 시리즈.": "カワイイボイス、ひとつのシリーズ。",
     "room부터 괴멸적 카와보 플리까지 · 10개의 큐레이션.":
       "roomから壊滅的カワボプレイリストまで · 10本のキュレーション。",
+    "채널 보관실.": "チャンネル保管庫。",
+    "태그": "タグ",
+    "검색": "検索",
+    "채널명 또는 태그": "チャンネル名またはタグ",
+    "랜덤 불러오기": "ランダム表示",
+    "전체 불러오기": "すべて表示",
+    "태그 JSON 갱신": "タグJSON更新",
+    "이번 랜덤 채널": "今回のランダムチャンネル",
+    "전체 채널 목록": "全チャンネル一覧",
+    "불러오는 중…": "読み込み中…",
+    "채널 열기": "チャンネルを開く",
+    "조건에 맞는 채널이 없어요.": "条件に合うチャンネルがありません。",
     "재생목록 추가": "プレイリスト追加",
     "YouTube 채널": "YouTubeチャンネル",
     "링크 프로필": "リンクプロフィール",
@@ -397,6 +425,26 @@ function translatedStaticText(
       .replace(
         /^(\d+)곡 · SOTERIA ROOM$/,
         language === "ja" ? "$1曲 · SOTERIA ROOM" : "$1 songs · SOTERIA ROOM",
+      )
+      .replace(
+        /^(.+) 태그의 채널을 둘러보고, 확장 프로그램\s*JSON으로 주기적으로 갱신해요\.$/,
+        language === "ja"
+          ? "$1タグのチャンネルを見て、拡張機能JSONで定期的に更新します。"
+          : "Browse channels tagged $1 and refresh them with extension JSON.",
+      )
+      .replace(
+        /^([\d,]+)개 채널 · (.+)$/,
+        language === "ja" ? "$1チャンネル · $2" : "$1 channels · $2",
+      )
+      .replace(
+        /^(\d+)-(\d+) \/ ([\d,]+)개$/,
+        language === "ja" ? "$1-$2 / $3件" : "$1-$2 / $3 channels",
+      )
+      .replace(
+        /^([\d,]+)개 \/ 전체 ([\d,]+)개$/,
+        language === "ja"
+          ? "$1件 / 全$2件"
+          : "$1 channels / $2 total",
       );
   }
   if (!translated || translated === trimmed) return value;
