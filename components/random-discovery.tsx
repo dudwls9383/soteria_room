@@ -7,7 +7,10 @@ import {
   Upload,
   Copy,
   Music2,
+  Play,
+  SkipForward,
   Users,
+  X,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import type { Playlist } from "../lib/music";
@@ -34,7 +37,8 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
     [month, setMonth] = useState("all"),
     [songQuery, setSongQuery] = useState(""),
     [count, setCount] = useState(10),
-    [songs, setSongs] = useState<MusicRecord[]>([]);
+    [songs, setSongs] = useState<MusicRecord[]>([]),
+    [playing, setPlaying] = useState<MusicRecord | null>(null);
   const [musicSnapshot, setMusicSnapshot] = useState<MusicSnapshot>({
       total: 0,
       music: [],
@@ -190,6 +194,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   onChange={(e) => {
                     setScope(e.target.value as Scope);
                     setSongs([]);
+                    setPlaying(null);
                   }}
                 >
                   {scopes.map((s) => (
@@ -206,6 +211,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   onChange={(e) => {
                     setYear(e.target.value);
                     setSongs([]);
+                    setPlaying(null);
                   }}
                 >
                   <option value="all">전체</option>
@@ -223,6 +229,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   onChange={(e) => {
                     setMonth(e.target.value);
                     setSongs([]);
+                    setPlaying(null);
                   }}
                 >
                   <option value="all">전체</option>
@@ -240,6 +247,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   onChange={(e) => {
                     setSongQuery(e.target.value);
                     setSongs([]);
+                    setPlaying(null);
                   }}
                   placeholder="곡, 채널, 재생목록"
                 />
@@ -264,7 +272,9 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   count > 100
                 }
                 onClick={() => {
-                  setSongs(sampleUnique(pool, count));
+                  const picked = sampleUnique(pool, count);
+                  setSongs(picked);
+                  setPlaying(picked[0] || null);
                   setNotice(
                     pool.length < count
                       ? `후보가 ${pool.length}곡이라 모두 뽑았어요.`
@@ -279,6 +289,56 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
           </section>
           {songs.length > 0 && (
             <>
+              {playing && (
+                <section className="room-player glass">
+                  <div className="room-player-frame">
+                    <iframe
+                      title={playing.title}
+                      src={`https://www.youtube.com/embed/${playing.id}?autoplay=1&playsinline=1`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                  <div className="room-player-copy">
+                    <span className="room-eyebrow">NOW PLAYING</span>
+                    <h3 className="notranslate" translate="no">
+                      {playing.title}
+                    </h3>
+                    <p className="notranslate" translate="no">
+                      {playing.artist}
+                    </p>
+                    <small className="notranslate" translate="no">
+                      {playing.playlists.slice(0, 3).join(" / ")}
+                    </small>
+                    <div className="player-actions">
+                      <a
+                        className="room-button subtle"
+                        href={`https://youtu.be/${playing.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        YouTube에서 열기 <ExternalLink size={14} />
+                      </a>
+                      <button
+                        className="room-button subtle"
+                        onClick={() => {
+                          const index = songs.findIndex((t) => t.id === playing.id);
+                          setPlaying(songs[(index + 1) % songs.length]);
+                        }}
+                      >
+                        다음 곡 <SkipForward size={15} />
+                      </button>
+                      <button
+                        className="icon-button"
+                        aria-label="플레이어 닫기"
+                        onClick={() => setPlaying(null)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
               <div className="section-title">
                 <h2>
                   이번에 만난 음악<span>{songs.length}곡</span>
@@ -293,12 +353,9 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
               </div>
               <div className="random-song-grid">
                 {songs.map((t) => (
-                  <a
-                    className="random-song glass"
+                  <article
+                    className={`random-song glass ${playing?.id === t.id ? "active" : ""}`}
                     key={t.id}
-                    href={`https://youtu.be/${t.id}`}
-                    target="_blank"
-                    rel="noreferrer"
                   >
                     <img src={t.thumbnail} alt="" loading="lazy" />
                     <div>
@@ -311,11 +368,20 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                       <small className="notranslate" translate="no">
                         {t.playlists.slice(0, 2).join(" / ")}
                       </small>
-                      <span>
-                        YouTube에서 듣기 <ExternalLink size={13} />
-                      </span>
+                      <div className="random-song-actions">
+                        <button onClick={() => setPlaying(t)}>
+                          <Play size={13} /> 사이트에서 듣기
+                        </button>
+                        <a
+                          href={`https://youtu.be/${t.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          YouTube <ExternalLink size={12} />
+                        </a>
+                      </div>
                     </div>
-                  </a>
+                  </article>
                 ))}
               </div>
             </>
