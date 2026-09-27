@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpen,
   ExternalLink,
   RefreshCw,
   Search,
@@ -25,6 +26,21 @@ type Snapshot = {
   updatedAt: number | null;
   source: string | null;
 };
+
+const galleryGuideLinks = [
+  {
+    title: "소테리아의 곡 디깅하는 법",
+    category: "Tip",
+    description: "카와보 갤에서 음악을 찾고 정리하는 흐름을 적어 둔 글.",
+    url: "https://gall.dcinside.com/mini/board/view/?id=moesound&no=1025&search_head=90&page=1",
+  },
+  {
+    title: "재생목록을 만드는 법",
+    category: "Tip",
+    description: "좋은 곡을 모아 플레이리스트로 정리하는 기준을 다룬 글.",
+    url: "https://gall.dcinside.com/mini/board/view/?id=moesound&no=979&search_head=90&page=1",
+  },
+];
 const tagChoices = [
   "ASMR",
   "KawaVo",
@@ -117,14 +133,10 @@ export default function ChannelTagExplorer({
       <div className="room-heading">
         <div>
           <div className="room-eyebrow">CHANNEL TAG DB</div>
-          <h1>
-            {tag === "ASMR"
-              ? "ASMR 채널 보관실."
-              : `${current?.label || tag} 채널 보관실.`}
-          </h1>
+          <h1>채널 보관실.</h1>
           <p>
-            확장 프로그램 태그 JSON에서 가져온 채널을 태그별로 둘러보고 무작위로
-            뽑아요.
+            {current?.label || tag} 태그의 채널을 둘러보고, 확장 프로그램
+            JSON으로 주기적으로 갱신해요.
           </p>
         </div>
       </div>
@@ -208,20 +220,40 @@ export default function ChannelTagExplorer({
         <div>
           <h2>카와보 갤 Picks 목차</h2>
           <p>
-            추천글을 연결하면 이 목차별로 채널을 분리해 가져올 수 있게 둘
-            예정입니다.
+            글 말머리와 목차를 기준으로 추천 채널을 나눌 수 있도록 먼저 틀을
+            잡아두었어요.
           </p>
+          <div className="category-chip-grid compact">
+            {picks.map((c) => (
+              <span key={c.id} className={c.tag === tag ? "active" : ""}>
+                {c.label}
+              </span>
+            ))}
+            {meta.map((c) => (
+              <span key={c.id} className="muted">
+                {c.label}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="category-chip-grid">
-          {picks.map((c) => (
-            <span key={c.id} className={c.tag === tag ? "active" : ""}>
-              {c.label}
-            </span>
-          ))}
-          {meta.map((c) => (
-            <span key={c.id} className="muted">
-              {c.label}
-            </span>
+        <div className="gallery-guide-grid">
+          {galleryGuideLinks.map((link) => (
+            <a
+              className="gallery-guide-card"
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              key={link.url}
+            >
+              <span>
+                <BookOpen size={14} /> {link.category}
+              </span>
+              <strong>{link.title}</strong>
+              <p>{link.description}</p>
+              <small>
+                카와이 보이스 갤러리에서 보기 <ExternalLink size={13} />
+              </small>
+            </a>
           ))}
         </div>
       </section>

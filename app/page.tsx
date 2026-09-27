@@ -394,6 +394,36 @@ const sources: Record<string, string> = {
   somunia: "https://gall.dcinside.com/mgallery/board/lists/?id=somunia",
   moesound: "https://gall.dcinside.com/mini/board/lists?id=moesound",
 };
+const connectedSpaces = {
+  blog: {
+    label: "Naver Blog",
+    title: "블로그 포스트",
+    description: "긴 글과 음악 기록을 모아두는 개인 아카이브.",
+    points: ["음악 감상 기록", "월별 정리", "원문 글 이동"],
+  },
+  somunia: {
+    label: "DC Gallery",
+    title: "소무니아 갤러리",
+    description: "소무니아 관련 글과 커뮤니티 흐름을 확인하는 공간.",
+    points: ["최신 글", "커뮤니티 반응", "원문 갤러리"],
+  },
+  moesound: {
+    label: "Kawaii Voice Gallery",
+    title: "카와이 보이스 갤러리",
+    description: "하꼬 추천, 카와보, ASMR, 노래 추천 글을 이어 붙일 핵심 공간.",
+    points: ["Picks 목차", "추천 채널", "디깅 가이드"],
+  },
+} as const;
+const moesoundGuideLinks = [
+  {
+    title: "소테리아의 곡 디깅하는 법",
+    url: "https://gall.dcinside.com/mini/board/view/?id=moesound&no=1025&search_head=90&page=1",
+  },
+  {
+    title: "재생목록을 만드는 법",
+    url: "https://gall.dcinside.com/mini/board/view/?id=moesound&no=979&search_head=90&page=1",
+  },
+];
 async function request(path: string, input?: object) {
   const res = await fetch(
     path,
@@ -981,9 +1011,6 @@ export default function Room() {
                         </button>
                       </div>
                     </div>
-                    <div className="featured-number">
-                      01<span> / MY PLAYLISTS</span>
-                    </div>
                   </div>
                   <div className="pick-side">
                     <div className="room-stats glass">
@@ -1394,6 +1421,54 @@ export default function Room() {
                   <ExternalLink size={16} />
                 </a>
               </div>
+              <section className="connected-overview glass">
+                <div>
+                  <span className="room-eyebrow">
+                    {connectedSpaces[id as keyof typeof connectedSpaces].label}
+                  </span>
+                  <h2>
+                    {connectedSpaces[id as keyof typeof connectedSpaces].title}
+                  </h2>
+                  <p>
+                    {
+                      connectedSpaces[id as keyof typeof connectedSpaces]
+                        .description
+                    }
+                  </p>
+                  <div className="connected-points">
+                    {connectedSpaces[
+                      id as keyof typeof connectedSpaces
+                    ].points.map((point) => (
+                      <span key={point}>{point}</span>
+                    ))}
+                  </div>
+                </div>
+                {id === "moesound" ? (
+                  <div className="connected-guide-links">
+                    {moesoundGuideLinks.map((link) => (
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        key={link.url}
+                      >
+                        {link.title}
+                        <ArrowUpRight size={14} />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <a
+                    className="room-button subtle"
+                    href={sources[id]}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    원문 공간으로 이동
+                    <ArrowUpRight size={15} />
+                  </a>
+                )}
+              </section>
               {postLoading ? (
                 <div className="room-empty">
                   <LoaderCircle className="spin" />
