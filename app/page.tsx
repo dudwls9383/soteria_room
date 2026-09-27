@@ -15,6 +15,7 @@ import {
   ListMusic,
   LoaderCircle,
   MessageCircle,
+  Play,
   Plus,
   RefreshCw,
   Search,
@@ -51,6 +52,7 @@ import { monthOf, searchLibrary } from "../lib/archive";
 import "./room.css";
 
 type Saved = Playlist & { updatedAt: number };
+type PlayableTrack = Track & { playlists?: string[] };
 type Post = { title: string; url: string; date: string; description?: string };
 type TranslateLanguage = "ko" | "ja" | "en";
 const DAY = 86400000;
@@ -182,6 +184,8 @@ const uiDictionary: Record<
     "YouTube 재생목록 주소": "YouTube playlist URL",
     "선택한 재생목록": "Selected playlist",
     "YouTube에서 듣기": "Listen on YouTube",
+    "사이트에서 첫 곡 듣기": "Play first track here",
+    "NOW PLAYING": "NOW PLAYING",
     "이 목록으로 월드컵": "World Cup with this list",
     "YouTube 링크 복사": "Copy YouTube link",
     "오늘의 음악을 다시 발견하는 방.": "A room to rediscover today’s music.",
@@ -346,6 +350,8 @@ const uiDictionary: Record<
     "YouTube 재생목록 주소": "YouTubeプレイリストURL",
     "선택한 재생목록": "選択中のプレイリスト",
     "YouTube에서 듣기": "YouTubeで聴く",
+    "사이트에서 첫 곡 듣기": "最初の曲をここで聴く",
+    "NOW PLAYING": "NOW PLAYING",
     "이 목록으로 월드컵": "このリストでワールドカップ",
     "YouTube 링크 복사": "YouTubeリンクをコピー",
     "오늘의 음악을 다시 발견하는 방.": "今日の音楽を再発見する部屋。",
@@ -567,6 +573,7 @@ export default function Room() {
     [filter, setFilter] = useState("all"),
     [sort, setSort] = useState("month");
   const [selected, setSelected] = useState<Saved | null>(null);
+  const [playing, setPlaying] = useState<PlayableTrack | null>(null);
   const [channel, setChannel] = useState<ChannelPlaylist[]>([]),
     [syncing, setSyncing] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, title: "" });
@@ -645,6 +652,7 @@ export default function Room() {
     setFilter("all");
     setYear("all");
     setSelected(null);
+    setPlaying(null);
     if (id === "worldcup") setCupVisited(true);
     history.replaceState(null, "", `#${id}`);
   }
@@ -859,6 +867,10 @@ export default function Room() {
   function openPlaylist(p: Saved) {
     setSelected(p);
   }
+  function playTrack(track?: PlayableTrack) {
+    if (!track) return;
+    setPlaying(track);
+  }
   useEffect(() => {
     if (selected)
       document
@@ -866,28 +878,44 @@ export default function Room() {
         ?.scrollIntoView({ behavior: "instant", block: "start" });
   }, [selected]);
   function card(p: Saved, i: number) {
+    const firstTrack = p.tracks[0];
     return (
       <article className="room-card" key={p.id}>
-        <button
-          className={`room-cover tone-${i % 4}`}
-          onClick={() => openPlaylist(p)}
-          aria-label={`${p.title} 곡 목록 보기`}
-        >
-          {(p.thumbnail || p.tracks[0]) && (
-            <img
-              src={p.thumbnail || p.tracks[0]?.thumbnail}
-              alt=""
-              loading="lazy"
-            />
-          )}
-          <span className="cover-shade" />
+        <div className={`room-cover tone-${i % 4}`}>
+          <button
+            className="cover-main"
+            onClick={() => openPlaylist(p)}
+            aria-label={`${p.title} 곡 목록 보기`}
+          >
+            {(p.thumbnail || firstTrack) && (
+              <img
+                src={p.thumbnail || firstTrack?.thumbnail}
+                alt=""
+                loading="lazy"
+              />
+            )}
+            <span className="cover-shade" />
+          </button>
           <span className="cover-count">
             <ListMusic size={14} />
             {p.tracks.length}곡
           </span>
-          <span className="cover-open">
-            <ArrowUpRight size={23} />
-          </span>
+          <button
+            className="cover-open"
+            disabled={!firstTrack}
+            onClick={() => playTrack(firstTrack)}
+            aria-label={`${p.title} 첫 곡 재생`}
+          >
+            <Play size={18} />
+          </button>
+        </div>
+        <button
+          className="playlist-mini-play"
+          disabled={!firstTrack}
+          onClick={() => playTrack(firstTrack)}
+        >
+          <Play size={12} />
+          사이트에서 첫 곡 듣기
         </button>
         <div className="card-meta">
           <span>
@@ -919,6 +947,52 @@ export default function Room() {
           </span>
         </p>
       </article>
+    );
+  }
+  function trackRow(t: PlayableTrack, i: number, context?: string) {
+    return (
+      <div className="room-track" key={`${context || "track"}-${t.id}-${i}`}>
+        <span className="track-index">
+          {context === "detail" ? i + 1 : String(i + 1).padStart(2, "0")}
+        </span>
+        <button
+          className="track-play"
+          onClick={() => playTrack(t)}
+          aria-label={`${t.title} 사이트에서 재생`}
+        >
+          <img src={t.thumbnail} alt="" loading="lazy" />
+          <span>
+            <Play size={13} />
+          </span>
+        </button>
+        <span className="track-copy">
+          <strong className="notranslate" translate="no">
+            {t.title}
+          </strong>
+          <small>
+            <span className="notranslate" translate="no">
+              {t.artist}
+              {t.playlists?.length ? ` · ${t.playlists.join(" / ")}` : ""}
+            </span>
+          </small>
+        </span>
+        <button
+          className="track-inline-play"
+          onClick={() => playTrack(t)}
+          aria-label={`${t.title} 재생`}
+        >
+          <Play size={15} />
+        </button>
+        <a
+          className="track-open"
+          href={`https://youtu.be/${t.id}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`${t.title} YouTube에서 열기`}
+        >
+          <ArrowUpRight size={17} />
+        </a>
+      </div>
     );
   }
   return (
@@ -1047,6 +1121,49 @@ export default function Room() {
                 <progress value={progress.done} max={progress.total} />
               )}
             </div>
+          )}
+          {playing && (
+            <section className="room-player global-player glass">
+              <div className="room-player-frame">
+                <iframe
+                  title={playing.title}
+                  src={`https://www.youtube.com/embed/${playing.id}?autoplay=1&playsinline=1`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+              <div className="room-player-copy">
+                <span className="room-eyebrow">NOW PLAYING</span>
+                <h3 className="notranslate" translate="no">
+                  {playing.title}
+                </h3>
+                <p className="notranslate" translate="no">
+                  {playing.artist}
+                </p>
+                {playing.playlists?.length ? (
+                  <small className="notranslate" translate="no">
+                    {playing.playlists.slice(0, 3).join(" / ")}
+                  </small>
+                ) : null}
+                <div className="player-actions">
+                  <a
+                    className="room-button subtle"
+                    href={`https://youtu.be/${playing.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    YouTube에서 듣기 <ExternalLink size={14} />
+                  </a>
+                  <button
+                    className="icon-button"
+                    aria-label="플레이어 닫기"
+                    onClick={() => setPlaying(null)}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+            </section>
           )}
           {["pick", "archive", "recap", "kawaii"].map((id) => (
             <TabsContent value={id} key={id}>
@@ -1453,31 +1570,7 @@ export default function Room() {
               </button>
             </div>
             <div className="track-list glass">
-              {tracks.slice(0, 200).map((t, i) => (
-                <a
-                  className="room-track"
-                  key={t.id}
-                  href={`https://www.youtube.com/watch?v=${t.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span className="track-index">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <img src={t.thumbnail} alt="" loading="lazy" />
-                  <span>
-                    <strong className="notranslate" translate="no">
-                      {t.title}
-                    </strong>
-                    <small>
-                      <span className="notranslate" translate="no">
-                        {t.artist} · {t.playlists.join(" / ")}
-                      </span>
-                    </small>
-                  </span>
-                  <ArrowUpRight size={18} />
-                </a>
-              ))}
+              {tracks.slice(0, 200).map((t, i) => trackRow(t, i, "search"))}
               {!tracks.length && (
                 <div className="room-empty">
                   <Search size={30} />
@@ -1759,27 +1852,7 @@ export default function Room() {
                 <span>{selected.tracks.length}곡</span>
               </div>
               <div className="detail-tracks">
-                {selected.tracks.map((t, i) => (
-                  <a
-                    className="room-track"
-                    key={t.id}
-                    href={`https://youtu.be/${t.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="track-index">{i + 1}</span>
-                    <img src={t.thumbnail} alt="" loading="lazy" />
-                    <span>
-                      <strong className="notranslate" translate="no">
-                        {t.title}
-                      </strong>
-                      <small className="notranslate" translate="no">
-                        {t.artist}
-                      </small>
-                    </span>
-                    <ArrowUpRight size={17} />
-                  </a>
-                ))}
+                {selected.tracks.map((t, i) => trackRow(t, i, "detail"))}
               </div>
             </section>
           )}
