@@ -17,6 +17,7 @@ import type { Playlist } from "../lib/music";
 import type { MusicRecord } from "../lib/music-index";
 import { scopes, sampleUnique, type Scope } from "../lib/collections";
 import { SHEET_URL, type Channel } from "../lib/subscriptions";
+import PickDiscovery from "./pick-discovery";
 type Snapshot = {
   channels: Channel[];
   updatedAt: number | null;
@@ -167,16 +168,18 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
           {notice}
         </p>
       )}
-      <Tabs defaultValue="songs">
+      <Tabs defaultValue="picks">
         <TabsList className="discovery-tabs">
+          <TabsTrigger value="picks"><Music2 size={16} />Pick</TabsTrigger>
           <TabsTrigger value="songs">
-            <Music2 size={16} />Random Pick
+            <Shuffle size={16} />랜덤 뽑기
           </TabsTrigger>
           <TabsTrigger value="channels">
             <Users size={16} />
             랜덤 채널
           </TabsTrigger>
         </TabsList>
+        <TabsContent value="picks"><PickDiscovery /></TabsContent>
         <TabsContent value="songs">
           <section className="discovery-control glass">
             <div>

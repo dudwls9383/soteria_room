@@ -3,6 +3,7 @@ import { failure } from "../../../lib/server";
 import type { Playlist } from "../../../lib/music";
 import { buildMusicIndex, filterMusicIndex } from "../../../lib/music-index";
 import type { Scope } from "../../../lib/collections";
+import { buildPicks } from "../../../lib/picks";
 
 export async function GET(request: Request) {
   try {
@@ -22,6 +23,14 @@ export async function GET(request: Request) {
         }) as Playlist & { updatedAt: number },
     );
     const music = buildMusicIndex(playlists);
+    if (url.searchParams.get("mode") === "picks") {
+      return Response.json(buildPicks(music, {
+        year: url.searchParams.get("year") || undefined,
+        quarter: Number(url.searchParams.get("quarter")) || undefined,
+        refresh: url.searchParams.get("refresh") || undefined,
+        nonce: (url.searchParams.get("nonce") || "").slice(0, 80),
+      }), { headers: { "Cache-Control": "no-store" } });
+    }
     const filtered = filterMusicIndex(music, {
       q: url.searchParams.get("q") || "",
       scope: (url.searchParams.get("scope") || "all") as Scope | "all",
