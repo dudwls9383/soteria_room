@@ -11,7 +11,6 @@ import {
   ExternalLink,
   Library,
   Languages,
-  Link2,
   ListMusic,
   LoaderCircle,
   MessageCircle,
@@ -94,6 +93,8 @@ const uiDictionary: Record<
       "From room to intensely kawaii-voice playlists · 10 curations.",
     "재생목록 추가": "Add playlist",
     "YouTube 채널": "YouTube channel",
+    "링크 프로필": "Link profile",
+    공유: "Share",
     "PLAYLIST PICK": "PLAYLIST PICK",
     "당신의 취향이\n머무는 곳.": "A place where\nyour taste stays.",
     "채널에서 재생목록을 가져오면 이곳에 펼쳐져요.":
@@ -194,6 +195,8 @@ const uiDictionary: Record<
       "roomから壊滅的カワボプレイリストまで · 10本のキュレーション。",
     "재생목록 추가": "プレイリスト追加",
     "YouTube 채널": "YouTubeチャンネル",
+    "링크 프로필": "リンクプロフィール",
+    공유: "共有",
     "PLAYLIST PICK": "PLAYLIST PICK",
     "당신의 취향이\n머무는 곳.": "あなたの好みが\nとどまる場所。",
     "채널에서 재생목록을 가져오면 이곳에 펼쳐져요.":
@@ -686,6 +689,14 @@ export default function Room() {
       setError("클립보드 권한을 확인해 주세요.");
     }
   }
+  async function copySiteShare() {
+    try {
+      await navigator.clipboard.writeText(location.href.split("#")[0]);
+      setNotice("사이트 공유 링크를 복사했어요.");
+    } catch {
+      setError("클립보드 권한을 확인해 주세요.");
+    }
+  }
   async function copyPlaylistShare(p: Saved) {
     try {
       await navigator.clipboard.writeText(
@@ -803,7 +814,7 @@ export default function Room() {
         </TabsList>
         <div className="sidebar-bottom">
           <div className="source-avatar">s.</div>
-          <div>
+          <div className="source-links">
             <strong>soteria_room</strong>
             <a
               href="https://www.youtube.com/@soteria_room"
@@ -811,6 +822,9 @@ export default function Room() {
               rel="noreferrer"
             >
               YouTube 채널 <ArrowUpRight size={12} />
+            </a>
+            <a href={linkPage} target="_blank" rel="noreferrer">
+              링크 프로필 <ArrowUpRight size={12} />
             </a>
           </div>
         </div>
@@ -836,15 +850,14 @@ export default function Room() {
                 </button>
               ))}
             </div>
-            <a
+            <button
               className="link-page-button"
-              href={linkPage}
-              target="_blank"
-              rel="noreferrer"
+              onClick={() => void copySiteShare()}
+              aria-label="사이트 공유 링크 복사"
             >
-              <Link2 size={15} />
-              link
-            </a>
+              <Copy size={15} />
+              공유
+            </button>
             <button
               className="icon-button"
               onClick={() => navigate("settings")}
