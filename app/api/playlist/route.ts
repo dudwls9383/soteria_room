@@ -2,9 +2,10 @@ import { ensureMeta } from "../../../lib/playlist-meta";
 import { env } from "cloudflare:workers";
 import { database } from "../../../db";
 import { readPlaylist, playlistId } from "../../../lib/youtube";
-import { ApiError, body, failure } from "../../../lib/server";
+import { ApiError, body, failure, requireAdmin } from "../../../lib/server";
 export async function POST(request: Request) {
   try {
+    requireAdmin(request);
     const input = await body(request, 2000);
     if (typeof input.url !== "string")
       throw new ApiError("재생목록 링크를 입력해 주세요.");
@@ -55,6 +56,21 @@ export async function POST(request: Request) {
       .bind(id, playlist.thumbnail || "", playlist.views ?? null, Date.now())
       .run();
     return Response.json(playlist);
+  } catch (e) {
+    return failure(e);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    requireAdmin(request);
+    const input = await body(request, 2000);
+    if (typeof input.id !== "string" || !input.id.trim())
+      throw new ApiError("삭제할 재생목록을 찾지 못했어요.");
+    await ensureMeta();
+    await database().prepare("DELETE FROM playlists WHERE id = ?").bind(input.id).run();
+    await database().prepare("DELETE FROM playlist_meta WHERE id = ?").bind(input.id).run();
+    return Response.json({ ok: true, id: input.id });
   } catch (e) {
     return failure(e);
   }

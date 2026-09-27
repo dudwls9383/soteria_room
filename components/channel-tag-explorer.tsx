@@ -36,8 +36,10 @@ const tagChoices = [
 ];
 export default function ChannelTagExplorer({
   initialTag = "ASMR",
+  adminKey = "",
 }: {
   initialTag?: string;
+  adminKey?: string;
 }) {
   const [tag, setTag] = useState(initialTag);
   const [query, setQuery] = useState("");
@@ -98,7 +100,10 @@ export default function ChannelTagExplorer({
     try {
       const r = await fetch("/api/channel-tags", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(adminKey ? { "x-soteria-admin-key": adminKey } : {}),
+        },
         body: JSON.stringify({ json: await file.text(), source: file.name }),
       });
       const d: any = await r.json();
@@ -204,7 +209,7 @@ export default function ChannelTagExplorer({
               aria-label="YouTube Subscription Manager JSON 업로드"
               type="file"
               accept=".json,application/json"
-              disabled={busy}
+              disabled={busy || !adminKey}
               onChange={(e) => {
                 void uploadTagJson(e.target.files?.[0]);
                 e.target.value = "";

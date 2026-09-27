@@ -336,6 +336,27 @@ body {
 .room-button.subtle:hover {
   background: white;
 }
+
+.room-button.danger {
+  background: linear-gradient(135deg, #d86c6c, #b94d5a);
+  border-color: #b94d5a;
+  color: #fff;
+}
+.room-button.danger:hover {
+  background: linear-gradient(135deg, #c65353, #a73e4c);
+}
+.admin-lock-card {
+  border-color: #ffffff;
+}
+.admin-lock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.admin-lock-card input {
+  margin-top: 8px;
+}
 .room-button.bright {
   background: #fff;
   color: #254954;

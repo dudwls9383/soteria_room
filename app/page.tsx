@@ -13,6 +13,7 @@ import {
   Library,
   Languages,
   ListMusic,
+  LockKeyhole,
   LoaderCircle,
   MessageCircle,
   Play,
@@ -23,6 +24,7 @@ import {
   Shuffle,
   Sparkles,
   Trophy,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -546,13 +548,22 @@ const sources: Record<string, string> = {
   somunia: "https://gall.dcinside.com/mgallery/board/lists/?id=somunia",
   moesound: "https://gall.dcinside.com/mini/board/lists?id=moesound",
 };
-async function request(path: string, input?: object) {
+async function request(
+  path: string,
+  input?: object,
+  options: { method?: "POST" | "DELETE"; adminKey?: string } = {},
+) {
   const res = await fetch(
     path,
     input
       ? {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: options.method || "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(options.adminKey
+              ? { "x-soteria-admin-key": options.adminKey }
+              : {}),
+          },
           body: JSON.stringify(input),
         }
       : undefined,
@@ -583,6 +594,7 @@ export default function Room() {
   const [url, setUrl] = useState(""),
     [importing, setImporting] = useState(false),
     [lastSync, setLastSync] = useState(0);
+  const [adminKey, setAdminKey] = useState("");
   const [featuredId, setFeaturedId] = useState(""),
     [cupVisited, setCupVisited] = useState(false),
     [cupPlaylist, setCupPlaylist] = useState<Playlist | null>(null);
@@ -672,9 +684,14 @@ export default function Room() {
     const data = await request("/api/library");
     setLibrary(data.playlists);
     libraryRef.current = data.playlists;
+    setLastSync(data.lastUpdatedAt || 0);
   }
   // 순차 가져오기로 요청을 제한하고 실패한 목록만 보고합니다. 다음 실행은 최근 저장분을 건너뜁니다.
   async function synchronize(force = false, retryOnly = false) {
+    if (!adminKey.trim()) {
+      setError("관리 잠금을 먼저 열어 주세요.");
+      return;
+    }
     if (lock.current) return;
     lock.current = true;
     setSyncing(true);
@@ -723,10 +740,14 @@ export default function Room() {
         const p = pending[i];
         setProgress({ done: i, total: pending.length, title: p.title });
         try {
-          const imported = await request("/api/playlist", {
-            url: `https://www.youtube.com/playlist?list=${p.id}`,
-            force,
-          });
+          const imported = await request(
+            "/api/playlist",
+            {
+              url: `https://www.youtube.com/playlist?list=${p.id}`,
+              force,
+            },
+            { adminKey },
+          );
           setLibrary((current) => {
             const next = [
               { ...imported, updatedAt: Date.now() },
@@ -746,11 +767,7 @@ export default function Room() {
         setProgress({ done: i + 1, total: pending.length, title: p.title });
       }
       setFailures(failed);
-      if (!failed.length) {
-        const now = Date.now();
-        localStorage.setItem("soteria-last-sync", String(now));
-        setLastSync(now);
-      }
+      if (!failed.length) setLastSync(Date.now());
       setNotice(
         failed.length
           ? `${pending.length - failed.length}개 갱신 · ${failed.length}개 다시 확인 필요`
@@ -771,28 +788,10 @@ export default function Room() {
       setTab(hash);
       if (hash === "worldcup") setCupVisited(true);
     }
-    const last = Number(localStorage.getItem("soteria-last-sync") || 0);
-    setLastSync(last);
+    setAdminKey(sessionStorage.getItem("soteria-admin-key") || "");
     void reload()
-      .then(() => {
-        if (
-          Date.now() - last > DAY ||
-          seriesLists.recap.some(
-            (p) => !libraryRef.current.some((x) => x.id === p.id),
-          )
-        )
-          void synchronize();
-      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-    const timer = setInterval(() => {
-      if (
-        Date.now() - Number(localStorage.getItem("soteria-last-sync") || 0) >
-        DAY
-      )
-        void synchronize();
-    }, 3600000);
-    return () => clearInterval(timer);
   }, []);
   useEffect(() => {
     clearGoogleTranslateCookie();
@@ -825,11 +824,46 @@ export default function Room() {
     setImporting(true);
     setError("");
     try {
-      const p = await request("/api/playlist", { url, force: true });
+      if (!adminKey.trim()) throw new Error("관리 잠금을 먼저 열어 주세요.");
+      const p = await request(
+        "/api/playlist",
+        { url, force: true },
+        { adminKey },
+      );
       await reload();
       setSelected({ ...p, updatedAt: Date.now() });
       setNotice(`‘${p.title}’을 가져왔어요.`);
       setUrl("");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function deletePlaylist(p: Saved) {
+    if (!adminKey.trim()) {
+      setError("관리 잠금을 먼저 열어 주세요.");
+      return;
+    }
+    if (!confirm(`‘${displayTitle(p)}’을 보관실에서 삭제할까요? 채널 전체 동기화를 다시 하면 기본 목록은 다시 돌아올 수 있어요.`)) return;
+    setImporting(true);
+    setError("");
+    try {
+      await request(
+        "/api/playlist",
+        { id: p.id },
+        { method: "DELETE", adminKey },
+      );
+      setLibrary((current) => {
+        const next = current.filter((item) => item.id !== p.id);
+        libraryRef.current = next;
+        return next;
+      });
+      setSelected(null);
+      setPlaying(null);
+      setNotice(`‘${displayTitle(p)}’을 보관실에서 삭제했어요.`);
+      await reload();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -1210,7 +1244,7 @@ export default function Room() {
                               ? openPlaylist(featured)
                               : void synchronize()
                           }
-                          disabled={!featured && syncing}
+                          disabled={!featured && (syncing || !adminKey.trim())}
                         >
                           {featured
                             ? "재생목록 열기"
@@ -1424,7 +1458,7 @@ export default function Room() {
                     필요합니다.{" "}
                     <button
                       className="room-button subtle"
-                      disabled={syncing}
+                      disabled={syncing || !adminKey.trim()}
                       onClick={() => void synchronize()}
                     >
                       미수집 목록 가져오기
@@ -1595,13 +1629,13 @@ export default function Room() {
             <PlaylistShareTool library={library} />
           </TabsContent>
           <TabsContent value="random">
-            <RandomDiscovery library={library} />
+            <RandomDiscovery library={library} adminKey={adminKey} />
           </TabsContent>
           <TabsContent value="bottle">
             <SongBottleLite />
           </TabsContent>
           <TabsContent value="asmr">
-            <ChannelTagExplorer initialTag="ASMR" />
+            <ChannelTagExplorer initialTag="ASMR" adminKey={adminKey} />
           </TabsContent>
           <TabsContent
             value="worldcup"
@@ -1697,6 +1731,53 @@ export default function Room() {
               </div>
             </div>
             <div className="settings-grid">
+              <section className="settings-card glass admin-lock-card">
+                <div className="setting-icon">
+                  <LockKeyhole size={22} />
+                </div>
+                <h2>관리 잠금</h2>
+                <p>
+                  보관실에 저장되는 동기화, 직접 추가, 삭제, JSON/CSV 갱신은
+                  관리자 키가 있어야 실행돼요. 방문자용 링크 추출과 월드컵
+                  불러오기는 저장 없이 일회성으로만 작동합니다.
+                </p>
+                <label htmlFor="admin-key">관리자 키</label>
+                <input
+                  id="admin-key"
+                  value={adminKey}
+                  onChange={(e) => setAdminKey(e.target.value)}
+                  type="password"
+                  placeholder="SOTERIA_ADMIN_KEY"
+                  autoComplete="off"
+                />
+                <div className="admin-lock-actions">
+                  <button
+                    className="room-button"
+                    type="button"
+                    disabled={!adminKey.trim()}
+                    onClick={() => {
+                      sessionStorage.setItem("soteria-admin-key", adminKey);
+                      setNotice("관리 잠금을 열었어요. 이 브라우저 탭에서만 유지됩니다.");
+                    }}
+                  >
+                    <LockKeyhole size={16} />
+                    잠금 열기
+                  </button>
+                  <button
+                    className="room-button subtle"
+                    type="button"
+                    disabled={!adminKey}
+                    onClick={() => {
+                      sessionStorage.removeItem("soteria-admin-key");
+                      setAdminKey("");
+                      setNotice("관리 잠금을 닫았어요.");
+                    }}
+                  >
+                    잠금 닫기
+                  </button>
+                </div>
+                <small>현재 상태: {adminKey.trim() ? "키 입력됨" : "잠김"}</small>
+              </section>
               <section className="settings-card glass">
                 <div className="setting-icon">
                   <RefreshCw size={22} />
@@ -1711,12 +1792,12 @@ export default function Room() {
                   @soteria_room <ExternalLink size={14} />
                 </a>
                 <p>
-                  앱을 열 때 확인하고, 실행 중에는 하루 간격으로 공개 재생목록과
-                  수록곡을 갱신해요. 실패한 목록은 기존 내용을 유지합니다.
+                  관리자가 누를 때만 @soteria_room의 공개 재생목록과 수록곡을
+                  갱신해요. 실패한 목록은 기존 내용을 유지합니다.
                 </p>
                 <button
                   className="room-button"
-                  disabled={syncing}
+                  disabled={syncing || !adminKey.trim()}
                   onClick={() => void synchronize(true)}
                 >
                   <RefreshCw size={16} className={syncing ? "spin" : ""} />
@@ -1724,7 +1805,7 @@ export default function Room() {
                 </button>
                 <button
                   className="room-button subtle"
-                  disabled={syncing || !failures.length}
+                  disabled={syncing || !failures.length || !adminKey.trim()}
                   onClick={() => void synchronize(true, true)}
                 >
                   <RefreshCw
@@ -1751,8 +1832,9 @@ export default function Room() {
                 </div>
                 <h2>링크로 직접 가져오기</h2>
                 <p>
-                  다른 채널이나 일부 공개 재생목록도 링크로 추가할 수 있어요.
-                  같은 목록을 다시 넣으면 최신 내용으로 갱신합니다.
+                  내 보관실에 수동으로 저장할 재생목록만 관리자 키로 추가해요.
+                  방문자가 자기 목록을 시험할 때는 왼쪽의 링크 추출기나 월드컵에서
+                  일회성으로 불러옵니다.
                 </p>
                 <form onSubmit={importOne}>
                   <label htmlFor="import-url">YouTube 재생목록 주소</label>
@@ -1766,7 +1848,7 @@ export default function Room() {
                   />
                   <button
                     className="room-button"
-                    disabled={importing || syncing}
+                    disabled={importing || syncing || !adminKey.trim()}
                   >
                     {importing ? (
                       <LoaderCircle size={16} className="spin" />
@@ -1784,7 +1866,7 @@ export default function Room() {
                   <h2>다시 확인할 목록 · {failures.length}</h2>
                   <button
                     className="room-button subtle"
-                    disabled={syncing}
+                    disabled={syncing || !adminKey.trim()}
                     onClick={() => void synchronize(true, true)}
                   >
                     <RefreshCw size={16} className={syncing ? "spin" : ""} />
@@ -1800,8 +1882,8 @@ export default function Room() {
               </section>
             )}
             <div className="room-note">
-              가져온 정보와 월드컵 결과는 이 PC에 저장돼요. 비공개 목록은 가져올
-              수 없으며 비공개·삭제된 영상은 표시되지 않을 수 있어요.
+              보관실 동기화와 수동 추가·삭제는 관리자 전용입니다. 방문자가 링크를
+              넣어 쓰는 기능은 저장하지 않고 그 자리에서만 사용합니다.
             </div>
           </TabsContent>
           {selected && (
@@ -1850,6 +1932,14 @@ export default function Room() {
                 >
                   <Copy size={16} />
                   YouTube 링크 복사
+                </button>
+                <button
+                  className="room-button danger"
+                  disabled={importing || !adminKey.trim()}
+                  onClick={() => void deletePlaylist(selected)}
+                >
+                  <Trash2 size={16} />
+                  보관실에서 삭제
                 </button>
                 <span>{selected.tracks.length}곡</span>
               </div>

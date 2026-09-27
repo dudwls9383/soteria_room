@@ -32,7 +32,13 @@ type MusicSnapshot = {
     collections: string[];
   };
 };
-export default function RandomDiscovery({ library }: { library: Playlist[] }) {
+export default function RandomDiscovery({
+  library,
+  adminKey = "",
+}: {
+  library: Playlist[];
+  adminKey?: string;
+}) {
   const [scope, setScope] = useState<Scope>("picks"),
     [year, setYear] = useState("all"),
     [month, setMonth] = useState("all"),
@@ -97,7 +103,10 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
     try {
       const r = await fetch("/api/subscriptions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(adminKey ? { "x-soteria-admin-key": adminKey } : {}),
+        },
         body: JSON.stringify(input),
       });
       const d: any = await r.json();
@@ -135,7 +144,10 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
     try {
       const r = await fetch("/api/channel-avatars", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(adminKey ? { "x-soteria-admin-key": adminKey } : {}),
+        },
         body: JSON.stringify({ channels: picked }),
       });
       const d: any = await r.json();
@@ -481,7 +493,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
             <div className="control-row">
               <button
                 className="room-button subtle"
-                disabled={busy}
+                disabled={busy || !adminKey}
                 onClick={() => void update({ source: "sheet" })}
               >
                 <RefreshCw size={16} className={busy ? "spin" : ""} />
@@ -493,7 +505,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
                   aria-label="구독목록 CSV 업로드"
                   type="file"
                   accept=".csv,text/csv"
-                  disabled={busy}
+                  disabled={busy || !adminKey}
                   onChange={(e) => {
                     void upload(e.target.files?.[0]);
                     e.target.value = "";
@@ -505,7 +517,7 @@ export default function RandomDiscovery({ library }: { library: Playlist[] }) {
               </a>
             </div>
             <p className="room-note">
-              새 파일이 정상적으로 읽힐 때만 기존 목록을 교체합니다. 채널 URL과
+              관리 잠금이 열린 상태에서만 목록을 교체합니다. 채널 URL과
               채널 제목 열을 사용해요.
             </p>
           </section>

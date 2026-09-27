@@ -13,6 +13,7 @@ export async function GET() {
       .all<{ id: string; title: string; tracks: string; updated_at: number }>();
     return Response.json(
       {
+        lastUpdatedAt: result.results.reduce((latest, p) => Math.max(latest, p.updated_at || 0), 0),
         playlists: result.results.map((p) => ({
           id: p.id,
           title: p.title,

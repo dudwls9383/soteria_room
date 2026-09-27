@@ -51,10 +51,10 @@ export default function PlaylistShareTool({
     setError("");
     setCopied(false);
     try {
-      const response = await fetch("/api/playlist", {
+      const response = await fetch("/api/playlist-preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, force: false }),
+        body: JSON.stringify({ url }),
       });
       const data = (await response.json()) as Playlist & { error?: string };
       if (!response.ok) throw new Error(data.error);
@@ -90,7 +90,7 @@ export default function PlaylistShareTool({
           <h2>재생목록 선택</h2>
           <p>
             Python으로 쓰던 링크 추출기를 웹 안으로 옮겼어요. 공유하고 싶은
-            재생목록 주소를 붙여넣으면 영상 단축 링크만 꺼냅니다.
+            재생목록 주소를 붙여넣으면 저장하지 않고 영상 단축 링크만 꺼냅니다.
           </p>
           <form className="share-url-form" onSubmit={extract}>
             <label>

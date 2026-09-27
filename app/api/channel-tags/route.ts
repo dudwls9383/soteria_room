@@ -1,5 +1,5 @@
 import { database } from "../../../db";
-import { body, failure, ApiError } from "../../../lib/server";
+import { body, failure, ApiError, requireAdmin } from "../../../lib/server";
 import {
   buildChannelTagDataset,
   channelTagSummaries,
@@ -60,6 +60,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    requireAdmin(request);
     const input = await body(request, 2200000);
     const source =
       typeof input.source === "string"

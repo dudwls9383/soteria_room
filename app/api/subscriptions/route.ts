@@ -1,5 +1,5 @@
 import { database } from "../../../db";
-import { body, ApiError, failure } from "../../../lib/server";
+import { body, ApiError, failure, requireAdmin } from "../../../lib/server";
 import { CSV_URL, parseSubscriptions } from "../../../lib/subscriptions";
 async function init() {
   await database()
@@ -31,6 +31,7 @@ export async function GET() {
 }
 export async function POST(request: Request) {
   try {
+    requireAdmin(request);
     const input = await body(request, 2000000);
     let csv: string;
     let source: string;

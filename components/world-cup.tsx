@@ -147,7 +147,7 @@ export default function Home({
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/playlist", {
+      const res = await fetch("/api/playlist-preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
