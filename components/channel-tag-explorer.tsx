@@ -226,45 +226,81 @@ export default function ChannelTagExplorer({
         </h2>
         {busy && <span className="room-note">불러오는 중…</span>}
       </div>
-      <div className="tagged-channel-list">
-        {display.map((c, i) => (
-          <a
-            className="tagged-channel-row glass"
-            href={c.url}
-            key={c.id}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span className="channel-row-index">
-              {picked.length
-                ? String(i + 1).padStart(2, "0")
-                : String(pageStart + i + 1)}
-            </span>
-            {c.avatar ? (
-              <img
-                className="channel-row-avatar"
-                src={c.avatar}
-                alt=""
-                loading="lazy"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <span className="channel-row-monogram">{c.title.slice(0, 1)}</span>
-            )}
-            <div className="channel-row-main">
-              <h3 className="notranslate" translate="no">
+      <div
+        className={picked.length ? "tagged-channel-list" : "tagged-channel-gallery"}
+      >
+        {display.map((c, i) =>
+          picked.length ? (
+            <a
+              className="tagged-channel-row glass"
+              href={c.url}
+              key={c.id}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="channel-row-index">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              {c.avatar ? (
+                <img
+                  className="channel-row-avatar"
+                  src={c.avatar}
+                  alt=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="channel-row-monogram">
+                  {c.title.slice(0, 1)}
+                </span>
+              )}
+              <div className="channel-row-main">
+                <h3 className="notranslate" translate="no">
+                  {c.title}
+                </h3>
+                <p>
+                  <Tags size={11} />
+                  {c.tags.slice(0, 5).join(" · ") || "CHANNEL"}
+                </p>
+              </div>
+              <span className="channel-row-open">
+                채널 열기 <ExternalLink size={13} />
+              </span>
+            </a>
+          ) : (
+            <a
+              className="tagged-channel-tile glass"
+              href={c.url}
+              key={c.id}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="channel-tile-number">
+                {String(pageStart + i + 1)}
+              </span>
+              {c.avatar ? (
+                <img
+                  className="channel-tile-cover"
+                  src={c.avatar}
+                  alt=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="channel-tile-cover channel-tile-monogram">
+                  {c.title.slice(0, 1)}
+                </span>
+              )}
+              <strong className="notranslate" translate="no">
                 {c.title}
-              </h3>
+              </strong>
               <p>
-                <Tags size={11} />
-                {c.tags.slice(0, 5).join(" · ") || "CHANNEL"}
+                <Tags size={10} />
+                {c.tags.slice(0, 3).join(" · ") || "CHANNEL"}
               </p>
-            </div>
-            <span className="channel-row-open">
-              채널 열기 <ExternalLink size={13} />
-            </span>
-          </a>
-        ))}
+            </a>
+          ),
+        )}
       </div>
       {!picked.length && pageCount > 1 && (
         <div className="channel-pagination" aria-label="채널 목록 페이지">

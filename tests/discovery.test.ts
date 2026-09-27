@@ -14,6 +14,7 @@ import {
   parseChannelAvatar,
 } from "../lib/subscriptions.ts";
 import { parseMeta } from "../lib/youtube-metadata.ts";
+import { buildMusicIndex, filterMusicIndex } from "../lib/music-index.ts";
 const p = (title: string, views: number | null = null) => ({
   id: title,
   title,
@@ -123,4 +124,43 @@ test("channel tag JSON import merges extension tags and metadata", () => {
     dataset.channels.UC1234567890123456789012.subscriberCount,
     "1200",
   );
+});
+
+test("music index deduplicates tracks and keeps playlist context", () => {
+  const shared = {
+    id: "song-1",
+    title: "Shared Song",
+    artist: "Singer",
+    thumbnail: "thumb",
+  };
+  const index = buildMusicIndex([
+    {
+      id: "monthly",
+      title: "2026.09",
+      tracks: [shared],
+      updatedAt: 10,
+    },
+    {
+      id: "pick",
+      title: "9월의 픽(2026)",
+      tracks: [shared, { ...shared, id: "song-2", title: "Pick Only" }],
+      updatedAt: 20,
+    },
+  ]);
+  assert.equal(index.length, 2);
+  const first = index.find((item) => item.id === "song-1")!;
+  assert.deepEqual(first.playlistIds.sort(), ["monthly", "pick"]);
+  assert.ok(first.scopes.includes("picks"));
+  assert.ok(first.scopes.includes("monthly"));
+  assert.deepEqual(
+    filterMusicIndex(index, { scope: "picks" })
+      .map((item) => item.id)
+      .sort(),
+    ["song-1", "song-2"],
+  );
+  assert.deepEqual(
+    filterMusicIndex(index, { scope: "monthly" }).map((item) => item.id),
+    ["song-1"],
+  );
+  assert.equal(filterMusicIndex(index, { q: "shared" }).length, 1);
 });

@@ -2155,6 +2155,79 @@ body {
   gap: 8px;
   margin-bottom: 18px;
 }
+.tagged-channel-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.tagged-channel-tile {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+  border-radius: 20px;
+  padding: 10px;
+  overflow: hidden;
+}
+.channel-tile-number {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  z-index: 1;
+  border: 1px solid #ffffffb8;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: #f8fcffbd;
+  color: #5f7f8e;
+  font-size: 10px;
+  font-weight: 900;
+}
+.channel-tile-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid #ffffffd9;
+  box-shadow: 0 9px 18px #31556a17;
+}
+.channel-tile-monogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #e4e8ff, #d7edf0);
+  color: #536c8a;
+  font-size: 32px;
+  font-weight: 900;
+}
+.tagged-channel-tile:nth-child(3n + 2) .channel-tile-monogram {
+  background: linear-gradient(145deg, #fde6ed, #e5e1f7);
+}
+.tagged-channel-tile:nth-child(3n) .channel-tile-monogram {
+  background: linear-gradient(145deg, #dbefde, #e7edf9);
+}
+.tagged-channel-tile strong {
+  color: #294f61;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tagged-channel-tile p {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  color: #78909b;
+  font-size: 10px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 .tagged-channel-row {
   display: grid;
   grid-template-columns: 46px 42px minmax(0, 1fr) auto;
