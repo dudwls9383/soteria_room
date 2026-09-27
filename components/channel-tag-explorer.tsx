@@ -1,7 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  BookOpen,
   ExternalLink,
   RefreshCw,
   Search,
@@ -13,7 +12,6 @@ import {
 import type {
   TaggedChannel,
   ChannelTagSummary,
-  PicksCategory,
 } from "../lib/channel-tags";
 import { sampleUnique } from "../lib/collections";
 
@@ -22,25 +20,10 @@ type Snapshot = {
   query: string;
   channels: TaggedChannel[];
   summaries: ChannelTagSummary[];
-  picksCategories: PicksCategory[];
   updatedAt: number | null;
   source: string | null;
 };
 
-const galleryGuideLinks = [
-  {
-    title: "소테리아의 곡 디깅하는 법",
-    category: "Tip",
-    description: "카와보 갤에서 음악을 찾고 정리하는 흐름을 적어 둔 글.",
-    url: "https://gall.dcinside.com/mini/board/view/?id=moesound&no=1025&search_head=90&page=1",
-  },
-  {
-    title: "재생목록을 만드는 법",
-    category: "Tip",
-    description: "좋은 곡을 모아 플레이리스트로 정리하는 기준을 다룬 글.",
-    url: "https://gall.dcinside.com/mini/board/view/?id=moesound&no=979&search_head=90&page=1",
-  },
-];
 const tagChoices = [
   "ASMR",
   "KawaVo",
@@ -63,11 +46,11 @@ export default function ChannelTagExplorer({
     query: "",
     channels: [],
     summaries: [],
-    picksCategories: [],
     updatedAt: null,
     source: null,
   });
   const [picked, setPicked] = useState<TaggedChannel[]>([]);
+  const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -75,7 +58,7 @@ export default function ChannelTagExplorer({
     setBusy(true);
     setError("");
     fetch(
-      `/api/channel-tags?tag=${encodeURIComponent(tag)}&q=${encodeURIComponent(query)}&limit=360`,
+      `/api/channel-tags?tag=${encodeURIComponent(tag)}&q=${encodeURIComponent(query)}&limit=3000`,
       {
         signal: controller.signal,
       },
@@ -85,6 +68,7 @@ export default function ChannelTagExplorer({
         if (!r.ok) throw Error(d.error);
         setSnapshot(d);
         setPicked([]);
+        setPage(1);
       })
       .catch((e) => {
         if (e.name !== "AbortError") setError(e.message);
@@ -93,15 +77,16 @@ export default function ChannelTagExplorer({
     return () => controller.abort();
   }, [tag, query]);
   const current = snapshot.summaries.find((s) => s.id === tag);
-  const picks = useMemo(
-    () => snapshot.picksCategories.filter((c) => c.kind === "Picks"),
-    [snapshot.picksCategories],
-  );
-  const meta = useMemo(
-    () => snapshot.picksCategories.filter((c) => c.kind !== "Picks"),
-    [snapshot.picksCategories],
-  );
-  const display = picked.length ? picked : snapshot.channels.slice(0, 36);
+  const pageSize = 96;
+  const totalChannels = snapshot.channels.length;
+  const pageCount = Math.max(1, Math.ceil(totalChannels / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const pageStart = (safePage - 1) * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, totalChannels);
+  const display = picked.length
+    ? picked
+    : snapshot.channels.slice(pageStart, pageEnd);
+  const pageNumbers = Array.from({ length: pageCount }, (_, i) => i + 1);
   async function uploadTagJson(file?: File) {
     if (!file) return;
     if (file.size > 2200000) {
@@ -122,6 +107,7 @@ export default function ChannelTagExplorer({
       setQuery("");
       setSnapshot(d);
       setPicked([]);
+      setPage(1);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -185,16 +171,27 @@ export default function ChannelTagExplorer({
           <button
             className="room-button"
             disabled={!snapshot.channels.length || busy}
-            onClick={() =>
+            onClick={() => {
               setPicked(
                 sampleUnique(
                   snapshot.channels,
                   Math.min(6, snapshot.channels.length),
                 ),
-              )
-            }
+              );
+              setPage(1);
+            }}
           >
-            <Shuffle size={16} /> 추천 채널 뽑기
+            <Shuffle size={16} /> 랜덤 불러오기
+          </button>
+          <button
+            className="room-button subtle"
+            disabled={!snapshot.channels.length || busy}
+            onClick={() => {
+              setPicked([]);
+              setPage(1);
+            }}
+          >
+            전체 불러오기
           </button>
           <label className="room-button subtle upload-label">
             {busy ? (
@@ -216,94 +213,73 @@ export default function ChannelTagExplorer({
           </label>
         </div>
       </section>
-      <section className="tag-categories glass">
-        <div>
-          <h2>카와보 갤 Picks 목차</h2>
-          <p>
-            글 말머리와 목차를 기준으로 추천 채널을 나눌 수 있도록 먼저 틀을
-            잡아두었어요.
-          </p>
-          <div className="category-chip-grid compact">
-            {picks.map((c) => (
-              <span key={c.id} className={c.tag === tag ? "active" : ""}>
-                {c.label}
-              </span>
-            ))}
-            {meta.map((c) => (
-              <span key={c.id} className="muted">
-                {c.label}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="gallery-guide-grid">
-          {galleryGuideLinks.map((link) => (
-            <a
-              className="gallery-guide-card"
-              href={link.url}
-              target="_blank"
-              rel="noreferrer"
-              key={link.url}
-            >
-              <span>
-                <BookOpen size={14} /> {link.category}
-              </span>
-              <strong>{link.title}</strong>
-              <p>{link.description}</p>
-              <small>
-                카와이 보이스 갤러리에서 보기 <ExternalLink size={13} />
-              </small>
-            </a>
-          ))}
-        </div>
-      </section>
       <div className="section-title">
         <h2>
-          {picked.length ? "이번 추천 채널" : "채널 목록"}
-          <span>{display.length.toLocaleString()}개</span>
+          {picked.length ? "이번 랜덤 채널" : "전체 채널 목록"}
+          <span>
+            {picked.length
+              ? `${display.length.toLocaleString()}개 / 전체 ${totalChannels.toLocaleString()}개`
+              : totalChannels
+                ? `${pageStart + 1}-${pageEnd} / ${totalChannels.toLocaleString()}개`
+                : "0개"}
+          </span>
         </h2>
         {busy && <span className="room-note">불러오는 중…</span>}
       </div>
-      <div className="channel-grid tagged-channel-grid">
+      <div className="tagged-channel-list">
         {display.map((c, i) => (
           <a
-            className="channel-card glass"
+            className="tagged-channel-row glass"
             href={c.url}
             key={c.id}
             target="_blank"
             rel="noreferrer"
           >
+            <span className="channel-row-index">
+              {picked.length
+                ? String(i + 1).padStart(2, "0")
+                : String(pageStart + i + 1)}
+            </span>
             {c.avatar ? (
               <img
-                className="channel-avatar"
+                className="channel-row-avatar"
                 src={c.avatar}
                 alt=""
                 loading="lazy"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <span className="channel-monogram">{c.title.slice(0, 1)}</span>
+              <span className="channel-row-monogram">{c.title.slice(0, 1)}</span>
             )}
-            <div>
-              <small>
-                {picked.length
-                  ? `PICK ${String(i + 1).padStart(2, "0")}`
-                  : c.tags.slice(0, 2).join(" · ") || "CHANNEL"}
-              </small>
+            <div className="channel-row-main">
               <h3 className="notranslate" translate="no">
                 {c.title}
               </h3>
-              <p className="tag-list">
-                <Tags size={12} />
-                {c.tags.slice(0, 4).join(" · ")}
+              <p>
+                <Tags size={11} />
+                {c.tags.slice(0, 5).join(" · ") || "CHANNEL"}
               </p>
-              <span>
-                채널 열기 <ExternalLink size={14} />
-              </span>
             </div>
+            <span className="channel-row-open">
+              채널 열기 <ExternalLink size={13} />
+            </span>
           </a>
         ))}
       </div>
+      {!picked.length && pageCount > 1 && (
+        <div className="channel-pagination" aria-label="채널 목록 페이지">
+          {pageNumbers.map((number) => (
+            <button
+              key={number}
+              className={number === safePage ? "active" : ""}
+              type="button"
+              onClick={() => setPage(number)}
+            >
+              {number}
+            </button>
+          ))}
+        </div>
+      )}
       {!display.length && (
         <div className="room-empty glass">
           <Users size={32} />

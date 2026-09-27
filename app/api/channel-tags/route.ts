@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const tag = url.searchParams.get("tag") || "ASMR";
     const query = url.searchParams.get("q") || "";
-    const limit = Math.min(Number(url.searchParams.get("limit") || 240), 1000);
+    const limit = Math.min(Number(url.searchParams.get("limit") || 240), 3000);
     const { dataset, updatedAt, source } = await currentDataset();
     const channels = searchTaggedChannels(dataset, tag, query, limit);
     return Response.json({
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return Response.json({
       summaries: channelTagSummaries(dataset),
       picksCategories: dataset.picksCategories,
-      channels: searchTaggedChannels(dataset, "ASMR", "", 360),
+      channels: searchTaggedChannels(dataset, "ASMR", "", 3000),
       tag: "ASMR",
       query: "",
       updatedAt,
