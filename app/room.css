@@ -1029,22 +1029,8 @@ body {
   background: #203f49;
   border-color: #42606b;
 }
-.worldcup-module .playlist-panel {
-  background: #25464e;
-  border-color: #496a72;
-}
 .worldcup-module .site-footer {
   display: none;
-}
-.worldcup-module .playlist-panel {
-  justify-content: flex-start;
-  gap: 22px;
-}
-.worldcup-module .playlist-copy {
-  margin-top: 12px;
-}
-.worldcup-module .loaded-summary {
-  margin-top: 10px;
 }
 .worldcup-module .nav-item.active {
   color: #e6f3f8;
@@ -2023,4 +2009,30 @@ body {
 .discovery-tabs button {
   width: auto !important;
   flex: initial;
+}
+
+.worldcup-module .setup-grid.compact {
+  display: block;
+}
+.worldcup-module .setup-card-wide {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.worldcup-module .setup-steps {
+  display: grid;
+  gap: 0;
+}
+.worldcup-module .setup-step-block + .setup-step-block {
+  border-top: 1px solid #42606b;
+  margin-top: 24px;
+  padding-top: 24px;
+}
+.worldcup-module .setup-status {
+  margin-top: 18px;
+}
+.worldcup-module .setup-status strong {
+  overflow-wrap: anywhere;
+}
+.worldcup-module .how-strip {
+  padding-bottom: 10px;
 }

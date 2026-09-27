@@ -451,138 +451,150 @@ export default function Home({
             </h1>
             <p>내 재생목록으로 시작하는 음악 이상형 월드컵</p>
           </div>
-          <div className="setup-grid">
-            <section className="setup-card">
-              <div className="section-heading">
-                <span className="step-number">01</span>
-                <h2>재생목록 가져오기</h2>
-                <ListMusic size={21} />
-              </div>
-              <label htmlFor="playlist-url">유튜브 재생목록 링크</label>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void loadPlaylist();
-                }}
-              >
-                <div className="url-field">
-                  <Link2 size={19} />
-                  <input
-                    id="playlist-url"
-                    type="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/playlist?list=…"
-                    autoComplete="off"
-                    required
-                  />
-                </div>
-                <button type="submit" className="load-button" disabled={busy}>
-                  {busy ? (
-                    <LoaderCircle className="spin" size={18} />
-                  ) : (
-                    <ListMusic size={18} />
-                  )}{" "}
-                  {busy ? "재생목록 불러오는 중…" : "재생목록 불러오기"}
-                  <ArrowRight size={18} />
-                </button>
-              </form>
-              <p className="help">
-                공개 또는 일부 공개 재생목록을 사용할 수 있어요.
-              </p>
-              {error && (
-                <p className="error-message" role="alert">
-                  {error}
-                </p>
-              )}
-              {playlist?.warning && <p className="help">{playlist.warning}</p>}
-              <div className="divider" />
-              <div className="section-heading">
-                <span className="step-number">02</span>
-                <h2>몇 강으로 시작할까요?</h2>
-              </div>
-              <div className="round-options">
-                {[4, 8, 16, 32, 64].map((n) => (
-                  <button
-                    key={n}
-                    className={size === n ? "selected" : ""}
-                    disabled={!playlist || playlist.tracks.length < n}
-                    onClick={() => setSize(n)}
+          <div className="setup-grid compact">
+            <section className="setup-card setup-card-wide">
+              <div className="setup-steps">
+                <section className="setup-step-block">
+                  <div className="section-heading">
+                    <span className="step-number">01</span>
+                    <h2>재생목록 가져오기</h2>
+                    <ListMusic size={21} />
+                  </div>
+                  <label htmlFor="playlist-url">유튜브 재생목록 링크</label>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void loadPlaylist();
+                    }}
                   >
-                    {n}강{size === n && <Check size={13} />}
-                  </button>
-                ))}
-              </div>
-              <div className="more-rounds">
-                <label htmlFor="all-rounds">다른 대진 규모</label>
-                <select
-                  id="all-rounds"
-                  value={size}
-                  disabled={!playlist}
-                  onChange={(e) => setSize(Number(e.target.value))}
-                >
-                  {sizes.map((n) => (
-                    <option
-                      value={n}
-                      key={n}
-                      disabled={!playlist || playlist.tracks.length < n}
+                    <div className="url-field">
+                      <Link2 size={19} />
+                      <input
+                        id="playlist-url"
+                        type="url"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/playlist?list=…"
+                        autoComplete="off"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="load-button"
+                      disabled={busy}
                     >
-                      {n}강
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="help">
-                재생목록에서 무작위로 {size}곡을 뽑아 대진을 만들어요.
-              </p>
-              <button
-                className="primary start-button"
-                disabled={!playlist || busy || playlist.tracks.length < size}
-                onClick={() => void start()}
-              >
-                <Play size={18} fill="currentColor" />
-                월드컵 시작하기
-                <ArrowRight size={18} />
-              </button>
-              <div className="start-caption">
-                {size}곡 · {size - 1}번의 선택 · 단 하나의 우승곡
+                      {busy ? (
+                        <LoaderCircle className="spin" size={18} />
+                      ) : (
+                        <ListMusic size={18} />
+                      )}{" "}
+                      {busy ? "재생목록 불러오는 중…" : "재생목록 불러오기"}
+                      <ArrowRight size={18} />
+                    </button>
+                  </form>
+                  <p className="help">
+                    공개 또는 일부 공개 재생목록을 사용할 수 있어요.
+                  </p>
+                  {error && (
+                    <p className="error-message" role="alert">
+                      {error}
+                    </p>
+                  )}
+                  {playlist?.warning && (
+                    <p className="help">{playlist.warning}</p>
+                  )}
+                  <div className="loaded-summary setup-status">
+                    <span className="ready-check">
+                      {playlist ? <Check size={16} /> : <ListMusic size={16} />}
+                    </span>
+                    <div>
+                      <strong>
+                        {playlist
+                          ? playlist.title
+                          : "재생목록을 먼저 가져와 주세요"}
+                      </strong>
+                      <span>
+                        {playlist
+                          ? `${playlist.tracks.length}곡 준비 완료 · 선택한 수만큼 무작위로 참여해요.`
+                          : "유튜브 재생목록 링크를 넣으면 준비 상태가 표시돼요."}
+                      </span>
+                    </div>
+                  </div>
+                </section>
+                <section className="setup-step-block">
+                  <div className="section-heading">
+                    <span className="step-number">02</span>
+                    <h2>몇 강으로 시작할까요?</h2>
+                  </div>
+                  <div className="round-options">
+                    {[4, 8, 16, 32, 64].map((n) => (
+                      <button
+                        key={n}
+                        className={size === n ? "selected" : ""}
+                        disabled={!playlist || playlist.tracks.length < n}
+                        onClick={() => setSize(n)}
+                      >
+                        {n}강{size === n && <Check size={13} />}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="more-rounds">
+                    <label htmlFor="all-rounds">다른 대진 규모</label>
+                    <select
+                      id="all-rounds"
+                      value={size}
+                      disabled={!playlist}
+                      onChange={(e) => setSize(Number(e.target.value))}
+                    >
+                      {sizes.map((n) => (
+                        <option
+                          value={n}
+                          key={n}
+                          disabled={!playlist || playlist.tracks.length < n}
+                        >
+                          {n}강
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="help">
+                    재생목록에서 무작위로 {size}곡을 뽑아 대진을 만들어요.
+                  </p>
+                  <button
+                    className="primary start-button"
+                    disabled={
+                      !playlist || busy || playlist.tracks.length < size
+                    }
+                    onClick={() => void start()}
+                  >
+                    <Play size={18} fill="currentColor" />
+                    월드컵 시작하기
+                    <ArrowRight size={18} />
+                  </button>
+                  <div className="start-caption">
+                    {size}곡 · {size - 1}번의 선택 · 단 하나의 우승곡
+                  </div>
+                </section>
               </div>
             </section>
-            <section className="playlist-panel">
-              <div className="panel-top">
-                <span>{playlist ? "READY TO PLAY" : "PLAYLIST STATUS"}</span>
-                <Headphones size={20} />
-              </div>
-              <div className="playlist-copy">
-                <h2>{playlist?.title || "재생목록을 기다리고 있어요."}</h2>
-                <p>
-                  {playlist
-                    ? `${playlist.tracks.length}곡 준비 완료`
-                    : "유튜브 재생목록 링크를 넣으면 이곳에 준비 상태가 표시돼요."}
-                </p>
-              </div>
-              {playlist ? (
-                <div className="loaded-summary">
-                  <span className="ready-check">
-                    <Check size={16} />
-                  </span>
-                  <div>
-                    <strong>대진을 만들 준비가 됐어요</strong>
-                    <span>불러온 곡 중 선택한 수만큼 무작위로 참여해요.</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="loaded-summary muted">
-                  <span className="ready-check">
-                    <ListMusic size={16} />
-                  </span>
-                  <div>
-                    <strong>재생목록을 먼저 가져와 주세요</strong>
-                    <span>공개 또는 일부 공개 목록을 사용할 수 있어요.</span>
-                  </div>
-                </div>
-              )}
-            </section>
+          </div>
+          <div className="how-strip">
+            <div>
+              <span>01</span>
+              <p>재생목록을 넣고</p>
+            </div>
+            <i />
+            <div>
+              <span>02</span>
+              <p>더 좋아하는 곡을 고르면</p>
+            </div>
+            <i />
+            <div>
+              <span>03</span>
+              <p>나의 우승곡이 전체 랭킹에</p>
+              <Trophy size={17} />
+            </div>
           </div>
         </main>
       )}
