@@ -1,8 +1,9 @@
 import { refreshMeta } from "../../../lib/playlist-meta";
 import { playlistId } from "../../../lib/youtube";
-import { body, failure, ApiError } from "../../../lib/server";
+import { body, failure, ApiError, requireAdmin } from "../../../lib/server";
 export async function POST(request: Request) {
   try {
+    requireAdmin(request);
     const input = await body(request, 2000);
     let id;
     try {

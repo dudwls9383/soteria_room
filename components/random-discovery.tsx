@@ -499,7 +499,7 @@ export default function RandomDiscovery({
                 <RefreshCw size={16} className={busy ? "spin" : ""} />
                 {busy ? "가져오는 중…" : "연결된 시트 다시 가져오기"}
               </button>
-              <label className="room-button subtle upload-label">
+              <label className="room-button subtle upload-label" aria-disabled={!adminKey} title={!adminKey ? "가져오기 · 동기화에서 관리 잠금을 열어 주세요." : undefined}>
                 <Upload size={16} />새 CSV로 갱신
                 <input
                   aria-label="구독목록 CSV 업로드"

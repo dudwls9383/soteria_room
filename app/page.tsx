@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
   Headphones,
@@ -16,6 +16,7 @@ import {
   LockKeyhole,
   LoaderCircle,
   MessageCircle,
+  Menu,
   Play,
   Plus,
   RefreshCw,
@@ -33,6 +34,9 @@ import {
   TabsTrigger,
   TabsContent,
 } from "../components/ui/tabs";
+import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetDescription } from "../components/ui/sheet";
+import { unpackLibrary } from "../lib/library-wire";
+import { reconcileTranslation, type TranslationRecord } from "../lib/live-translation";
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
@@ -49,7 +53,6 @@ import {
   type Scope,
 } from "../lib/collections";
 import type { Playlist, Track } from "../lib/music";
-import type { ChannelPlaylist } from "../lib/channel";
 import { monthOf, searchLibrary } from "../lib/archive";
 import "./room.css";
 
@@ -57,7 +60,6 @@ type Saved = Playlist & { updatedAt: number };
 type PlayableTrack = Track & { playlists?: string[] };
 type Post = { title: string; url: string; date: string; description?: string };
 type TranslateLanguage = "ko" | "ja" | "en";
-const DAY = 86400000;
 const linkPage = "https://lit.link/en/soteria";
 const translateOptions: { value: TranslateLanguage; label: string }[] = [
   { value: "ko", label: "KO" },
@@ -73,6 +75,7 @@ const uiDictionary: Record<
   Record<string, string>
 > = {
   en: {
+    "월별 큐레이션": "Monthly curation", "마이 리캡": "My Recap", "카와보 시리즈": "Kawaii Voice series", "전체 메뉴": "All sections",
     "내 공간": "My room",
     "음악 보관실": "Music archive",
     "작은 프로젝트": "Small projects",
@@ -236,6 +239,7 @@ const uiDictionary: Record<
       "Switched to Japanese UI. Song and playlist titles stay in the original language.",
   },
   ja: {
+    "월별 큐레이션": "月別キュレーション", "마이 리캡": "My Recap", "카와보 시리즈": "カワイイボイスシリーズ", "전체 메뉴": "メニュー",
     "내 공간": "マイルーム",
     "음악 보관실": "音楽アーカイブ",
     "작은 프로젝트": "小さなプロジェクト",
@@ -402,7 +406,8 @@ const uiDictionary: Record<
       "日本語UIに切り替えました。曲名とプレイリスト名は原文のままです。",
   },
 };
-const originalTextNodes = new WeakMap<Text, string>();
+const originalTextNodes = new WeakMap<Text, TranslationRecord>();
+const translatedAttributes = new WeakMap<Element, Map<string, TranslationRecord>>();
 function translatedStaticText(
   value: string,
   language: Exclude<TranslateLanguage, "ko">,
@@ -478,10 +483,10 @@ function applyUiLanguage(language: TranslateLanguage) {
     node = walker.nextNode() as Text | null
   ) {
     if (shouldSkipTranslation(node)) continue;
-    const original = originalTextNodes.get(node) ?? node.nodeValue ?? "";
-    if (!originalTextNodes.has(node)) originalTextNodes.set(node, original);
-    node.nodeValue =
-      language === "ko" ? original : translatedStaticText(original, language);
+    const record = reconcileTranslation(node.nodeValue ?? "", originalTextNodes.get(node),
+      source => language === "ko" ? source : translatedStaticText(source,language));
+    originalTextNodes.set(node, record);
+    if (node.nodeValue !== record.rendered) node.nodeValue = record.rendered;
   }
   for (const element of document.querySelectorAll<HTMLElement>(
     "[placeholder],[aria-label]",
@@ -490,13 +495,12 @@ function applyUiLanguage(language: TranslateLanguage) {
     for (const attr of ["placeholder", "aria-label"] as const) {
       const current = element.getAttribute(attr);
       if (!current) continue;
-      const key = `data-original-${attr}`;
-      const original = element.getAttribute(key) ?? current;
-      if (!element.hasAttribute(key)) element.setAttribute(key, original);
-      element.setAttribute(
-        attr,
-        language === "ko" ? original : translatedStaticText(original, language),
-      );
+      const records = translatedAttributes.get(element) ?? new Map<string,TranslationRecord>();
+      const record = reconcileTranslation(current, records.get(attr),
+        source => language === "ko" ? source : translatedStaticText(source,language));
+      records.set(attr,record);
+      translatedAttributes.set(element,records);
+      if (current !== record.rendered) element.setAttribute(attr,record.rendered);
     }
   }
 }
@@ -529,15 +533,15 @@ const pageCopy: Record<
 // 새 기능은 이 목록과 아래 TabsContent를 추가하면 독립 탭으로 확장할 수 있습니다.
 const modules = [
   { id: "pick", name: "재생목록 픽", icon: Sparkles, group: "음악 보관실" },
-  { id: "search", name: "유튜브 재생목록 검색기", icon: Search },
+  { id: "archive", name: "월별 큐레이션", icon: CalendarDays },
+  { id: "random", name: "디깅", icon: Shuffle },
+  { id: "recap", name: "마이 리캡", icon: AudioLines },
+  { id: "kawaii", name: "카와보 시리즈", icon: ListMusic },
+  { id: "search", name: "유튜브 재생목록 검색기", icon: Search, group: "작은 프로젝트" },
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
-  { id: "archive", name: "월별 수집 · 큐레이션", icon: CalendarDays },
-  { id: "recap", name: "My Recap", icon: AudioLines },
-  { id: "kawaii", name: "Kawaii Voice 시리즈", icon: ListMusic },
-  { id: "random", name: "디깅", icon: Shuffle, group: "작은 프로젝트" },
-  { id: "bottle", name: "곡추천 병", icon: MessageCircle },
-  { id: "asmr", name: "채널 보관실", icon: Headphones },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
+  { id: "asmr", name: "채널 보관실", icon: Headphones },
+  { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결된 공간" },
   { id: "somunia", name: "소무니아 갤러리", icon: MessageCircle },
   { id: "moesound", name: "카와이 보이스 갤러리", icon: MessageCircle },
@@ -585,8 +589,7 @@ export default function Room() {
     [sort, setSort] = useState("month");
   const [selected, setSelected] = useState<Saved | null>(null);
   const [playing, setPlaying] = useState<PlayableTrack | null>(null);
-  const [channel, setChannel] = useState<ChannelPlaylist[]>([]),
-    [syncing, setSyncing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, title: "" });
   const [failures, setFailures] = useState<
     { id: string; title: string; message: string }[]
@@ -595,6 +598,10 @@ export default function Room() {
     [importing, setImporting] = useState(false),
     [lastSync, setLastSync] = useState(0);
   const [adminKey, setAdminKey] = useState("");
+  const [adminDraft, setAdminDraft] = useState("");
+  const [adminChecking, setAdminChecking] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [nextSync, setNextSync] = useState(0);
   const [featuredId, setFeaturedId] = useState(""),
     [cupVisited, setCupVisited] = useState(false),
     [cupPlaylist, setCupPlaylist] = useState<Playlist | null>(null);
@@ -610,12 +617,11 @@ export default function Room() {
   const lock = useRef(false),
     libraryRef = useRef(library);
   libraryRef.current = library;
-  const allTracks = searchLibrary(library, "");
+  const allTracks = useMemo(() => searchLibrary(library, ""), [library]);
   const unique = { size: allTracks.length };
-  const tracks = searchLibrary(
-    library.filter((p) => inScope(p, searchScope)),
-    query,
-  );
+  const tracks = useMemo(() => searchLibrary(
+    library.filter((p) => inScope(p, searchScope)), query,
+  ), [library, searchScope, query]);
   const baseLibrary = library.filter((p) =>
     tab === "pick"
       ? !["monthly", "recap", "kawaii"].includes(kindOf(p)) &&
@@ -659,6 +665,7 @@ export default function Room() {
     baseLibrary[0];
   function navigate(id: string) {
     setTab(id);
+    setMobileMenu(false);
     window.scrollTo(0, 0);
     setQuery("");
     setFilter("all");
@@ -680,118 +687,101 @@ export default function Room() {
           : "영어 UI로 바꿨어요. 곡 제목과 재생목록 제목은 원문을 유지합니다.",
     );
   }
-  async function reload() {
-    const data = await request("/api/library");
-    setLibrary(data.playlists);
-    libraryRef.current = data.playlists;
-    setLastSync(data.lastUpdatedAt || 0);
+  function acceptLibrary(data: any) {
+    const playlists = data.version === 1 ? unpackLibrary(data) : data.playlists;
+    setLibrary(playlists);
+    libraryRef.current = playlists;
+    setLoading(false);
   }
-  // 순차 가져오기로 요청을 제한하고 실패한 목록만 보고합니다. 다음 실행은 최근 저장분을 건너뜁니다.
-  async function synchronize(force = false, retryOnly = false) {
-    if (!adminKey.trim()) {
-      setError("관리 잠금을 먼저 열어 주세요.");
-      return;
-    }
+  async function reload() {
+    const response = await fetch("/api/library", {cache:"no-store"});
+    if (!response.ok) throw new Error("보관실을 불러오지 못했어요. 다시 시도해 주세요.");
+    const copy = response.clone();
+    acceptLibrary(await response.json());
+    // A public read-only snapshot gives returning visitors an immediate archive.
+    if ("caches" in window) void caches.open("soteria-library-v1").then(cache => cache.put("/api/library",copy)).catch(() => {});
+  }
+  function acceptSync(data: any) {
+    setLastSync(data.lastSuccessAt || 0);
+    setNextSync(data.nextSyncAt || 0);
+    setFailures((data.failures || []).map((p: any) => ({...p,message:p.error})));
+    setProgress({ done:data.done, total:data.total, title:data.title || "채널 갱신 중" });
+  }
+  async function synchronize(_force = false, retryOnly = false, quiet = false) {
     if (lock.current) return;
     lock.current = true;
     setSyncing(true);
-    const previousFailures = failures;
-    if (!retryOnly) setFailures([]);
-    setError("");
-    setNotice("");
-    setProgress({
-      done: 0,
-      total: 0,
-      title: retryOnly
-        ? "실패한 재생목록만 다시 확인하고 있어요"
-        : "채널의 공개 재생목록을 찾고 있어요",
-    });
-    const failed: { id: string; title: string; message: string }[] = [];
+    if (!quiet) { setError(""); setNotice(""); }
     try {
-      let discovered: ChannelPlaylist[];
-      if (retryOnly) {
-        discovered = previousFailures.map((p) => ({
-          id: p.id,
-          title: p.title,
-          thumbnail: "",
-        }));
-      } else {
-        const data = await request("/api/channel");
-        discovered = [
-          ...new Map(
-            [
-              ...data.playlists,
-              ...seriesLists.recap.map((p) => ({ ...p, thumbnail: "" })),
-            ].map((p) => [p.id, p]),
-          ).values(),
-        ] as ChannelPlaylist[];
-        setChannel(discovered);
-      }
-      const pending = retryOnly
-        ? discovered
-        : discovered.filter(
-            (p) =>
-              force ||
-              !libraryRef.current.some(
-                (s) => s.id === p.id && Date.now() - s.updatedAt < DAY,
-              ),
-          );
-      for (let i = 0; i < pending.length; i++) {
-        const p = pending[i];
-        setProgress({ done: i, total: pending.length, title: p.title });
-        try {
-          const imported = await request(
-            "/api/playlist",
-            {
-              url: `https://www.youtube.com/playlist?list=${p.id}`,
-              force,
-            },
-            { adminKey },
-          );
-          setLibrary((current) => {
-            const next = [
-              { ...imported, updatedAt: Date.now() },
-              ...current.filter((x) => x.id !== imported.id),
-            ];
-            libraryRef.current = next;
-            return next;
-          });
-        } catch (e) {
-          failed.push({
-            id: p.id,
-            title: p.title,
-            message: (e as Error).message,
-          });
-          setFailures([...failed]);
+      let steps = 0;
+      while (true) {
+        const data = await request("/api/sync", {retry:retryOnly});
+        acceptSync(data);
+        if (data.waiting) {
+          if (!quiet) setNotice("다른 방문자가 동기화 중이에요. 완료되면 목록을 다시 불러옵니다.");
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
         }
-        setProgress({ done: i + 1, total: pending.length, title: p.title });
+        if (data.cached || !data.pending.length) {
+          await reload();
+          if (!quiet || !data.cached) setNotice(data.failures.length
+            ? `${data.failures.length}개 목록은 다시 확인이 필요해요. 기존 자료를 유지하며, 실패 목록은 완료 5분 후 재시도할 수 있어요.`
+            : data.cached ? "오늘의 동기화가 이미 완료되어 최신 저장 목록을 불러왔어요." : "채널 동기화를 마쳤어요.");
+          break;
+        }
+        if (++steps % 10 === 0) await reload();
       }
-      setFailures(failed);
-      if (!failed.length) setLastSync(Date.now());
-      setNotice(
-        failed.length
-          ? `${pending.length - failed.length}개 갱신 · ${failed.length}개 다시 확인 필요`
-          : retryOnly
-            ? "실패했던 재생목록을 모두 다시 가져왔어요."
-            : `채널의 재생목록 ${discovered.length}개를 확인했어요.`,
-      );
+    } catch (e) { setError((e as Error).message); }
+    finally { lock.current = false; setSyncing(false); }
+  }
+  async function unlockAdmin(key = adminDraft) {
+    setAdminChecking(true);
+    try {
+      await request("/api/admin", {}, {adminKey:key});
+      setAdminKey(key);
+      setAdminDraft("");
+      sessionStorage.setItem("soteria-admin-key",key);
+      setNotice("관리 잠금을 열었어요. 이 브라우저 탭에서만 유지됩니다.");
     } catch (e) {
+      setAdminKey("");
+      sessionStorage.removeItem("soteria-admin-key");
       setError((e as Error).message);
-    } finally {
-      lock.current = false;
-      setSyncing(false);
-    }
+    } finally { setAdminChecking(false); }
   }
   useEffect(() => {
+    let active = true;
     const hash = location.hash.slice(1);
     if (modules.some((m) => m.id === hash)) {
       setTab(hash);
       if (hash === "worldcup") setCupVisited(true);
     }
-    setAdminKey(sessionStorage.getItem("soteria-admin-key") || "");
-    void reload()
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    const savedKey = sessionStorage.getItem("soteria-admin-key");
+    if (savedKey) void unlockAdmin(savedKey);
+    void (async () => {
+      try {
+        if ("caches" in window) {
+          const cached = await caches.open("soteria-library-v1").then(cache => cache.match("/api/library")).catch(() => undefined);
+          if (cached && active) acceptLibrary(await cached.json());
+        }
+        await reload();
+        const status = await request("/api/sync");
+        if (!active) return;
+        acceptSync(status);
+        // Daily refresh is activity-based: start after content is visible and
+        // resume a persisted unfinished run; never gate reading on YouTube.
+        if (status.pending.length || Date.now() >= status.nextSyncAt) void synchronize(false,false,true);
+      } catch (e) { if (active) setError((e as Error).message); }
+      finally { if (active) setLoading(false); }
+    })();
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "visible" || lock.current) return;
+      void request("/api/sync").then(status => {
+        if (!active) return;
+        acceptSync(status);
+        if (status.pending.length || Date.now() >= status.nextSyncAt) void synchronize(false,false,true);
+      }).catch(() => {});
+    }, 60 * 60 * 1000);
+    return () => { active = false; clearInterval(timer); };
   }, []);
   useEffect(() => {
     clearGoogleTranslateCookie();
@@ -799,6 +789,15 @@ export default function Room() {
   useEffect(() => {
     applyUiLanguage(language);
   });
+  useEffect(() => {
+    let frame = 0;
+    const observer = new MutationObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => applyUiLanguage(language));
+    });
+    observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:["placeholder","aria-label"]});
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [language]);
   useEffect(() => {
     if (!sources[tab]) return;
     let active = true;
@@ -971,7 +970,9 @@ export default function Room() {
               <img
                 src={p.thumbnail || firstTrack?.thumbnail}
                 alt=""
-                loading="lazy"
+                loading={i < 4 ? "eager" : "lazy"}
+                decoding="async"
+                onError={(e) => { if (firstTrack && e.currentTarget.src !== firstTrack.thumbnail) e.currentTarget.src = firstTrack.thumbnail; }}
               />
             )}
             <span className="cover-shade" />
@@ -1124,6 +1125,21 @@ export default function Room() {
           </div>
         </div>
       </aside>
+      <div className="mobile-room-header glass">
+        <a href="#pick" onClick={e => {e.preventDefault(); navigate("pick");}}><AudioLines size={22} /><strong>SOTERIA ROOM</strong></a>
+        <Sheet open={mobileMenu} onOpenChange={setMobileMenu}>
+          <SheetTrigger asChild><button className="room-button subtle"><Menu size={19} />전체 메뉴</button></SheetTrigger>
+          <SheetContent side="left" className="mobile-room-menu">
+            <SheetTitle>SOTERIA ROOM</SheetTitle>
+            <SheetDescription>듣고 싶은 음악, 해보고 싶은 프로젝트를 골라보세요.</SheetDescription>
+            <nav aria-label="전체 메뉴">{modules.map(m => <div key={m.id}>
+              {m.group && <h2>{m.group}</h2>}
+              <button aria-current={tab === m.id ? "page" : undefined} onClick={() => navigate(m.id)}><m.icon size={19}/>{m.name}{tab === m.id && <Check size={16}/>}</button>
+            </div>)}</nav>
+            <a href={linkPage} target="_blank" rel="noreferrer">soteria_room · 링크 프로필 <ArrowUpRight size={16}/></a>
+          </SheetContent>
+        </Sheet>
+      </div>
       <div className="room-workspace">
         <header className="room-topbar">
           <div>
@@ -1220,6 +1236,10 @@ export default function Room() {
                           featured?.thumbnail || featured?.tracks[0]?.thumbnail
                         }
                         alt=""
+                        onError={(e) => {
+                          const fallback = featured?.tracks[0]?.thumbnail;
+                          if (fallback && e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                        }}
                       />
                     )}
                     <div className="featured-overlay" />
@@ -1229,12 +1249,12 @@ export default function Room() {
                         PLAYLIST PICK
                       </span>
                       <h2 className="notranslate" translate="no">
-                        {featured?.title || "당신의 취향이\n머무는 곳."}
+                        {featured?.title || (loading ? "음악을 꺼내고 있어요…" : "당신의 취향이\n머무는 곳.")}
                       </h2>
                       <p>
                         {featured
                           ? `${featured.tracks.length}곡 · SOTERIA ROOM`
-                          : "채널에서 재생목록을 가져오면 이곳에 펼쳐져요."}
+                          : loading ? "저장된 재생목록과 곡 정보를 불러오는 중이에요." : "채널에서 재생목록을 가져오면 이곳에 펼쳐져요."}
                       </p>
                       <div className="featured-actions">
                         <button
@@ -1244,7 +1264,7 @@ export default function Room() {
                               ? openPlaylist(featured)
                               : void synchronize()
                           }
-                          disabled={!featured && (syncing || !adminKey.trim())}
+                          disabled={loading || (!featured && syncing)}
                         >
                           {featured
                             ? "재생목록 열기"
@@ -1278,12 +1298,12 @@ export default function Room() {
                     <div className="room-stats glass">
                       <span className="room-eyebrow">IN MY ROOM</span>
                       <div>
-                        <strong>{library.length.toLocaleString()}</strong>
+                        <strong>{loading ? "—" : library.length.toLocaleString()}</strong>
                         <span>개의 재생목록</span>
                       </div>
                       <div className="stats-bottom">
                         <AudioLines size={19} />
-                        <b>{unique.size.toLocaleString()}</b>곡의 서로 다른 발견
+                        <b>{loading ? "—" : unique.size.toLocaleString()}</b>곡의 서로 다른 발견
                       </div>
                     </div>
                     <button
@@ -1313,7 +1333,7 @@ export default function Room() {
                           ? "Kawaii Voice Playlist"
                           : "큐레이션 재생목록"}
                     <span>
-                      {visible.length}
+                      {loading ? "…" : visible.length}
                       {missingSeries.length
                         ? ` / ${selectedSeries.length}`
                         : ""}
@@ -1452,13 +1472,13 @@ export default function Room() {
                     />
                   </label>
                 </div>
-                {missingSeries.length > 0 && (
+                {!loading && missingSeries.length > 0 && (
                   <div className="room-note">
                     {missingSeries.length}개 목록을 가져오는 중이거나 확인이
                     필요합니다.{" "}
                     <button
                       className="room-button subtle"
-                      disabled={syncing || !adminKey.trim()}
+                      disabled={syncing}
                       onClick={() => void synchronize()}
                     >
                       미수집 목록 가져오기
@@ -1483,9 +1503,9 @@ export default function Room() {
                   </div>
                 )}
                 {loading ? (
-                  <div className="room-empty">
-                    <LoaderCircle className="spin" />
-                    보관실을 열고 있어요.
+                  <div className="library-loading" role="status" aria-label="보관실을 불러오는 중">
+                    <p><LoaderCircle className="spin" size={18} /> 보관실을 열고 있어요.</p>
+                    <div className="playlist-grid">{Array.from({length:6}, (_,i) => <div className="playlist-skeleton" key={i}><div /><span /><span /></div>)}</div>
                   </div>
                 ) : visible.length ? (
                   id === "archive" && sort === "month" ? (
@@ -1593,7 +1613,7 @@ export default function Room() {
             </label>
             <div className="section-title">
               <h2>
-                검색 결과<span>{tracks.length}곡</span>
+                검색 결과<span>{loading ? "불러오는 중…" : `${tracks.length}곡`}</span>
               </h2>
               <button
                 className="room-button subtle"
@@ -1607,7 +1627,7 @@ export default function Room() {
             {playerPanel()}
             <div className="track-list glass">
               {tracks.slice(0, 200).map((t, i) => trackRow(t, i, "search"))}
-              {!tracks.length && (
+              {!loading && !tracks.length && (
                 <div className="room-empty">
                   <Search size={30} />
                   <h3>
@@ -1737,15 +1757,15 @@ export default function Room() {
                 </div>
                 <h2>관리 잠금</h2>
                 <p>
-                  보관실에 저장되는 동기화, 직접 추가, 삭제, JSON/CSV 갱신은
+                  보관실에 직접 추가, 삭제, JSON/CSV 갱신은
                   관리자 키가 있어야 실행돼요. 방문자용 링크 추출과 월드컵
                   불러오기는 저장 없이 일회성으로만 작동합니다.
                 </p>
                 <label htmlFor="admin-key">관리자 키</label>
                 <input
                   id="admin-key"
-                  value={adminKey}
-                  onChange={(e) => setAdminKey(e.target.value)}
+                  value={adminDraft}
+                  onChange={(e) => setAdminDraft(e.target.value)}
                   type="password"
                   placeholder="SOTERIA_ADMIN_KEY"
                   autoComplete="off"
@@ -1754,11 +1774,8 @@ export default function Room() {
                   <button
                     className="room-button"
                     type="button"
-                    disabled={!adminKey.trim()}
-                    onClick={() => {
-                      sessionStorage.setItem("soteria-admin-key", adminKey);
-                      setNotice("관리 잠금을 열었어요. 이 브라우저 탭에서만 유지됩니다.");
-                    }}
+                    disabled={!adminDraft.trim() || adminChecking}
+                    onClick={() => void unlockAdmin()}
                   >
                     <LockKeyhole size={16} />
                     잠금 열기
@@ -1776,7 +1793,7 @@ export default function Room() {
                     잠금 닫기
                   </button>
                 </div>
-                <small>현재 상태: {adminKey.trim() ? "키 입력됨" : "잠김"}</small>
+                <small>현재 상태: {adminChecking ? "확인 중" : adminKey ? "관리자 확인됨" : "잠김"}</small>
               </section>
               <section className="settings-card glass">
                 <div className="setting-icon">
@@ -1792,12 +1809,12 @@ export default function Room() {
                   @soteria_room <ExternalLink size={14} />
                 </a>
                 <p>
-                  관리자가 누를 때만 @soteria_room의 공개 재생목록과 수록곡을
-                  갱신해요. 실패한 목록은 기존 내용을 유지합니다.
+                  누구나 동기화할 수 있어요. 24시간이 지난 뒤 첫 방문에서 자동으로 갱신하며,
+                  같은 날에는 저장된 결과를 불러옵니다. 실패한 목록은 기존 내용을 유지해요.
                 </p>
                 <button
                   className="room-button"
-                  disabled={syncing || !adminKey.trim()}
+                  disabled={syncing}
                   onClick={() => void synchronize(true)}
                 >
                   <RefreshCw size={16} className={syncing ? "spin" : ""} />
@@ -1805,7 +1822,7 @@ export default function Room() {
                 </button>
                 <button
                   className="room-button subtle"
-                  disabled={syncing || !failures.length || !adminKey.trim()}
+                  disabled={syncing || !failures.length}
                   onClick={() => void synchronize(true, true)}
                 >
                   <RefreshCw
@@ -1814,15 +1831,16 @@ export default function Room() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
+                <small>다음 갱신 가능: {nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "확인 중"}</small>
                 <small>
                   마지막 전체 성공:{" "}
                   {lastSync
                     ? new Date(lastSync).toLocaleString("ko-KR")
                     : "아직 없음"}
                 </small>
-                {channel.length > 0 && (
+                {progress.total > 0 && (
                   <small>
-                    채널에서 발견한 공개 재생목록 {channel.length}개
+                    채널에서 발견한 공개 재생목록 {progress.total}개
                   </small>
                 )}
               </section>
@@ -1866,7 +1884,7 @@ export default function Room() {
                   <h2>다시 확인할 목록 · {failures.length}</h2>
                   <button
                     className="room-button subtle"
-                    disabled={syncing || !adminKey.trim()}
+                    disabled={syncing}
                     onClick={() => void synchronize(true, true)}
                   >
                     <RefreshCw size={16} className={syncing ? "spin" : ""} />

@@ -198,7 +198,7 @@ export default function ChannelTagExplorer({
           >
             전체 불러오기
           </button>
-          <label className="room-button subtle upload-label">
+          <label className="room-button subtle upload-label" aria-disabled={!adminKey} title={!adminKey ? "가져오기 · 동기화에서 관리 잠금을 열어 주세요." : undefined}>
             {busy ? (
               <RefreshCw size={16} className="spin" />
             ) : (
@@ -226,7 +226,7 @@ export default function ChannelTagExplorer({
               ? `${display.length.toLocaleString()}개 / 전체 ${totalChannels.toLocaleString()}개`
               : totalChannels
                 ? `${pageStart + 1}-${pageEnd} / ${totalChannels.toLocaleString()}개`
-                : "0개"}
+                : busy ? "불러오는 중…" : "0개"}
           </span>
         </h2>
         {busy && <span className="room-note">불러오는 중…</span>}

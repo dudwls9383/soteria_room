@@ -1,6 +1,7 @@
 import { database } from "../../../db";
 import { failure } from "../../../lib/server";
 import { ensureMeta } from '../../../lib/playlist-meta';
+import { packLibrary } from '../../../lib/library-wire';
 export async function GET() {
   try {
     await ensureMeta();
@@ -12,17 +13,14 @@ export async function GET() {
       )
       .all<{ id: string; title: string; tracks: string; updated_at: number }>();
     return Response.json(
-      {
-        lastUpdatedAt: result.results.reduce((latest, p) => Math.max(latest, p.updated_at || 0), 0),
-        playlists: result.results.map((p) => ({
+      packLibrary(result.results.map((p) => ({
           id: p.id,
           title: p.title,
           tracks: JSON.parse(p.tracks),
           updatedAt: p.updated_at,
-          thumbnail: byId.get(p.id)?.thumbnail,
+          thumbnail: byId.get(p.id)?.thumbnail || JSON.parse(p.tracks)[0]?.thumbnail || "",
           views: byId.get(p.id)?.views ?? null,
-        })),
-      },
+        })), result.results.reduce((latest, p) => Math.max(latest, p.updated_at || 0), 0)),
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
