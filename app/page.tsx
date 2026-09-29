@@ -1938,7 +1938,7 @@ export default function Room() {
             {failures.length > 0 && (
               <section className="settings-card glass">
                 <div className="section-title compact-title">
-                  <h2>다시 확인할 목록 · {failures.length}</h2>
+                  <h2 className="sync-failures-heading">다시 확인할 목록 · {failures.length}개</h2>
                   <button
                     className="room-button subtle"
                     disabled={syncing || stopping}
@@ -1948,12 +1948,17 @@ export default function Room() {
                     실패 목록만 재시도
                   </button>
                 </div>
+                <details className="sync-failures-details" key={syncStage}>
+                  <summary>목록 펼치기 / 접기</summary>
+                  <div className="sync-failures-scroll" tabIndex={0} role="region" aria-label="다시 확인할 재생목록">
                 {failures.map((f, i) => (
                   <div className="sync-failure" key={i}>
                     <strong>{f.title}</strong>
                     <p>{f.message}</p>
                   </div>
                 ))}
+                  </div>
+                </details>
               </section>
             )}
             <section className="settings-card glass reset-library-card">
