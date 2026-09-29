@@ -170,7 +170,11 @@ export async function readPlaylist(
   );
   if (!response.ok)
     throw new Error(
-      "유튜브 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.",
+      response.status === 429
+        ? "YouTube가 요청을 제한했어요 (HTTP 429). 반복 재시도는 잠시 멈춰 주세요. 기존 자료는 유지됩니다."
+        : response.status === 403
+          ? "YouTube가 서버의 접근을 거절했어요 (HTTP 403). 기존 자료는 유지됩니다."
+          : `YouTube 응답 오류 (HTTP ${response.status}). 잠시 후 다시 시도해 주세요.`,
     );
   const html = await response.text();
   const data = parseInitialData(html);

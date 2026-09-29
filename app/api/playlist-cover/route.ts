@@ -11,10 +11,7 @@ export async function GET(request: Request) {
     await ensureMeta();
     const saved = await database().prepare("SELECT json_extract(p.tracks,'$[0].thumbnail') AS fallback,m.thumbnail,m.checked_at FROM playlists p LEFT JOIN playlist_meta m ON p.id=m.id WHERE p.id=?").bind(id).first<{fallback:string|null;thumbnail:string|null;checked_at:number|null}>();
     if (!saved) throw new ApiError("재생목록을 찾지 못했어요.",404);
-    const cache = (caches as unknown as {default?: Cache}).default;
-    const cacheKey = new Request(`${new URL(request.url).origin}/api/playlist-cover?id=${id}&revision=${saved.checked_at || 0}`);
-    const hit = await cache?.match(cacheKey);
-    if (hit) return hit;
+    // Sites does not permit the default Worker cache; use browser HTTP caching.
     let source = saved.thumbnail || saved.fallback || "";
     const readImage = async (url:string) => {
       const target = new URL(url);
@@ -36,7 +33,6 @@ export async function GET(request: Request) {
     // custom artwork for an entire day.
     const ttl = custom && source === response.url ? 3600 : 300;
     const image = new Response(response.body, {headers:{"Content-Type":response.headers.get("Content-Type") || "image/jpeg","Cache-Control":`public, max-age=${ttl}`,"X-Content-Type-Options":"nosniff"}});
-    await cache?.put(cacheKey,image.clone());
     return image;
   } catch (error) { return failure(error); }
 }
