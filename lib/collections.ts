@@ -15,8 +15,8 @@ export function kindOf(p: Pick<Playlist, "id" | "title">) {
   if (series.recap.some((x) => x.id === p.id)) return "recap";
   if (series.kawaii.some((x) => x.id === p.id)) return "kawaii";
   if (
-    /^20\d{2}\s*[.-]\s*\d{1,2}$/.test(p.title.trim()) ||
-    /^a bundle of songs|^Before 2021$/i.test(p.title)
+    /^20\d{2}(?:\s*[.-]\s*\d{1,2})?$/.test(p.title.trim()) ||
+    /^a bundle o[fd] songs|^Before 2021$/i.test(p.title)
   )
     return "monthly";
   if (/월의\s*픽/.test(p.title)) return "picks";

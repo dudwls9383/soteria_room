@@ -63,12 +63,14 @@ test("daily sync cannot be bypassed by retry; unfinished queues resume across da
   state.pending = [{id:"fixed-source",title:"source",thumbnail:""}];
   assert.equal(syncAction(state,now + SYNC_DAY * 2,false),"continue");
 });
-test("only failed sync items are eligible for retry, after the cooldown", () => {
+test("failed sync items retry immediately and secondary sync stays independent", () => {
   const now = SYNC_DAY * 10;
   const state = {...emptySync(), startedAt:now,finishedAt:now,failures:[{id:"failed",title:"failed",thumbnail:"",error:"timeout"}]};
-  assert.equal(syncAction(state,now + SYNC_RETRY_DELAY - 1,true),"cached");
+  assert.equal(syncAction(state,now,true),"retry");
   assert.equal(syncAction(state,now + SYNC_RETRY_DELAY,true),"retry");
   assert.equal(syncAction(state,now + SYNC_RETRY_DELAY,false),"cached");
+  assert.equal(syncAction(state,now,false,"secondary"),"discover");
+  assert.equal(syncAction({...state,failures:[]},now,true,"secondary"),"cached");
 });
 test("compact library round-trips duplicates, alternate titles, custom images and empty lists", () => {
   const track = {id:"abcdefghijk",title:"曲 제목",artist:"Artist",thumbnail:"https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"};

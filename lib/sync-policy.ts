@@ -1,16 +1,18 @@
 // Shared server policy: visitors can refresh only the fixed source, once per 24 hours.
 export const SYNC_DAY = 24 * 60 * 60 * 1000;
 export const SYNC_RETRY_DELAY = 5 * 60 * 1000;
+export type SyncStage = "primary" | "secondary";
 export type SyncItem = { id: string; title: string; thumbnail: string; count?: number; firstId?: string; error?: string };
 export type SyncState = {
   startedAt: number; lastSuccessAt: number; finishedAt: number;
+  logs?: {at:number;message:string}[];
   total: number; done: number; pending: SyncItem[]; failures: SyncItem[]; skipped?: number; paused?: boolean; manifestVersion?: number;
 };
 export const emptySync = (): SyncState => ({ startedAt: 0, lastSuccessAt: 0, finishedAt: 0, total: 0, done: 0, pending: [], failures: [] });
-export function syncAction(state: SyncState, now: number, retry: boolean) {
+export function syncAction(state: SyncState, now: number, retry: boolean, stage: SyncStage = "primary") {
   if (state.pending.length) return "continue";
-  if (!state.startedAt || now - state.startedAt >= SYNC_DAY) return "discover";
-  if (retry && state.failures.length && now - state.finishedAt >= SYNC_RETRY_DELAY) return "retry";
+  if (retry) return state.failures.length ? "retry" : "cached";
+  if (stage === "secondary" || !state.startedAt || now - state.startedAt >= SYNC_DAY) return "discover";
   return "cached";
 }
 // Count + first video are a fast change hint, not a content hash. Refresh all

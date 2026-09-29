@@ -594,6 +594,9 @@ export default function Room() {
   const [quietSync, setQuietSync] = useState(false);
   const [totalTracks, setTotalTracks] = useState<number | null>(null);
   const [fullLoading, setFullLoading] = useState(false);
+  const [syncStage, setSyncStage] = useState<"primary" | "secondary">("primary");
+  const [syncLogs,setSyncLogs] = useState<{at:number;message:string}[]>([]);
+  const [archiveRevision,setArchiveRevision] = useState(0);
   const [skipped, setSkipped] = useState(0);
   const tabRef = useRef(tab);
   tabRef.current = tab;
@@ -716,13 +719,15 @@ export default function Room() {
     void reload(true).catch(e=>setError(e.message)).finally(()=>setFullLoading(false));
   }, [tab, loading]);
   function acceptSync(data: any) {
+    setSyncStage(data.stage || "primary");
+    setSyncLogs(data.logs || []);
     setLastSync(data.lastSuccessAt || 0);
     setSkipped(data.skipped || 0);
     setNextSync(data.nextSyncAt || 0);
     setFailures((data.failures || []).map((p: any) => ({...p,message:p.error})));
     setProgress({ done:data.done, total:data.total, title:data.title || "채널 갱신 중" });
   }
-  async function synchronize(_force = false, retryOnly = false, quiet = false) {
+  async function synchronize(_force = false, retryOnly = false, quiet = false, stage: "primary" | "secondary" = "primary") {
     if (lock.current) return;
     lock.current = true;
     setSyncing(true);
@@ -732,7 +737,7 @@ export default function Room() {
     try {
       let steps = 0;
       while (true) {
-        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet});
+        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet,stage});
         if (run !== syncRun.current) break;
         acceptSync(data);
         if (data.waiting) {
@@ -742,7 +747,7 @@ export default function Room() {
         if (data.cached || !data.pending.length) {
           await reload();
           if (!quiet) setNotice(data.failures.length
-            ? `${data.failures.length}개 목록은 다시 확인이 필요해요. 기존 자료를 유지하며, 실패 목록은 완료 5분 후 재시도할 수 있어요.`
+            ? `${data.failures.length}개 목록은 다시 확인이 필요해요. 기존 자료는 유지됩니다. 실패 목록은 기다리지 않고 다시 시도할 수 있어요.`
             : data.cached ? "오늘의 동기화가 이미 완료되어 최신 저장 목록을 불러왔어요." : "채널 동기화를 마쳤어요.");
           break;
         }
@@ -1678,13 +1683,13 @@ export default function Room() {
             <PlaylistShareTool library={library.filter(p=>!p.summaryOnly)} />
           </TabsContent>
           <TabsContent value="random">
-            <RandomDiscovery library={library} adminKey={adminKey} />
+            <RandomDiscovery key={`discovery-${archiveRevision}`} library={library} adminKey={adminKey} />
           </TabsContent>
           <TabsContent value="bottle">
             <SongBottleLite />
           </TabsContent>
           <TabsContent value="asmr">
-            <ChannelTagExplorer initialTag="ASMR" adminKey={adminKey} />
+            <ChannelTagExplorer key={`channels-${archiveRevision}`} initialTag="ASMR" adminKey={adminKey} />
           </TabsContent>
           <TabsContent
             value="worldcup"
@@ -1828,7 +1833,7 @@ export default function Room() {
                 <div className="setting-icon">
                   <RefreshCw size={22} />
                 </div>
-                <h2>채널 전체 자동 가져오기</h2>
+                <h2>1차 자동 · 2차 수동 동기화</h2>
                 <a
                   className="source-link"
                   href="https://www.youtube.com/@soteria_room/playlists"
@@ -1838,8 +1843,7 @@ export default function Room() {
                   @soteria_room <ExternalLink size={14} />
                 </a>
                 <p>
-                  누구나 동기화할 수 있어요. 24시간이 지난 뒤 첫 방문에서 자동으로 갱신하며,
-                  같은 날에는 저장된 결과를 불러옵니다. 곡 수와 첫 곡이 같은 목록은 건너뛰며, 일주일마다 곡 전체를 다시 확인해요. 실패한 목록은 기존 내용을 유지합니다.
+                  1차는 월의 픽·My Recap·Kawaii Voice Playlist·기타 큐레이션을 하루 한 번 자동 갱신합니다. 2차는 202X.XX와 연간 수집 목록·A bundle of songs를 아래 버튼으로 선택했을 때만 가져옵니다. 저장된 기존 자료는 그대로 이용할 수 있어요.
                 </p>
                 <button
                   className="room-button"
@@ -1847,12 +1851,12 @@ export default function Room() {
                   onClick={() => void synchronize(true)}
                 >
                   <RefreshCw size={16} className={syncing ? "spin" : ""} />
-                  {syncing ? "채널 동기화 중…" : "지금 전체 동기화"}
+                  {syncing ? "동기화 중…" : "1차 큐레이션 동기화"}
                 </button>
                 <button
                   className="room-button subtle"
                   disabled={syncing || !failures.length}
-                  onClick={() => void synchronize(true, true)}
+                  onClick={() => void synchronize(true, true, false, syncStage)}
                 >
                   <RefreshCw
                     size={16}
@@ -1860,17 +1864,20 @@ export default function Room() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
+                <button className="room-button subtle" disabled={syncing} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화</button>
+                <div className="sync-stage-switch"><button disabled={syncing} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
+                <small>{syncStage === "primary" ? "1차 큐레이션" : "2차 월별·연간 수집"} 진행 기록</small>
                 <small>이번 확인에서 건너뛴 목록: {skipped}개</small>
-                <small>다음 갱신 가능: {nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "확인 중"}</small>
+                <small>{syncStage === "primary" ? `다음 자동 갱신: ${nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "첫 방문 시"}` : "2차는 수동으로만 실행합니다."}</small>
                 <small>
-                  마지막 전체 성공:{" "}
+                  선택 단계 마지막 성공:{" "}
                   {lastSync
                     ? new Date(lastSync).toLocaleString("ko-KR")
                     : "아직 없음"}
                 </small>
                 {progress.total > 0 && (
                   <small>
-                    채널에서 발견한 공개 재생목록 {progress.total}개
+                    선택 단계 {progress.done} / {progress.total}개
                   </small>
                 )}
               </section>
@@ -1908,6 +1915,7 @@ export default function Room() {
                 </form>
               </section>
             </div>
+            <details className="sync-log glass" open><summary>동기화 로그 · {syncStage === "primary" ? "1차" : "2차"} · 최근 12개</summary><div role="log">{syncLogs.length ? syncLogs.map((entry,i)=><p key={`${entry.at}-${i}`}><time>{new Date(entry.at).toLocaleTimeString("ko-KR")}</time> {entry.message}</p>) : <p>아직 기록이 없어요.</p>}</div></details>
             {failures.length > 0 && (
               <section className="settings-card glass">
                 <div className="section-title compact-title">
@@ -1915,7 +1923,7 @@ export default function Room() {
                   <button
                     className="room-button subtle"
                     disabled={syncing}
-                    onClick={() => void synchronize(true, true)}
+                    onClick={() => void synchronize(true, true, false, syncStage)}
                   >
                     <RefreshCw size={16} className={syncing ? "spin" : ""} />
                     실패 목록만 재시도
@@ -1930,9 +1938,9 @@ export default function Room() {
               </section>
             )}
             <section className="settings-card glass reset-library-card">
-              <h2>재생목록 DB 초기화</h2>
+              <h2>자료별 DB 초기화</h2>
               <p>저장된 재생목록과 표지, 동기화 기록을 비웁니다. JSON·CSV 채널 자료와 월드컵 기록, 곡추천 병은 유지돼요.</p>
-              <ResetDataButton target="library" label="재생목록 DB 초기화" adminKey={adminKey} onReset={afterLibraryReset} />
+              <div className="reset-button-group"><ResetDataButton target="library" label="재생목록 DB 초기화" adminKey={adminKey} onReset={afterLibraryReset} /><ResetDataButton target="json" label="JSON 초기화" adminKey={adminKey} onReset={()=>setArchiveRevision(v=>v+1)} /><ResetDataButton target="csv" label="CSV 초기화" adminKey={adminKey} onReset={()=>setArchiveRevision(v=>v+1)} /></div>
             </section>
             <div className="room-note">
               동기화는 누구나 이용하며, 수동 추가·삭제와 초기화는 관리자 전용입니다. 방문자가 링크를
