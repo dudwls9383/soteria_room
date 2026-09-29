@@ -1,3 +1,4 @@
+import fallbackData from "../../../lib/channel-tags-data";
 import { database } from "../../../db";
 import { body, ApiError, failure, requireAdmin } from "../../../lib/server";
 import { CSV_URL, parseSubscriptions } from "../../../lib/subscriptions";
@@ -16,10 +17,17 @@ export async function GET() {
         "SELECT channels,updated_at,source FROM subscription_snapshots WHERE id='main'",
       )
       .first<{ channels: string; updated_at: number; source: string }>();
+    // Reuse imported portraits by channel ID; never scrape thousands of channels
+    // just to render the subscription list. An empty JSON snapshot stays empty.
+    let metadata: Record<string,{avatar?:string|null}> = fallbackData.channels;
+    try {
+      const tags=await database().prepare("SELECT dataset FROM channel_tag_snapshots WHERE id='main'").first<{dataset:string}>();
+      if(tags) metadata=JSON.parse(tags.dataset).channels || {};
+    } catch { /* The optional JSON table may not exist on a new installation. */ }
     return Response.json(
       saved
         ? {
-            channels: JSON.parse(saved.channels),
+            channels: JSON.parse(saved.channels).map((c:any)=>({...c,avatar:metadata[c.id]?.avatar || c.avatar})),
             updatedAt: saved.updated_at,
             source: saved.source,
           }

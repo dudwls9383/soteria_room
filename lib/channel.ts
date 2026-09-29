@@ -64,7 +64,7 @@ export async function discoverChannel(): Promise<ChannelPlaylist[]> {
     signal: AbortSignal.timeout(25000),
   });
   if (!response.ok)
-    throw new Error("채널을 읽지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    throw new Error(`채널을 읽지 못했습니다 (HTTP ${response.status}). 잠시 후 다시 시도해 주세요.`);
   const html = await response.text();
   const data = parseInitialData(html);
   const selected = data.contents?.twoColumnBrowseResultsRenderer?.tabs?.find(
@@ -94,7 +94,7 @@ export async function discoverChannel(): Promise<ChannelPlaylist[]> {
         signal: AbortSignal.timeout(25000),
       },
     );
-    if (!next.ok) throw new Error("채널의 다음 목록을 읽지 못했습니다.");
+    if (!next.ok) throw new Error(`채널의 다음 목록을 읽지 못했습니다 (HTTP ${next.status}).`);
     const page = extractChannelPage(await next.json());
     items.push(...page.items);
     continuation = page.continuation;

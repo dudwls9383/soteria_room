@@ -595,6 +595,9 @@ export default function Room() {
   const [totalTracks, setTotalTracks] = useState<number | null>(null);
   const [fullLoading, setFullLoading] = useState(false);
   const [syncStage, setSyncStage] = useState<"primary" | "secondary">("primary");
+  const [stopping,setStopping] = useState(false);
+  const [syncPaused,setSyncPaused] = useState(false);
+  const [syncStopReason,setSyncStopReason] = useState("");
   const [syncLogs,setSyncLogs] = useState<{at:number;message:string}[]>([]);
   const [archiveRevision,setArchiveRevision] = useState(0);
   const [skipped, setSkipped] = useState(0);
@@ -720,6 +723,8 @@ export default function Room() {
   }, [tab, loading]);
   function acceptSync(data: any) {
     setSyncStage(data.stage || "primary");
+    setSyncPaused(!!data.paused);
+    setSyncStopReason(data.stopReason || "");
     setSyncLogs(data.logs || []);
     setLastSync(data.lastSuccessAt || 0);
     setSkipped(data.skipped || 0);
@@ -731,15 +736,17 @@ export default function Room() {
     if (lock.current) return;
     lock.current = true;
     setSyncing(true);
+    setSyncStage(stage);
     setQuietSync(quiet);
     const run = ++syncRun.current;
     if (!quiet) { setError(""); setNotice(""); }
     try {
       let steps = 0;
       while (true) {
-        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet,stage});
+        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet,stage,continuing:steps>0});
         if (run !== syncRun.current) break;
         acceptSync(data);
+        if (data.paused) { setNotice(data.stopReason || "동기화를 중단했어요."); await reload(); break; }
         if (data.waiting) {
           if (!quiet) setNotice("이미 서버에서 갱신 중이에요. 저장된 음악은 바로 이용할 수 있어요.");
           break;
@@ -754,7 +761,16 @@ export default function Room() {
         if (++steps % 10 === 0) await reload();
       }
     } catch (e) { if (!quiet) setError((e as Error).message); }
-    finally { lock.current = false; setSyncing(false); }
+    finally { if(run === syncRun.current) {lock.current = false; setSyncing(false);} }
+  }
+  async function stopSynchronization() {
+    setStopping(true);
+    ++syncRun.current;
+    try {
+      const data=await request("/api/sync",{action:"stop",stage:syncStage});
+      acceptSync(data); setNotice(data.stopReason); await reload();
+    } catch(e) {setError((e as Error).message);}
+    finally {lock.current=false;setSyncing(false);setStopping(false);}
   }
   async function unlockAdmin(key = adminDraft) {
     setAdminChecking(true);
@@ -1239,6 +1255,7 @@ export default function Room() {
                   : "채널 확인 중"}
                 <small>{progress.title}</small>
               </span>
+              <button className="room-button subtle" disabled={stopping} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
               {progress.total > 0 && (
                 <progress value={progress.done} max={progress.total} />
               )}
@@ -1512,7 +1529,7 @@ export default function Room() {
                     필요합니다.{" "}
                     <button
                       className="room-button subtle"
-                      disabled={syncing}
+                      disabled={syncing || stopping}
                       onClick={() => void synchronize()}
                     >
                       미수집 목록 가져오기
@@ -1847,7 +1864,7 @@ export default function Room() {
                 </p>
                 <button
                   className="room-button"
-                  disabled={syncing}
+                  disabled={syncing || stopping}
                   onClick={() => void synchronize(true)}
                 >
                   <RefreshCw size={16} className={syncing ? "spin" : ""} />
@@ -1864,9 +1881,11 @@ export default function Room() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
-                <button className="room-button subtle" disabled={syncing} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화</button>
-                <div className="sync-stage-switch"><button disabled={syncing} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
+                <button className="room-button subtle" disabled={syncing || stopping} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화</button>
+                <div className="sync-stage-switch"><button disabled={syncing || stopping} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing || stopping} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
                 <small>{syncStage === "primary" ? "1차 큐레이션" : "2차 월별·연간 수집"} 진행 기록</small>
+                <button className="room-button subtle" disabled={stopping || syncPaused} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
+                {syncStopReason && <small role="status">{syncStopReason}</small>}
                 <small>이번 확인에서 건너뛴 목록: {skipped}개</small>
                 <small>{syncStage === "primary" ? `다음 자동 갱신: ${nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "첫 방문 시"}` : "2차는 수동으로만 실행합니다."}</small>
                 <small>
@@ -1922,7 +1941,7 @@ export default function Room() {
                   <h2>다시 확인할 목록 · {failures.length}</h2>
                   <button
                     className="room-button subtle"
-                    disabled={syncing}
+                    disabled={syncing || stopping}
                     onClick={() => void synchronize(true, true, false, syncStage)}
                   >
                     <RefreshCw size={16} className={syncing ? "spin" : ""} />

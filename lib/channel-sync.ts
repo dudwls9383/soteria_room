@@ -5,7 +5,7 @@ import { readPlaylist } from "./youtube";
 import { ensureMeta } from "./playlist-meta";
 import { kindOf } from "./collections";
 import series from "./series.json";
-import { emptySync, syncAction, canSkipPlaylist, SYNC_DAY, SYNC_RETRY_DELAY, type SyncState, type SyncStage } from "./sync-policy";
+import { emptySync, syncAction, canSkipPlaylist, SYNC_DAY, SYNC_RETRY_DELAY, type SyncState, type SyncStage, isRateLimited } from "./sync-policy";
 
 export async function ensureSync() {
   await database().prepare("CREATE TABLE IF NOT EXISTS channel_sync (id TEXT PRIMARY KEY, state TEXT NOT NULL, owner TEXT, lease_until INTEGER NOT NULL DEFAULT 0)").run();
@@ -22,7 +22,7 @@ export async function syncStatus(stage: SyncStage = "primary") {
 
 // One request handles one playlist. The persisted queue survives closed tabs;
 // a D1 compare-and-set lease prevents different visitors doing the same work.
-export async function syncStep(retry: boolean, automatic = false, stage: SyncStage = "primary") {
+export async function syncStep(retry: boolean, automatic = false, stage: SyncStage = "primary", continuing = false) {
   await ensureSync();
   const db = database(), owner = crypto.randomUUID(), now = Date.now();
   const claim = await db.prepare(`UPDATE channel_sync SET owner=?,lease_until=? WHERE id='${stage}' AND lease_until<=?`)
@@ -31,8 +31,9 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
   const row = await db.prepare(`SELECT state FROM channel_sync WHERE id='${stage}'`).first<{state:string}>();
   const state: SyncState = JSON.parse(row!.state);
   try {
-    if (automatic && (state.paused || stage === "secondary")) return {...(await syncStatus(stage)),cached:true,busy:false};
+    if ((state.paused && (automatic || continuing)) || (automatic && stage === "secondary")) return {...(await syncStatus(stage)),cached:true,busy:false};
     state.paused = false;
+    state.stopReason = undefined;
     const action = state.pending.length && !state.manifestVersion ? "discover" : syncAction(state, now, retry, stage);
     if (action === "cached") return { ...(await syncStatus(stage)), cached: true, busy: false };
     if (action === "discover") {
@@ -73,6 +74,13 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
       }
     } catch (error) {
       playlist = undefined;
+      if (isRateLimited(error)) {
+        state.paused = true;
+        state.stopReason = "YouTube 요청 제한(HTTP 429)으로 중단했어요. 남은 목록은 보존되며 자동 재개하지 않습니다.";
+        state.logs = [...(state.logs || []),{at:Date.now(),message:state.stopReason}].slice(-12);
+        await db.prepare(`UPDATE channel_sync SET state=?,owner=NULL,lease_until=0 WHERE id='${stage}' AND owner=?`).bind(JSON.stringify(state),owner).run();
+        return {...(await syncStatus(stage)),title:item.title};
+      }
       state.failures.push({...item, error: error instanceof Error ? error.message : "다시 확인해 주세요."});
     }
     state.pending.shift();
@@ -95,12 +103,21 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
     return { ...(await syncStatus(stage)), title: item.title };
   } catch (error) {
     // Discovery failures are throttled too, without erasing a prior good library.
-    if (!state.pending.length) {
+    if (!state.pending.length || isRateLimited(error)) {
+      if (isRateLimited(error)) { state.paused=true; state.stopReason="YouTube 요청 제한(HTTP 429)으로 중단했어요. 자동 재개하지 않습니다."; state.logs=[...(state.logs || []),{at:Date.now(),message:state.stopReason}].slice(-12); }
       state.startedAt = now - SYNC_DAY + SYNC_RETRY_DELAY;
       await db.prepare(`UPDATE channel_sync SET state=? WHERE id='${stage}' AND owner=?`).bind(JSON.stringify(state),owner).run();
     }
+    if (isRateLimited(error)) return await syncStatus(stage);
     throw error;
   } finally {
     await db.prepare(`UPDATE channel_sync SET owner=NULL,lease_until=0 WHERE id='${stage}' AND owner=?`).bind(owner).run();
   }
+}
+
+// Revoking ownership prevents an already-running fetch from writing after stop.
+// The queue stays intact; only a fresh manual start may resume it.
+export async function stopSync() {
+  await ensureSync();
+  await database().prepare("UPDATE channel_sync SET state=json_set(state,'$.paused',json('true'),'$.stopReason',?),owner=NULL,lease_until=0 WHERE id IN ('primary','secondary')").bind("사용자가 동기화를 중단했어요. 남은 목록은 이어서 가져올 수 있어요.").run();
 }

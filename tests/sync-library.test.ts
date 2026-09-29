@@ -8,6 +8,19 @@ import { resetPlan } from "../lib/reset-plan.ts";
 import { DatabaseSync } from "node:sqlite";
 import { parseMeta } from "../lib/youtube-metadata.ts";
 import { extractChannelPage } from "../lib/channel.ts";
+import { isRateLimited } from "../lib/sync-policy.ts";
+import { readPlaylist } from "../lib/youtube.ts";
+
+test("YouTube 429 stays distinguishable so the queue can stop without retrying", async () => {
+  const original=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=async()=>{calls++;return new Response("limited",{status:429});};
+  try {
+    await assert.rejects(readPlaylist("PLtest123456789"),error=>isRateLimited(error));
+    assert.equal(calls,1);
+    assert.equal(isRateLimited(new Error("HTTP 403")),false);
+  } finally {globalThis.fetch=original;}
+});
 
 test("unchanged hints skip only fresh, fully identified playlists", () => {
   const now=20*SYNC_DAY, item={id:"a",title:"A",thumbnail:"",count:12,firstId:"first"};

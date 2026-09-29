@@ -212,7 +212,7 @@ export async function readPlaylist(
     );
     if (!next.ok)
       throw new Error(
-        "재생목록의 나머지 곡을 불러오지 못했어요. 다시 시도해 주세요.",
+        `재생목록의 나머지 곡을 불러오지 못했어요 (HTTP ${next.status}). 다시 시도해 주세요.`,
       );
     const part = extractTracks(await next.json());
     tracks.push(...part.tracks);

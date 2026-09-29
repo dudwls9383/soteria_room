@@ -5,6 +5,7 @@ export type SyncStage = "primary" | "secondary";
 export type SyncItem = { id: string; title: string; thumbnail: string; count?: number; firstId?: string; error?: string };
 export type SyncState = {
   startedAt: number; lastSuccessAt: number; finishedAt: number;
+  stopReason?: string;
   logs?: {at:number;message:string}[];
   total: number; done: number; pending: SyncItem[]; failures: SyncItem[]; skipped?: number; paused?: boolean; manifestVersion?: number;
 };
@@ -21,3 +22,5 @@ export function canSkipPlaylist(item: SyncItem, saved: {count:number;firstId:str
   return !!saved && item.count !== undefined && item.count === saved.count &&
     !!item.firstId && item.firstId === saved.firstId && now - saved.updatedAt < 7 * SYNC_DAY;
 }
+
+export function isRateLimited(error:unknown) { return error instanceof Error && /HTTP 429/.test(error.message); }
