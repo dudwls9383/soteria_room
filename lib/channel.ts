@@ -1,6 +1,11 @@
-import { parseInitialData } from "./youtube";
+import { parseInitialData } from "./youtube.ts";
 
-export type ChannelPlaylist = { id: string; title: string; thumbnail: string };
+export type ChannelPlaylist = { id: string; title: string; thumbnail: string; count?: number; firstId?: string };
+function videoCount(value: unknown): number | undefined {
+  const text = typeof value === "string" ? value : "";
+  const match = text.match(/^(?:동영상\s*)?([\d,]+)\s*(?:개|videos?)?$/i);
+  return match ? Number(match[1].replaceAll(",", "")) : undefined;
+}
 const headers = {
   "User-Agent": "Mozilla/5.0",
   "Accept-Language": "ko-KR,ko;q=0.9",
@@ -17,6 +22,8 @@ export function extractChannelPage(data: any) {
     if (r?.playlistId)
       items.push({
         id: r.playlistId,
+        count: videoCount(r.videoCount || r.videoCountText?.runs?.map((x:any)=>x.text).join("")),
+        firstId: r.navigationEndpoint?.watchEndpoint?.videoId,
         title:
           r.title?.simpleText ||
           r.title?.runs?.map((x: any) => x.text).join("") ||
@@ -29,6 +36,8 @@ export function extractChannelPage(data: any) {
     if (l?.contentType === "LOCKUP_CONTENT_TYPE_PLAYLIST" && l.contentId)
       items.push({
         id: l.contentId,
+        count: videoCount(l.contentImage?.collectionThumbnailViewModel?.primaryThumbnail?.thumbnailViewModel?.overlays?.flatMap((o:any) => o.thumbnailOverlayBadgeViewModel?.thumbnailBadges || []).map((b:any)=>b.thumbnailBadgeViewModel?.text).find(Boolean)),
+        firstId: l.rendererContext?.commandContext?.onTap?.innertubeCommand?.watchEndpoint?.videoId,
         title:
           l.metadata?.lockupMetadataViewModel?.title?.content || l.contentId,
         thumbnail:

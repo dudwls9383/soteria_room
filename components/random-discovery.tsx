@@ -18,6 +18,7 @@ import type { MusicRecord } from "../lib/music-index";
 import { scopes, sampleUnique, type Scope } from "../lib/collections";
 import { SHEET_URL, type Channel } from "../lib/subscriptions";
 import PickDiscovery from "./pick-discovery";
+import ResetDataButton from "./reset-data-button";
 type Snapshot = {
   channels: Channel[];
   updatedAt: number | null;
@@ -515,6 +516,7 @@ export default function RandomDiscovery({
               <a href={SHEET_URL} target="_blank" rel="noreferrer">
                 원본 시트 <ExternalLink size={14} />
               </a>
+              <ResetDataButton target="csv" label="CSV 초기화" adminKey={adminKey} disabled={busy} onReset={()=>{setSnapshot({channels:[],updatedAt:null,source:null});setChannels([]);setNotice("CSV 구독목록을 비웠어요.");}} />
             </div>
             <p className="room-note">
               관리 잠금이 열린 상태에서만 목록을 교체합니다. 채널 URL과

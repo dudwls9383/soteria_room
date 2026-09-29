@@ -3,6 +3,14 @@ import { env } from "cloudflare:workers";
 import { database } from "../../../db";
 import { readPlaylist, playlistId } from "../../../lib/youtube";
 import { ApiError, body, failure, requireAdmin } from "../../../lib/server";
+export async function GET(request: Request) {
+  try {
+    const id = new URL(request.url).searchParams.get("id") || "";
+    const saved = await database().prepare("SELECT id,title,tracks,updated_at FROM playlists WHERE id=?").bind(id).first<{id:string;title:string;tracks:string;updated_at:number}>();
+    if (!saved) throw new ApiError("저장된 재생목록이 없어요. 목록을 새로고침해 주세요.",404);
+    return Response.json({id:saved.id,title:saved.title,tracks:JSON.parse(saved.tracks),updatedAt:saved.updated_at}, {headers:{"Cache-Control":"no-store"}});
+  } catch (error) { return failure(error); }
+}
 export async function POST(request: Request) {
   try {
     requireAdmin(request);

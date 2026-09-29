@@ -2909,3 +2909,6 @@ body {
 }
 
 @media(max-width:700px) { .date-filters label { white-space:nowrap; gap:8px; } .date-filters select { min-width:0; } }
+
+.reset-library-card { margin-top:24px; }
+.reset-confirm-input { display:block; width:100%; padding:12px; margin-top:10px; border:1px solid #a6bcc8; border-radius:10px; font-size:16px; background:white; }

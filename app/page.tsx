@@ -52,7 +52,8 @@ import {
   yearOf,
   type Scope,
 } from "../lib/collections";
-import type { Playlist, Track } from "../lib/music";
+import { playlistCount, type Playlist, type Track } from "../lib/music";
+import ResetDataButton from "../components/reset-data-button";
 import { monthOf, searchLibrary } from "../lib/archive";
 import "./room.css";
 
@@ -590,6 +591,14 @@ export default function Room() {
   const [selected, setSelected] = useState<Saved | null>(null);
   const [playing, setPlaying] = useState<PlayableTrack | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [quietSync, setQuietSync] = useState(false);
+  const [totalTracks, setTotalTracks] = useState<number | null>(null);
+  const [fullLoading, setFullLoading] = useState(false);
+  const [skipped, setSkipped] = useState(0);
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const libraryRequest = useRef(0);
+  const syncRun = useRef(0);
   const [progress, setProgress] = useState({ done: 0, total: 0, title: "" });
   const [failures, setFailures] = useState<
     { id: string; title: string; message: string }[]
@@ -618,7 +627,7 @@ export default function Room() {
     libraryRef = useRef(library);
   libraryRef.current = library;
   const allTracks = useMemo(() => searchLibrary(library, ""), [library]);
-  const unique = { size: allTracks.length };
+  const unique = { size: totalTracks ?? allTracks.length };
   const tracks = useMemo(() => searchLibrary(
     library.filter((p) => inScope(p, searchScope)), query,
   ), [library, searchScope, query]);
@@ -690,19 +699,25 @@ export default function Room() {
   function acceptLibrary(data: any) {
     const playlists = data.version === 1 ? unpackLibrary(data) : data.playlists;
     setLibrary(playlists);
+    setTotalTracks(data.totalTracks ?? null);
     libraryRef.current = playlists;
     setLoading(false);
   }
-  async function reload() {
-    const response = await fetch("/api/library", {cache:"no-store"});
+  async function reload(full = ["search","extract"].includes(tabRef.current)) {
+    const requestId = ++libraryRequest.current;
+    const response = await fetch(full ? "/api/library" : "/api/library?summary=1", {cache:"no-store"});
     if (!response.ok) throw new Error("보관실을 불러오지 못했어요. 다시 시도해 주세요.");
-    const copy = response.clone();
-    acceptLibrary(await response.json());
-    // A public read-only snapshot gives returning visitors an immediate archive.
-    if ("caches" in window) void caches.open("soteria-library-v1").then(cache => cache.put("/api/library",copy)).catch(() => {});
+    const data = await response.json();
+    if (requestId === libraryRequest.current) acceptLibrary(data);
   }
+  useEffect(() => {
+    if (!["search","extract"].includes(tab) || !libraryRef.current.some(p=>p.summaryOnly)) return;
+    setFullLoading(true);
+    void reload(true).catch(e=>setError(e.message)).finally(()=>setFullLoading(false));
+  }, [tab, loading]);
   function acceptSync(data: any) {
     setLastSync(data.lastSuccessAt || 0);
+    setSkipped(data.skipped || 0);
     setNextSync(data.nextSyncAt || 0);
     setFailures((data.failures || []).map((p: any) => ({...p,message:p.error})));
     setProgress({ done:data.done, total:data.total, title:data.title || "채널 갱신 중" });
@@ -711,27 +726,29 @@ export default function Room() {
     if (lock.current) return;
     lock.current = true;
     setSyncing(true);
+    setQuietSync(quiet);
+    const run = ++syncRun.current;
     if (!quiet) { setError(""); setNotice(""); }
     try {
       let steps = 0;
       while (true) {
-        const data = await request("/api/sync", {retry:retryOnly});
+        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet});
+        if (run !== syncRun.current) break;
         acceptSync(data);
         if (data.waiting) {
-          if (!quiet) setNotice("다른 방문자가 동기화 중이에요. 완료되면 목록을 다시 불러옵니다.");
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue;
+          if (!quiet) setNotice("이미 서버에서 갱신 중이에요. 저장된 음악은 바로 이용할 수 있어요.");
+          break;
         }
         if (data.cached || !data.pending.length) {
           await reload();
-          if (!quiet || !data.cached) setNotice(data.failures.length
+          if (!quiet) setNotice(data.failures.length
             ? `${data.failures.length}개 목록은 다시 확인이 필요해요. 기존 자료를 유지하며, 실패 목록은 완료 5분 후 재시도할 수 있어요.`
             : data.cached ? "오늘의 동기화가 이미 완료되어 최신 저장 목록을 불러왔어요." : "채널 동기화를 마쳤어요.");
           break;
         }
         if (++steps % 10 === 0) await reload();
       }
-    } catch (e) { setError((e as Error).message); }
+    } catch (e) { if (!quiet) setError((e as Error).message); }
     finally { lock.current = false; setSyncing(false); }
   }
   async function unlockAdmin(key = adminDraft) {
@@ -759,17 +776,13 @@ export default function Room() {
     if (savedKey) void unlockAdmin(savedKey);
     void (async () => {
       try {
-        if ("caches" in window) {
-          const cached = await caches.open("soteria-library-v1").then(cache => cache.match("/api/library")).catch(() => undefined);
-          if (cached && active) acceptLibrary(await cached.json());
-        }
         await reload();
         const status = await request("/api/sync");
         if (!active) return;
         acceptSync(status);
         // Daily refresh is activity-based: start after content is visible and
         // resume a persisted unfinished run; never gate reading on YouTube.
-        if (status.pending.length || Date.now() >= status.nextSyncAt) void synchronize(false,false,true);
+        if (!status.busy && !status.paused && (status.pending.length || Date.now() >= status.nextSyncAt)) void synchronize(false,false,true);
       } catch (e) { if (active) setError((e as Error).message); }
       finally { if (active) setLoading(false); }
     })();
@@ -778,7 +791,7 @@ export default function Room() {
       void request("/api/sync").then(status => {
         if (!active) return;
         acceptSync(status);
-        if (status.pending.length || Date.now() >= status.nextSyncAt) void synchronize(false,false,true);
+        if (!status.busy && !status.paused && (status.pending.length || Date.now() >= status.nextSyncAt)) void synchronize(false,false,true);
       }).catch(() => {});
     }, 60 * 60 * 1000);
     return () => { active = false; clearInterval(timer); };
@@ -897,8 +910,24 @@ export default function Room() {
       setError("클립보드 권한을 확인해 주세요.");
     }
   }
-  function openPlaylist(p: Saved) {
+  async function openPlaylist(p: Saved) {
     setSelected(p);
+    if (!p.summaryOnly) return;
+    try {
+      const full = await request(`/api/playlist?id=${encodeURIComponent(p.id)}`);
+      setSelected(current => current?.id === p.id ? {...p,...full,summaryOnly:false,trackCount:full.tracks.length} : current);
+    } catch (e) { setError((e as Error).message); }
+  }
+  function coverUrl(p: Saved) { return `/api/playlist-cover?id=${encodeURIComponent(p.id)}`; }
+  async function afterLibraryReset() {
+    ++syncRun.current;
+    ++libraryRequest.current;
+    setSelected(null); setPlaying(null); setLibrary([]); setTotalTracks(0); setFailures([]);
+    setLastSync(0); setProgress({done:0,total:0,title:""}); setSkipped(0);
+    if ("caches" in window) await caches.delete("soteria-library-v1");
+    await reload();
+    acceptSync(await request("/api/sync"));
+    setNotice("재생목록 DB를 비웠어요. 다시 동기화 버튼을 누르면 가져옵니다.");
   }
   function playTrack(track?: PlayableTrack) {
     if (!track) return;
@@ -968,7 +997,7 @@ export default function Room() {
           >
             {(p.thumbnail || firstTrack) && (
               <img
-                src={p.thumbnail || firstTrack?.thumbnail}
+                src={coverUrl(p)}
                 alt=""
                 loading={i < 4 ? "eager" : "lazy"}
                 decoding="async"
@@ -979,7 +1008,7 @@ export default function Room() {
           </button>
           <span className="cover-count">
             <ListMusic size={14} />
-            {p.tracks.length}곡
+            {playlistCount(p)}곡
           </span>
           <button
             className="cover-open"
@@ -1013,7 +1042,7 @@ export default function Room() {
         <p>
           SOTERIA ROOM{" "}
           <span>
-            · {p.tracks.length}곡 ·{" "}
+            · {playlistCount(p)}곡 ·{" "}
             {p.views == null
               ? "조회수 미제공"
               : `${p.views.toLocaleString()}회 조회`}
@@ -1196,7 +1225,7 @@ export default function Room() {
               </button>
             </div>
           )}
-          {syncing && (
+          {syncing && (!quietSync || tab === "settings") && (
             <div className="sync-bar" role="status">
               <LoaderCircle size={16} className="spin" />
               <span>
@@ -1233,7 +1262,7 @@ export default function Room() {
                       <img
                         className="featured-backdrop"
                         src={
-                          featured?.thumbnail || featured?.tracks[0]?.thumbnail
+                          featured ? coverUrl(featured) : undefined
                         }
                         alt=""
                         onError={(e) => {
@@ -1253,7 +1282,7 @@ export default function Room() {
                       </h2>
                       <p>
                         {featured
-                          ? `${featured.tracks.length}곡 · SOTERIA ROOM`
+                          ? `${playlistCount(featured)}곡 · SOTERIA ROOM`
                           : loading ? "저장된 재생목록과 곡 정보를 불러오는 중이에요." : "채널에서 재생목록을 가져오면 이곳에 펼쳐져요."}
                       </p>
                       <div className="featured-actions">
@@ -1613,11 +1642,11 @@ export default function Room() {
             </label>
             <div className="section-title">
               <h2>
-                검색 결과<span>{loading ? "불러오는 중…" : `${tracks.length}곡`}</span>
+                검색 결과<span>{loading || fullLoading || library.some(p=>p.summaryOnly) ? "불러오는 중…" : `${tracks.length}곡`}</span>
               </h2>
               <button
                 className="room-button subtle"
-                disabled={!tracks.length}
+                disabled={!tracks.length || fullLoading || library.some(p=>p.summaryOnly)}
                 onClick={() => void copyLinks(tracks)}
               >
                 <Copy size={16} />
@@ -1626,7 +1655,7 @@ export default function Room() {
             </div>
             {playerPanel()}
             <div className="track-list glass">
-              {tracks.slice(0, 200).map((t, i) => trackRow(t, i, "search"))}
+              {fullLoading || library.some(p=>p.summaryOnly) ? <p role="status">검색할 곡 정보를 불러오는 중…</p> : tracks.slice(0, 200).map((t, i) => trackRow(t, i, "search"))}
               {!loading && !tracks.length && (
                 <div className="room-empty">
                   <Search size={30} />
@@ -1646,7 +1675,7 @@ export default function Room() {
             )}
           </TabsContent>
           <TabsContent value="extract">
-            <PlaylistShareTool library={library} />
+            <PlaylistShareTool library={library.filter(p=>!p.summaryOnly)} />
           </TabsContent>
           <TabsContent value="random">
             <RandomDiscovery library={library} adminKey={adminKey} />
@@ -1810,7 +1839,7 @@ export default function Room() {
                 </a>
                 <p>
                   누구나 동기화할 수 있어요. 24시간이 지난 뒤 첫 방문에서 자동으로 갱신하며,
-                  같은 날에는 저장된 결과를 불러옵니다. 실패한 목록은 기존 내용을 유지해요.
+                  같은 날에는 저장된 결과를 불러옵니다. 곡 수와 첫 곡이 같은 목록은 건너뛰며, 일주일마다 곡 전체를 다시 확인해요. 실패한 목록은 기존 내용을 유지합니다.
                 </p>
                 <button
                   className="room-button"
@@ -1831,6 +1860,7 @@ export default function Room() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
+                <small>이번 확인에서 건너뛴 목록: {skipped}개</small>
                 <small>다음 갱신 가능: {nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "확인 중"}</small>
                 <small>
                   마지막 전체 성공:{" "}
@@ -1899,8 +1929,13 @@ export default function Room() {
                 ))}
               </section>
             )}
+            <section className="settings-card glass reset-library-card">
+              <h2>재생목록 DB 초기화</h2>
+              <p>저장된 재생목록과 표지, 동기화 기록을 비웁니다. JSON·CSV 채널 자료와 월드컵 기록, 곡추천 병은 유지돼요.</p>
+              <ResetDataButton target="library" label="재생목록 DB 초기화" adminKey={adminKey} onReset={afterLibraryReset} />
+            </section>
             <div className="room-note">
-              보관실 동기화와 수동 추가·삭제는 관리자 전용입니다. 방문자가 링크를
+              동기화는 누구나 이용하며, 수동 추가·삭제와 초기화는 관리자 전용입니다. 방문자가 링크를
               넣어 쓰는 기능은 저장하지 않고 그 자리에서만 사용합니다.
             </div>
           </TabsContent>
@@ -1937,6 +1972,7 @@ export default function Room() {
                 </a>
                 <button
                   className="room-button subtle"
+                  disabled={selected.summaryOnly}
                   onClick={() => {
                     setCupPlaylist(selected);
                     navigate("worldcup");
@@ -1959,11 +1995,11 @@ export default function Room() {
                   <Trash2 size={16} />
                   보관실에서 삭제
                 </button>
-                <span>{selected.tracks.length}곡</span>
+                <span>{playlistCount(selected)}곡</span>
               </div>
               {playerPanel()}
               <div className="detail-tracks">
-                {selected.tracks.map((t, i) => trackRow(t, i, "detail"))}
+                {selected.summaryOnly ? <p role="status">곡 목록을 불러오는 중…</p> : selected.tracks.map((t, i) => trackRow(t, i, "detail"))}
               </div>
             </section>
           )}

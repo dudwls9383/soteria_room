@@ -1,5 +1,6 @@
 export type Track = { id: string; title: string; artist: string; thumbnail: string };
-export type Playlist = { id: string; title: string; tracks: Track[]; warning?: string; thumbnail?: string; views?: number | null };
+export type Playlist = { id: string; title: string; tracks: Track[]; trackCount?: number; summaryOnly?: boolean; warning?: string; thumbnail?: string; views?: number | null };
+export function playlistCount(p: Playlist) { return p.trackCount ?? p.tracks.length; }
 export const DEMO: Playlist = { id: "demo", title: "한 번쯤 들어본 그 노래", tracks: [
   ["gdZLi9oWNZg", "Dynamite", "BTS"], ["phuiiNCxRMg", "Supernova", "aespa"],
   ["kOHB85vDuow", "FANCY", "TWICE"], ["V9PVRfjEBTI", "BIRDS OF A FEATHER", "Billie Eilish"],

@@ -51,7 +51,7 @@ export function comparePlaylists(
   }
   if (sort === "count")
     return (
-      sign * (a.tracks.length - b.tracks.length) ||
+      sign * ((a.trackCount ?? a.tracks.length) - (b.trackCount ?? b.tracks.length)) ||
       a.title.localeCompare(b.title)
     );
   if (sort === "updated")

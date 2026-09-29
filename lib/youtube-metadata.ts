@@ -1,8 +1,11 @@
 // 재생목록 자체의 커스텀 표지와 조회수만 읽습니다. 개별 영상 통계는 섞지 않습니다.
 export function parseMeta(data: any) {
-  const thumbnail =
-    data.microformat?.microformatDataRenderer?.thumbnail?.thumbnails?.at(-1)
-      ?.url || "";
+  const candidates = [
+    data.header?.pageHeaderRenderer?.content?.pageHeaderViewModel?.heroImage?.contentPreviewImageViewModel?.image?.sources?.at(-1)?.url,
+    data.microformat?.microformatDataRenderer?.thumbnail?.thumbnails?.at(-1)?.url,
+    data.sidebar?.playlistSidebarRenderer?.items?.[0]?.playlistSidebarPrimaryInfoRenderer?.thumbnailRenderer?.playlistVideoThumbnailRenderer?.thumbnail?.thumbnails?.at(-1)?.url,
+  ].filter((url): url is string => typeof url === "string" && !!url);
+  const thumbnail = candidates.find(url => url.includes("/pl_c/")) || candidates[0] || "";
   let views: number | null = null;
   function walk(value: any) {
     if (typeof value === "string") {

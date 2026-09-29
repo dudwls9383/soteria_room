@@ -7,6 +7,6 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const input = await body(request, 1000);
-    return Response.json(await syncStep(input.retry === true), {headers:{"Cache-Control":"no-store"}});
+    return Response.json(await syncStep(input.retry === true, input.automatic === true), {headers:{"Cache-Control":"no-store"}});
   } catch (error) { return failure(error); }
 }
