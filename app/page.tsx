@@ -1881,7 +1881,7 @@ export default function Room() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
-                <button className="room-button subtle" disabled={syncing || stopping} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화</button>
+                <button className="room-button subtle" disabled={syncing || stopping} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화 (대용량)</button>
                 <div className="sync-stage-switch"><button disabled={syncing || stopping} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing || stopping} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
                 <small>{syncStage === "primary" ? "1차 큐레이션" : "2차 월별·연간 수집"} 진행 기록</small>
                 <button className="room-button subtle" disabled={stopping || syncPaused} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
