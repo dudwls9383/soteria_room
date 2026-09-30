@@ -16,8 +16,10 @@ export function subscriberNumber(value:unknown):number|null {
   return Number.isSafeInteger(number) && number>=0 ? number : null;
 }
 export function matchesBand(count:number|null, band:string) {
+  if(band === "everything") return true;
   if(band === "unknown") return count === null;
   if(count === null) return false;
+  if(band === "10000plus") return count >= 10000;
   if(band === "all") return count < 10000;
   const selected=subscriberBands.find(b=>b.id === band);
   return !!selected && count>=selected.min && count<selected.max;

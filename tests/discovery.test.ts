@@ -22,6 +22,11 @@ test("subscriber boundaries have no overlap; unknown is not zero",()=>{
     assert.equal(matchesBand(count,"all"),true);
   }
   assert.equal(matchesBand(10000,"all"),false);
+  assert.equal(matchesBand(9999,"10000plus"),false);
+  assert.equal(matchesBand(10000,"10000plus"),true);
+  assert.equal(matchesBand(1000000,"10000plus"),true);
+  assert.equal(matchesBand(null,"10000plus"),false);
+  for(const value of [null,0,9999,10000,1000000]) assert.equal(matchesBand(value,"everything"),true);
   assert.equal(matchesBand(null,"0"),false);
   assert.equal(matchesBand(null,"unknown"),true);
   assert.equal(subscriberNumber("0"),0);
