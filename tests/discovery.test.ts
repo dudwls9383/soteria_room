@@ -15,6 +15,25 @@ import {
 } from "../lib/subscriptions.ts";
 import { parseMeta } from "../lib/youtube-metadata.ts";
 import { buildMusicIndex, filterMusicIndex } from "../lib/music-index.ts";
+import { matchesBand, subscriberBands, subscriberNumber, officialSubscriberCount } from "../lib/small-channels.ts";
+test("subscriber boundaries have no overlap; unknown is not zero",()=>{
+  for(const count of [0,99,100,499,500,999,1000,1999,2000,4999,5000,9999]) {
+    assert.equal(subscriberBands.filter(b=>matchesBand(count,b.id)).length,1);
+    assert.equal(matchesBand(count,"all"),true);
+  }
+  assert.equal(matchesBand(10000,"all"),false);
+  assert.equal(matchesBand(null,"0"),false);
+  assert.equal(matchesBand(null,"unknown"),true);
+  assert.equal(subscriberNumber("0"),0);
+  assert.equal(subscriberNumber("1,234"),1234);
+  for(const invalid of [null,undefined,"","hidden","1.2K",-1,NaN]) assert.equal(subscriberNumber(invalid),null);
+});
+test("official private or missing subscriber counts remain unknown",()=>{
+  assert.equal(officialSubscriberCount({statistics:{hiddenSubscriberCount:true,subscriberCount:"0"}}),null);
+  assert.equal(officialSubscriberCount(undefined),null);
+  assert.equal(officialSubscriberCount({statistics:{subscriberCount:"0"}}),0);
+  assert.equal(officialSubscriberCount({statistics:{subscriberCount:"9999"}}),9999);
+});
 const p = (title: string, views: number | null = null) => ({
   id: title,
   title,

@@ -39,6 +39,7 @@ import { unpackLibrary } from "../lib/library-wire";
 import { reconcileTranslation, type TranslationRecord } from "../lib/live-translation";
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
+import SmallChannelDiscovery from "../components/small-channel-discovery";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
@@ -90,6 +91,7 @@ const uiDictionary: Record<
     "디깅": "Digging",
     "곡추천 병": "Song bottle",
     "채널 보관실": "Channel archive",
+    "하꼬 추천": "Small channels",
     "음악 월드컵": "Music World Cup",
     "블로그 포스트": "Blog posts",
     "소무니아 갤러리": "Somunia Gallery",
@@ -254,6 +256,7 @@ const uiDictionary: Record<
     "디깅": "ディグ",
     "곡추천 병": "曲おすすめボトル",
     "채널 보관실": "チャンネル保管庫",
+    "하꼬 추천": "小さなチャンネル発見",
     "음악 월드컵": "音楽ワールドカップ",
     "블로그 포스트": "ブログ記事",
     "소무니아 갤러리": "ソムニアギャラリー",
@@ -541,6 +544,7 @@ const modules = [
   { id: "search", name: "유튜브 재생목록 검색기", icon: Search, group: "작은 프로젝트" },
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
+  { id: "small", name: "하꼬 추천", icon: Sparkles },
   { id: "asmr", name: "채널 보관실", icon: Headphones },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결된 공간" },
@@ -1705,6 +1709,7 @@ export default function Room() {
           <TabsContent value="bottle">
             <SongBottleLite />
           </TabsContent>
+          <TabsContent value="small"><SmallChannelDiscovery key={`small-${archiveRevision}`} adminKey={adminKey} language={language} /></TabsContent>
           <TabsContent value="asmr">
             <ChannelTagExplorer key={`channels-${archiveRevision}`} initialTag="ASMR" adminKey={adminKey} />
           </TabsContent>
