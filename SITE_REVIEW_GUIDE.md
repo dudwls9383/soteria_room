@@ -1,0 +1,76 @@
+# SOTERIA ROOM — 외부 검토용 사이트 설명
+
+갱신일: 2026-10-01 (한국 시간)
+
+이 문서는 공개 사이트를 직접 열 수 없는 브라우저·LLM에서도 기능과 구현을 검토할 수 있도록 만든 정적 설명입니다. 실시간 DB의 목록·구독자 수·동기화 상태를 내보낸 자료가 아닙니다. 구현 여부는 아래 소스 링크로 확인할 수 있습니다. 디자인과 실제 클릭 동작은 사이트 화면 또는 사용자가 제공하는 스크린샷으로 별도 확인해야 합니다.
+
+- 사이트: https://soteria-room.workspace-304435.chatgpt.site
+- 소스: https://github.com/dudwls9383/soteria_room
+- 이 문서의 원문: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/SITE_REVIEW_GUIDE.md
+- README 원문: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/README.md
+
+## 목적과 디자인
+
+운영자 SOTERIA ROOM의 공개 YouTube 재생목록, 구독 채널, 블로그·커뮤니티 글을 하나의 음악 탐색 공간으로 연결합니다. 한국어 UI와 영어·일본어 UI를 제공하며 곡명·채널명은 원문을 유지합니다. 밝은 색과 반투명 패널을 사용하고, 모바일에서는 메뉴를 접어 화면 공간을 확보합니다. 음악은 YouTube 임베드로 재생하며 음원 파일을 자체 저장하거나 전송하지 않습니다.
+
+## 탭 순서와 역할
+
+| 탭 | 주요 역할 |
+| --- | --- |
+| 재생목록 픽 | 월의 픽·큐레이션 중심 목록, 정렬·필터, 작은 재생 버튼 |
+| 월별 큐레이션 | 월별 픽과 대량 수집 목록을 구분하여 연도별 탐색 |
+| 디깅 | 접속 시 표시되는 조건별 Pick, 랜덤 곡, 랜덤 채널과 가벼운 전체보기 |
+| 마이 리캡 | My Recap 시리즈 |
+| 카와보 시리즈 | Kawaii Voice Playlist 시리즈 |
+| 유튜브 재생목록 검색기 | 저장된 곡과 소속 재생목록 검색, 범위 필터 |
+| 재생목록 링크 추출기 | 입력한 공개 재생목록 링크에서 공유용 텍스트 생성 |
+| 음악 월드컵 | 재생목록 기반 선택 대결, YouTube 재생, 우승곡·랭킹 |
+| 하꼬 추천 | 구독자 구간·태그·이름 검색, 랜덤 12개와 전체보기 |
+| 채널 보관실 | JSON의 태그별 채널을 앨범형 목록으로 탐색 |
+| 곡추천 병 | 곡 링크와 짧은 메모를 남기는 가벼운 추천 공간 |
+| 블로그·갤러리 | 원문으로 연결하는 글 목록 |
+| 가져오기·동기화 | 단계별 수집·재시도·중단, 관리자 잠금과 자료별 초기화 |
+
+## 하꼬 추천과 채널 자료
+
+CSV 구독목록이 저장돼 있으면 이를 기준 목록으로 사용합니다. JSON의 채널 ID를 비교해 사진·태그·구독자 수를 보충하며, 공식 API로 수집한 수치가 있으면 그 수치를 사용합니다. CSV 저장본이 없으면 JSON 채널목록을 기준으로 사용합니다.
+
+구간은 전체 채널, 1만 명 미만 전체, 0–99, 100–499, 500–999, 1,000–1,999, 2,000–4,999, 5,000–9,999, 1만 명 이상, 미확인입니다. 전체 채널에는 미확인도 포함됩니다. 미확인을 0명으로 취급하지 않습니다. 60개씩 표시하며 태그·검색 조건 안에서 랜덤 추천할 수 있습니다.
+
+공식 API 키는 서버의 비밀 환경변수에 등록됐습니다. 관리자가 갱신을 실행하면 7일 이상 지난 채널을 요청당 최대 50개씩 처리해 DB에 저장합니다. 방문 시 자동으로 채널 통계를 갱신하지 않습니다. 키 연결과 단일 채널 조회는 확인됐으나, 이 문서는 전체 채널 갱신 완료를 증명하지 않습니다.
+
+## 동기화와 성능
+
+- 1차 자동: 월의 픽, My Recap, Kawaii Voice, 기타 큐레이션. 방문 시 하루 한 번 갱신합니다.
+- 2차 수동: 202X.XX, 연간 수집, A bundle of songs 등 대용량 목록. 버튼을 눌렀을 때 수집합니다.
+- 곡 수·첫 곡이 같고 최근 수집한 목록은 건너뜁니다. 같은 개수의 중간 곡 변경을 놓칠 수 있어 7일 이후에는 다시 수집합니다.
+- 중단은 대기열을 보존하고 실행 중인 요청의 저장 권한을 회수합니다. 이미 전송한 외부 요청이 즉시 취소되는 것은 아닙니다.
+- HTTP 429 감지 시 남은 목록 요청을 멈추고 자동 재개하지 않습니다.
+- 최근 12개 로그를 표시하고 실패 목록은 접이식 스크롤 영역에 표시합니다.
+- 첫 화면은 목록 요약을 읽으며, 전체 곡 정보는 검색 또는 개별 목록을 열 때 읽습니다.
+- 커스텀 표지 주소가 만료되면 갱신을 시도합니다. 표지 갱신과 채널 목록 발견에는 현재 공개 YouTube 페이지를 읽는 경로도 남아 있습니다.
+
+## 권한과 초기화
+
+일반 사용자는 저장된 음악 탐색과 고정 운영자 채널 동기화를 사용할 수 있습니다. 재생목록 직접 저장·삭제, JSON·CSV 교체·초기화, 공식 구독자 수 갱신은 관리자 인증이 필요합니다. 재생목록 DB·JSON·CSV 초기화는 개별 버튼이며 확인 문구를 입력해야 실행됩니다. 사용자 임시 재생목록은 링크 추출기·월드컵에서 일회성으로 사용합니다.
+
+## 핵심 소스 원문
+
+- 메인 화면과 탭: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/page.tsx
+- 디자인: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/room.css
+- 하꼬 추천 화면: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/small-channel-discovery.tsx
+- 구독자 구간: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/small-channels.ts
+- 채널 통계 갱신: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/api/small-channels/route.ts
+- 동기화: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/channel-sync.ts
+- 채널 목록 발견: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/channel.ts
+- 재생목록 읽기: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/youtube.ts
+- 추천 음악 인덱스: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/music-index.ts
+
+## 검토할 개선 후보
+
+1. 채널 목록 발견과 커스텀 표지 갱신도 공식 API로 전환해 HTML 읽기에서 발생하는 요청 제한을 줄이기.
+2. 영상의 공개·임베드 상태를 확인해 월드컵에서 재생 불가 후보를 분리하기. API 상태와 실제 재생 가능성은 구분하기.
+3. 영상별 조회수·업로드일·길이를 저장하여 저조회 곡, 오래된 업로드, 짧은 곡 등 조건을 추가하기. 업로드일을 곡 발매일로 표시하지 않기.
+4. 하꼬 추천에서 최신 수치 확인일·자료 범위와 갱신 진행률을 더 명확하게 보여주기.
+
+검토자는 구현된 기능, 제안 단계의 기능, 외부 서비스 때문에 확인할 수 없는 상태를 구분해 평가해 주세요.

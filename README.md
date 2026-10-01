@@ -3,6 +3,7 @@
 SOTERIA ROOM은 YouTube 재생목록을 중심으로 음악을 고르고, 찾고, 겨루고, 다시 듣기 위한 개인 음악 보관실입니다. 채널의 공개 재생목록을 가져와 월별 픽, 큐레이션, 리캡 시리즈, 카와이 보이스 시리즈로 정리하고, Pick과 랜덤 디깅, 음악 월드컵, 채널 보관실을 한 화면에서 사용할 수 있게 만들었습니다.
 
 - 공개 사이트: https://soteria-room.workspace-304435.chatgpt.site
+- 외부 LLM 검토용 설명: [SITE_REVIEW_GUIDE.md](./SITE_REVIEW_GUIDE.md) · [원문 읽기](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/SITE_REVIEW_GUIDE.md)
 - YouTube: https://www.youtube.com/@soteria_room
 - Blog: https://blog.naver.com/dudwls9383
 - Somunia Gallery: https://gall.dcinside.com/mgallery/board/lists/?id=somunia
