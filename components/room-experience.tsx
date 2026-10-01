@@ -11,11 +11,21 @@ export const useRoomAudio = () => useContext(AudioContext);
 export default function RoomExperience({children}:{children:ReactNode}) {
   const [queue,setQueue]=useState<Track[]>([]), [current,setCurrent]=useState<Track|null>(null);
   const [season,setSeason]=useState("auto"), [ambient,setAmbient]=useState("soft"), [intro,setIntro]=useState(false);
-  const [wide,setWide]=useState(false), [list,setList]=useState(false), [paused,setPaused]=useState(true);
+  const [theater,setTheater]=useState(false), [list,setList]=useState(false), [paused,setPaused]=useState(true);
   const [ready,setReady]=useState(false), [volume,setVolume]=useState(80);
   const [time,setTime]=useState(0), [duration,setDuration]=useState(0), [error,setError]=useState("");
   const mount=useRef<HTMLDivElement>(null), player=useRef<Player|null>(null), latest=useRef({queue,current});
   latest.current={queue,current};
+  // Full-room mode changes CSS only: the iframe stays mounted and keeps playing.
+  useEffect(()=>{
+    if(!theater)return;
+    const old=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    const escape=(e:KeyboardEvent)=>{if(e.key==="Escape")setTheater(false);};
+    window.addEventListener("keydown",escape);
+    return()=>{document.body.style.overflow=old;window.removeEventListener("keydown",escape);};
+  },[theater]);
+  useEffect(()=>{if(!current&&!queue.length)setTheater(false);},[current,queue.length]);
   function add(tracks:Track[]) { setQueue(old=>{ const ids=new Set(old.map(t=>t.id)); return [...old,...tracks.filter(t=>!ids.has(t.id)&&!!ids.add(t.id))]; }); setList(true); }
   function play(track:Track) { add([track]); setCurrent(track); setError(""); if(ready&&current?.id===track.id) player.current?.playVideo(); }
   function next(step=1) { const {queue:q,current:c}=latest.current; if(!q.length)return; const i=q.findIndex(t=>t.id===c?.id); const target=q[(i+step+q.length)%q.length]; if(target.id===c?.id){player.current?.seekTo(0,true);player.current?.playVideo();}else setCurrent(target); }
@@ -47,10 +57,10 @@ export default function RoomExperience({children}:{children:ReactNode}) {
   return <AudioContext.Provider value={{play,add,suspend:()=>{if(ready)player.current?.pauseVideo();}}}>
     {current&&ambient!=="off"&&<div className={`room-ambient ${ambient}`} key={current.id} aria-hidden="true" style={{backgroundImage:`url("${current.thumbnail}")`}}/>}
     {intro&&<div className="room-entrance" aria-hidden="true"><strong>SOTERIA ROOM</strong><span>▂ ▅ ▃ ▇ ▄</span></div>}
-    {children}
-    <div className="season-switch" aria-label="계절 테마">{[["auto","자동"],["spring","봄"],["summer","여름"],["autumn","가을"],["winter","겨울"]].map(([id,label])=><button key={id} aria-pressed={season===id} onClick={()=>setSeason(id)}>{label}</button>)}</div>
-    {(current||queue.length>0)&&<aside className={`listening-room glass ${wide?"expanded":""}`} aria-label="임시 듣기 목록">
-      <div className="listening-heading"><strong className="notranslate" translate="no">{current?.title||"임시 듣기 목록"}</strong><button onClick={()=>setWide(v=>!v)}>{wide?"작게":"넓게"}</button><button onClick={()=>setList(v=>!v)}>목록 {queue.length}</button><button aria-label="재생 종료" onClick={()=>{setCurrent(null);setError("");}}>×</button></div>
+    <div inert={theater}>{children}
+    <div className="season-switch" aria-label="계절 테마">{[["auto","자동"],["spring","봄"],["summer","여름"],["autumn","가을"],["winter","겨울"]].map(([id,label])=><button key={id} aria-pressed={season===id} onClick={()=>setSeason(id)}>{label}</button>)}</div></div>
+    {(current||queue.length>0)&&<aside className={`listening-room glass ${theater?"theater":""} ${list?"":"list-hidden"}`} role={theater?"dialog":undefined} aria-modal={theater?true:undefined} aria-label="임시 듣기 목록">
+      <div className="listening-heading"><strong className="notranslate" translate="no">{current?.title||"임시 듣기 목록"}</strong><button aria-pressed={theater} onClick={()=>{setTheater(v=>!v);setList(true);}}>{theater?"기본 모드":"전체 모드"}</button><button onClick={()=>setList(v=>!v)}>목록 {queue.length}</button><button aria-label="재생 종료" onClick={()=>{setCurrent(null);setTheater(false);setError("");}}>×</button></div>
       {current&&<div className="listening-body"><div className="listening-video"><div ref={mount}/></div><div className="listening-controls"><p className="notranslate" translate="no">{current.artist}</p><div><button onClick={()=>next(-1)}>이전</button><button disabled={!ready} onClick={()=>paused?player.current?.playVideo():player.current?.pauseVideo()}>{paused?"재생":"일시정지"}</button><button onClick={()=>next()}>다음</button><button onClick={()=>setQueue(q=>{const shuffled=[...q];for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}return shuffled;})}>셔플</button></div><label>진행 {clock(time)} / {clock(duration)}<input aria-label="재생 위치" type="range" min="0" max={duration||1} value={Math.min(time,duration||1)} disabled={!duration} onChange={e=>player.current?.seekTo(Number(e.target.value),true)}/></label><label>볼륨 <input aria-label="볼륨" type="range" min="0" max="100" value={volume} disabled={!ready} onChange={e=>{const v=Number(e.target.value);setVolume(v);player.current?.setVolume(v);}}/></label><label>앰비언트 <select value={ambient} onChange={e=>setAmbient(e.target.value)}><option value="off">끔</option><option value="soft">은은하게</option><option value="immersive">몰입</option></select></label><a href={`https://youtu.be/${current.id}`} target="_blank" rel="noreferrer">YouTube에서 듣기 ↗</a>{error&&<p role="alert">{error}</p>}</div></div>}
       {list&&<div className="listening-queue"><button onClick={()=>{setCurrent(null);setQueue([]);}}>목록 비우기</button><small>이 브라우저에서 잠깐 듣는 목록 · 새로고침하면 비워져요.</small>{queue.map((t,i)=><div key={t.id}><button aria-pressed={current?.id===t.id} className="notranslate" translate="no" onClick={()=>play(t)}>{i+1}. {t.title}</button><button disabled={i===0} aria-label={`${t.title} 위로`} onClick={()=>setQueue(q=>{const n=[...q];[n[i-1],n[i]]=[n[i],n[i-1]];return n;})}>↑</button><button disabled={i===queue.length-1} aria-label={`${t.title} 아래로`} onClick={()=>setQueue(q=>{const n=[...q];[n[i+1],n[i]]=[n[i],n[i+1]];return n;})}>↓</button><button aria-label={`${t.title} 목록에서 삭제`} onClick={()=>{setQueue(q=>q.filter(x=>x.id!==t.id));if(t.id===current?.id)setCurrent(queue.find(x=>x.id!==t.id)||null);}}>×</button></div>)}</div>}
     </aside>}

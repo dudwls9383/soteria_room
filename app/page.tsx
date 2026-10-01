@@ -79,6 +79,7 @@ const uiDictionary: Record<
   Record<string, string>
 > = {
   en: {
+    "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
     "계절 테마": "Season theme", "자동": "Auto", "봄": "Spring", "여름": "Summer", "가을": "Autumn", "겨울": "Winter",
     "임시 듣기 목록": "Listening queue", "듣기 목록에 모두 담기": "Add all to queue", "이 Pick을 듣기 목록에 담기": "Add these picks to queue", "이번 랜덤을 듣기 목록에 담기": "Add this selection to queue", "목록에 담기": "Add to queue",
     "넓게": "Expand", "작게": "Compact", "목록 비우기": "Clear queue", "재생 종료": "Stop playback", "이전": "Previous", "다음": "Next", "재생": "Play", "일시정지": "Pause", "셔플": "Shuffle", "볼륨": "Volume", "앰비언트": "Ambient", "끔": "Off", "은은하게": "Soft", "몰입": "Immersive",
@@ -248,6 +249,7 @@ const uiDictionary: Record<
       "Switched to Japanese UI. Song and playlist titles stay in the original language.",
   },
   ja: {
+    "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
     "계절 테마": "季節テーマ", "자동": "自動", "봄": "春", "여름": "夏", "가을": "秋", "겨울": "冬",
     "임시 듣기 목록": "再生キュー", "듣기 목록에 모두 담기": "すべてキューに追加", "이 Pick을 듣기 목록에 담기": "このPickをキューに追加", "이번 랜덤을 듣기 목록에 담기": "この選曲をキューに追加", "목록에 담기": "キューに追加",
     "넓게": "拡大", "작게": "コンパクト", "목록 비우기": "キューを空にする", "재생 종료": "再生を終了", "이전": "前へ", "다음": "次へ", "재생": "再生", "일시정지": "一時停止", "셔플": "シャッフル", "볼륨": "音量", "앰비언트": "アンビエント", "끔": "オフ", "은은하게": "控えめ", "몰입": "没入",
@@ -546,18 +548,18 @@ const pageCopy: Record<
 };
 // 새 기능은 이 목록과 아래 TabsContent를 추가하면 독립 탭으로 확장할 수 있습니다.
 const modules = [
-  { id: "pick", name: "재생목록 픽", icon: Sparkles, group: "음악 보관실" },
+  { id: "pick", name: "재생목록 픽", icon: Sparkles, group: "핵심" },
   { id: "archive", name: "월별 큐레이션", icon: CalendarDays },
   { id: "random", name: "디깅", icon: Shuffle },
   { id: "recap", name: "마이 리캡", icon: AudioLines },
   { id: "kawaii", name: "카와보 시리즈", icon: ListMusic },
-  { id: "search", name: "유튜브 재생목록 검색기", icon: Search, group: "작은 프로젝트" },
+  { id: "search", name: "유튜브 재생목록 검색기", icon: Search, group: "도구" },
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
-  { id: "small", name: "하꼬 추천", icon: Sparkles },
+  { id: "small", name: "하꼬 추천", icon: Sparkles, group: "탐색" },
   { id: "asmr", name: "채널 보관실", icon: Headphones },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
-  { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결된 공간" },
+  { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결" },
   { id: "somunia", name: "소무니아 갤러리", icon: MessageCircle },
   { id: "moesound", name: "카와이 보이스 갤러리", icon: MessageCircle },
   { id: "settings", name: "가져오기 · 동기화", icon: Settings2, group: "관리" },
