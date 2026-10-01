@@ -1,5 +1,7 @@
 /* Liquid Glass의 투명도·반사광·넓은 곡률을 CSS 변수로 조정할 수 있습니다. */
 :root {
+  --season-a: #b4d6e9;
+  --season-b: #b7dcd5;
   --room-ink: #203843;
   --room-muted: #5d727c;
   --room-blue: #216b88;
@@ -28,8 +30,8 @@ body:before {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse at 4% 10%, #b4d6e99c, transparent 48%),
-    radial-gradient(ellipse at 96% 32%, #b7dcd5a3, transparent 42%),
+    radial-gradient(ellipse at 4% 10%, var(--season-a), transparent 48%),
+    radial-gradient(ellipse at 96% 32%, var(--season-b), transparent 42%),
     radial-gradient(ellipse at 48% 100%, #c6cef594, transparent 50%),
     linear-gradient(125deg, #e5eef4, #f1f5f7 55%, #dce9f0);
 }
@@ -2922,3 +2924,4 @@ body {
 .sync-stage-switch{gap:6px}.sync-stage-switch button{flex:0 0 auto;width:auto;min-height:28px;padding:4px 9px;border-radius:9px;font-size:11px;line-height:1.4}
 
 .small-controls{padding:24px;margin-bottom:22px}.small-totals{font-size:26px;font-weight:600;margin:6px 0 18px}.small-totals span{opacity:.25;margin:0 10px}.small-bands{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}.small-bands button{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:14px;border:1px solid #c8dce9;background:#ffffff8c;color:#36536d;font-size:12px}.small-bands button[aria-pressed=true]{background:#d7edff;border-color:#7eaace;color:#163d66}.small-bands small{opacity:.6}.small-channel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}.small-channel-card{display:flex;align-items:flex-start;gap:12px;padding:16px;min-width:0;transition:background .2s}.small-channel-card:hover{background:#fff}.small-avatar{position:relative;flex-shrink:0;width:48px;height:48px;border-radius:50%;overflow:hidden;background:#e1edf8;display:grid;place-items:center}.small-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.small-channel-copy{flex:1;min-width:0}.small-channel-copy h3{font-size:14px;line-height:1.5;margin:0 0 5px;overflow-wrap:anywhere}.small-channel-copy strong{font-size:13px;color:#386d9b}.small-channel-copy p{font-size:10px;margin:5px 0;line-height:1.5}.small-channel-copy small{font-size:10px;opacity:.6}.small-update{padding:16px 20px;margin-top:20px;font-size:12px}.small-update summary{cursor:pointer}.small-update p{line-height:1.7}.small-update button{margin:6px 8px 0 0}.small-controls select,.small-controls input{min-height:36px;padding:8px;border:1px solid #cddde8;border-radius:10px;background:#ffffffaa}.small-controls input{width:100%}@media(max-width:600px){.small-controls{padding:16px}.small-channel-grid{grid-template-columns:1fr}.small-controls .control-row{flex-wrap:wrap}.small-controls .control-row .wide{min-width:100%}.small-bands button{flex:1 0 42%;justify-content:space-between}.small-totals{font-size:22px}}
+

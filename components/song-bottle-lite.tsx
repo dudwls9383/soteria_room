@@ -1,4 +1,5 @@
 "use client";
+import { useRoomAudio } from "./room-experience";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, X } from "lucide-react";
@@ -34,6 +35,7 @@ function shareLine(item: Recommendation) {
 }
 
 export default function SongBottleLite() {
+  const audio=useRoomAudio();
   const [items, setItems] = useState<Recommendation[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
@@ -93,51 +95,8 @@ export default function SongBottleLite() {
     window.setTimeout(() => setCopiedId(""), 1500);
   }
 
-  function playerPanel() {
-    const id = playing ? videoId(playing.url) : "";
-    if (!playing || !id) return null;
-    return (
-      <section className="room-player bottle-player glass">
-        <div className="room-player-frame">
-          <iframe
-            title={playing.title}
-            src={`https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
-        </div>
-        <div className="room-player-copy">
-          <span className="room-eyebrow">NOW PLAYING</span>
-          <h3 className="notranslate" translate="no">
-            {playing.title}
-          </h3>
-          {playing.artist && (
-            <p className="notranslate" translate="no">
-              {playing.artist}
-            </p>
-          )}
-          {playing.note && <small>{playing.note}</small>}
-          <div className="player-actions">
-            <a
-              className="room-button subtle"
-              href={playing.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              YouTube에서 듣기 <ExternalLink size={14} />
-            </a>
-            <button
-              className="icon-button"
-              aria-label="플레이어 닫기"
-              onClick={() => setPlaying(null)}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  function listen(item:Recommendation) { const id=videoId(item.url); if(id)audio.play({id,title:item.title,artist:item.artist,thumbnail:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}); }
+  function playerPanel(){return null;}
 
   return (
     <div>
@@ -241,7 +200,7 @@ export default function SongBottleLite() {
                   {id ? (
                     <button
                       className="bottle-cover"
-                      onClick={() => setPlaying(item)}
+                      onClick={() => listen(item)}
                       aria-label={`${item.title} 사이트에서 재생`}
                     >
                       <img
@@ -271,11 +230,11 @@ export default function SongBottleLite() {
                     )}
                     {item.note && <blockquote>{item.note}</blockquote>}
                     <div className="bottle-actions">
-                      {id && (
-                        <button onClick={() => setPlaying(item)}>
+                      {id && (<>
+                        <button onClick={() => {const id=videoId(item.url);if(id)audio.add([{id,title:item.title,artist:item.artist,thumbnail:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}]);}}>목록에 담기</button><button onClick={() => listen(item)}>
                           <Play size={12} />
                           재생
-                        </button>
+                        </button></>
                       )}
                       <a href={item.url} target="_blank" rel="noreferrer">
                         YouTube <ExternalLink size={12} />

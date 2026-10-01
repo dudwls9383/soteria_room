@@ -1,4 +1,5 @@
 "use client";
+import { useRoomAudio } from "./room-experience";
 import { useEffect, useState } from "react";
 import {
   Shuffle,
@@ -40,13 +41,15 @@ export default function RandomDiscovery({
   library: Playlist[];
   adminKey?: string;
 }) {
+  const audio=useRoomAudio();
   const [scope, setScope] = useState<Scope>("picks"),
     [year, setYear] = useState("all"),
     [month, setMonth] = useState("all"),
     [songQuery, setSongQuery] = useState(""),
     [count, setCount] = useState(10),
     [songs, setSongs] = useState<MusicRecord[]>([]),
-    [playing, setPlaying] = useState<MusicRecord | null>(null);
+    [playing, updatePlaying] = useState<MusicRecord | null>(null);
+  function setPlaying(t:MusicRecord|null){updatePlaying(t); if(t)audio.play(t);}
   const [musicSnapshot, setMusicSnapshot] = useState<MusicSnapshot>({
       total: 0,
       music: [],
@@ -315,58 +318,7 @@ export default function RandomDiscovery({
           </section>
           {songs.length > 0 && (
             <>
-              {playing && (
-                <section className="room-player glass">
-                  <div className="room-player-frame">
-                    <iframe
-                      title={playing.title}
-                      src={`https://www.youtube.com/embed/${playing.id}?autoplay=1&playsinline=1`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  </div>
-                  <div className="room-player-copy">
-                    <span className="room-eyebrow">NOW PLAYING</span>
-                    <h3 className="notranslate" translate="no">
-                      {playing.title}
-                    </h3>
-                    <p className="notranslate" translate="no">
-                      {playing.artist}
-                    </p>
-                    <small className="notranslate" translate="no">
-                      {playing.playlists.slice(0, 3).join(" / ")}
-                    </small>
-                    <div className="player-actions">
-                      <a
-                        className="room-button subtle"
-                        href={`https://youtu.be/${playing.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        YouTube에서 열기 <ExternalLink size={14} />
-                      </a>
-                      <button
-                        className="room-button subtle"
-                        onClick={() => {
-                          const index = songs.findIndex(
-                            (t) => t.id === playing.id,
-                          );
-                          setPlaying(songs[(index + 1) % songs.length]);
-                        }}
-                      >
-                        다음 곡 <SkipForward size={15} />
-                      </button>
-                      <button
-                        className="icon-button"
-                        aria-label="플레이어 닫기"
-                        onClick={() => setPlaying(null)}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </section>
-              )}
+<button className="room-button subtle" onClick={()=>audio.add(songs)}>이번 랜덤을 듣기 목록에 담기</button>
               <div className="section-title">
                 <h2>
                   이번 Pick<span>{songs.length}곡</span>

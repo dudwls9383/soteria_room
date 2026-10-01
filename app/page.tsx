@@ -1,4 +1,5 @@
 "use client";
+import RoomExperience, { useRoomAudio } from "../components/room-experience";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
@@ -57,6 +58,7 @@ import { playlistCount, type Playlist, type Track } from "../lib/music";
 import ResetDataButton from "../components/reset-data-button";
 import { monthOf, searchLibrary } from "../lib/archive";
 import "./room.css";
+import "./experience.css";
 
 type Saved = Playlist & { updatedAt: number };
 type PlayableTrack = Track & { playlists?: string[] };
@@ -77,6 +79,10 @@ const uiDictionary: Record<
   Record<string, string>
 > = {
   en: {
+    "계절 테마": "Season theme", "자동": "Auto", "봄": "Spring", "여름": "Summer", "가을": "Autumn", "겨울": "Winter",
+    "임시 듣기 목록": "Listening queue", "듣기 목록에 모두 담기": "Add all to queue", "이 Pick을 듣기 목록에 담기": "Add these picks to queue", "이번 랜덤을 듣기 목록에 담기": "Add this selection to queue", "목록에 담기": "Add to queue",
+    "넓게": "Expand", "작게": "Compact", "목록 비우기": "Clear queue", "재생 종료": "Stop playback", "이전": "Previous", "다음": "Next", "재생": "Play", "일시정지": "Pause", "셔플": "Shuffle", "볼륨": "Volume", "앰비언트": "Ambient", "끔": "Off", "은은하게": "Soft", "몰입": "Immersive",
+    "이 브라우저에서 잠깐 듣는 목록 · 새로고침하면 비워져요.": "A temporary queue in this browser. Reloading clears it.",
     "월별 큐레이션": "Monthly curation", "마이 리캡": "My Recap", "카와보 시리즈": "Kawaii Voice series", "전체 메뉴": "All sections",
     "내 공간": "My room",
     "음악 보관실": "Music archive",
@@ -242,6 +248,10 @@ const uiDictionary: Record<
       "Switched to Japanese UI. Song and playlist titles stay in the original language.",
   },
   ja: {
+    "계절 테마": "季節テーマ", "자동": "自動", "봄": "春", "여름": "夏", "가을": "秋", "겨울": "冬",
+    "임시 듣기 목록": "再生キュー", "듣기 목록에 모두 담기": "すべてキューに追加", "이 Pick을 듣기 목록에 담기": "このPickをキューに追加", "이번 랜덤을 듣기 목록에 담기": "この選曲をキューに追加", "목록에 담기": "キューに追加",
+    "넓게": "拡大", "작게": "コンパクト", "목록 비우기": "キューを空にする", "재생 종료": "再生を終了", "이전": "前へ", "다음": "次へ", "재생": "再生", "일시정지": "一時停止", "셔플": "シャッフル", "볼륨": "音量", "앰비언트": "アンビエント", "끔": "オフ", "은은하게": "控えめ", "몰입": "没入",
+    "이 브라우저에서 잠깐 듣는 목록 · 새로고침하면 비워져요.": "このブラウザだけの一時キューです。再読み込みすると消えます。",
     "월별 큐레이션": "月別キュレーション", "마이 리캡": "My Recap", "카와보 시리즈": "カワイイボイスシリーズ", "전체 메뉴": "メニュー",
     "내 공간": "マイルーム",
     "음악 보관실": "音楽アーカイブ",
@@ -583,7 +593,9 @@ async function request(
   return data;
 }
 // 제목에 명시된 월만 분류합니다. 수집 날짜를 발행 월로 오인하지 않도록 합니다.
-export default function Room() {
+export default function Room() { return <RoomExperience><RoomContent /></RoomExperience>; }
+function RoomContent() {
+  const audio = useRoomAudio();
   const [tab, setTab] = useState("pick"),
     [library, setLibrary] = useState<Saved[]>([]);
   const [loading, setLoading] = useState(true),
@@ -691,7 +703,7 @@ export default function Room() {
     setYear("all");
     setSelected(null);
     setPlaying(null);
-    if (id === "worldcup") setCupVisited(true);
+    if (id === "worldcup") { audio.suspend(); setCupVisited(true); }
     history.replaceState(null, "", `#${id}`);
   }
   function selectLanguage(nextLanguage: TranslateLanguage) {
@@ -956,54 +968,9 @@ export default function Room() {
   }
   function playTrack(track?: PlayableTrack) {
     if (!track) return;
-    setPlaying(track);
+    setPlaying(track); audio.play(track);
   }
-  function playerPanel() {
-    if (!playing) return null;
-    return (
-      <section className="room-player inline-context-player glass">
-        <div className="room-player-frame">
-          <iframe
-            title={playing.title}
-            src={`https://www.youtube.com/embed/${playing.id}?autoplay=1&playsinline=1`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
-        </div>
-        <div className="room-player-copy">
-          <span className="room-eyebrow">NOW PLAYING</span>
-          <h3 className="notranslate" translate="no">
-            {playing.title}
-          </h3>
-          <p className="notranslate" translate="no">
-            {playing.artist}
-          </p>
-          {playing.playlists?.length ? (
-            <small className="notranslate" translate="no">
-              {playing.playlists.slice(0, 3).join(" / ")}
-            </small>
-          ) : null}
-          <div className="player-actions">
-            <a
-              className="room-button subtle"
-              href={`https://youtu.be/${playing.id}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              YouTube에서 듣기 <ExternalLink size={14} />
-            </a>
-            <button
-              className="icon-button"
-              aria-label="플레이어 닫기"
-              onClick={() => setPlaying(null)}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  function playerPanel() { return null; }
   useEffect(() => {
     if (selected)
       document
@@ -1110,6 +1077,7 @@ export default function Room() {
         >
           <Play size={15} />
         </button>
+        <button className="track-inline-play" aria-label={`${t.title} 듣기 목록에 담기`} onClick={() => audio.add([t])}><Plus size={15} /></button>
         <a
           className="track-open"
           href={`https://youtu.be/${t.id}`}
@@ -1997,7 +1965,7 @@ export default function Room() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="detail-actions">
+              <div className="detail-actions"><button className="room-button subtle" disabled={selected.summaryOnly} onClick={()=>audio.add(selected.tracks)}>듣기 목록에 모두 담기</button>
                 <a
                   className="room-button"
                   href={`https://www.youtube.com/playlist?list=${selected.id}`}
