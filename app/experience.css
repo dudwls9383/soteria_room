@@ -110,3 +110,20 @@ body:has(.listening-room) .room-footer {padding-bottom:320px;}
 }
 
 .listening-heading > button[aria-controls="listening-queue"] { display:flex; align-items:center; gap:4px; }
+
+/* In-page PiP keeps the same visible YouTube iframe mounted at a usable size. */
+.player-settings-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.player-settings-heading > button { min-width:32px; min-height:32px; }
+.listening-room.mini-player { width:min(376px,calc(100% - 16px)); padding:8px; border-radius:18px; max-height:85dvh; }
+.mini-player .listening-heading { justify-content:flex-end; flex-wrap:nowrap; gap:5px; margin-bottom:7px; }
+.mini-player .listening-heading > strong { display:none; }
+.mini-player .listening-heading > button { display:flex; align-items:center; justify-content:center; gap:4px; min-height:30px; padding:5px 8px; font-size:12px; }
+.mini-player .listening-body { display:block; padding:0; }
+.mini-player .listening-video { width:100%; aspect-ratio:16/9; height:auto; min-height:200px; border-radius:12px; }
+.mini-player .listening-controls { margin:0; padding:0; display:block; }
+.mini-player .playback-progress, .mini-player .playback-row { display:none; }
+.mini-player .player-settings { position:static; width:100%; margin-top:8px; max-height:35dvh; overflow:auto; padding:12px; }
+.mini-player .listening-queue { max-height:180px; margin-top:8px; padding-top:8px; }
+.mini-player .listening-queue > div { align-items:center; }
+.mini-player .queue-track strong { font-size:12px; }
+.mini-player .queue-track small { font-size:11px; }

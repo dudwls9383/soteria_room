@@ -23,6 +23,8 @@ import {
   Settings2,
   ChevronDown,
   ChevronUp,
+  Minimize2,
+  Maximize2,
 } from "lucide-react";
 import { playbackError } from "../lib/video-facts";
 import type { Track } from "../lib/music";
@@ -62,6 +64,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
     [ambient, setAmbient] = useState("soft"),
     [intro, setIntro] = useState(false);
   const [theater, setTheater] = useState(false),
+    [mini, setMini] = useState(false),
     [list, setList] = useState(false),
     [paused, setPaused] = useState(true);
   const [ready, setReady] = useState(false),
@@ -333,7 +336,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
       )}
       {(current || queue.length > 0) && (
         <aside
-          className={`listening-room glass ${theater ? "theater" : ""} ${list ? "" : "list-hidden"}`}
+          className={`listening-room glass ${theater ? "theater" : ""} ${mini && !theater ? "mini-player" : ""} ${list ? "" : "list-hidden"}`}
           role={theater ? "dialog" : undefined}
           aria-modal={theater ? true : undefined}
           aria-label="임시 듣기 목록"
@@ -343,15 +346,25 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
               {current?.title || "임시 듣기 목록"}
             </strong>
             <button
+              aria-label={theater ? "기본 모드" : "전체 모드"}
               aria-pressed={theater}
               onClick={() => {
                 if (!current && queue[0]) play(queue[0]);
                 setTheater((v) => !v);
+                setMini(false);
                 setList(true);
               }}
             >
-              {theater ? "기본 모드" : "전체 모드"}
+              {mini ? <Maximize2 size={16}/> : theater ? "기본 모드" : "전체 모드"}
             </button>
+            {current && <button aria-label={mini ? "기본 모드" : "PiP 모드"}
+              title={mini ? "기본 모드" : "PiP 모드"} aria-pressed={mini}
+              onClick={() => {setMini(v => !v); setTheater(false); setList(false); setSettingsOpen(false);}}>
+              {mini ? <Maximize2 size={16}/> : <Minimize2 size={16}/>}
+              {!mini && <span>PiP</span>}
+            </button>}
+            {mini && <button aria-label="재생 설정" aria-expanded={settingsOpen}
+              onClick={()=>setSettingsOpen(v=>!v)}><Settings2 size={16}/></button>}
             <button aria-expanded={list} aria-controls="listening-queue"
               aria-label={list ? "듣기 목록 접기" : "듣기 목록 펼치기"}
               onClick={() => setList((v) => !v)}>
@@ -367,6 +380,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                 latest.current = { queue: [], current: null };
                 setList(false);
                 setTheater(false);
+                setMini(false);
                 setSettingsOpen(false);
                 setNotice("");
                 failed.current.clear();
@@ -516,6 +530,9 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                 </div>
                 {settingsOpen && (
                   <div className="player-settings glass">
+                    <div className="player-settings-heading"><strong>재생 설정</strong>
+                      <button aria-label="재생 설정 닫기" onClick={()=>setSettingsOpen(false)}>×</button>
+                    </div>
                     <label>
                       앰비언트
                       <select
