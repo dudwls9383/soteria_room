@@ -40,12 +40,11 @@ export default function PickDiscovery({adminKey=""}:{adminKey?:string}) {
     {error && <div className="room-message error" role="alert">{error} <button className="room-button subtle" onClick={() => setRequest({ section: "", nonce: String(Date.now()) })}>다시 시도</button></div>}
     {busy && !data && <p className="room-message" role="status">Pick을 불러오는 중…</p>}
     {data && <>
-      <div className="pick-period-controls glass control-row">
+      {data.sections.map(section => <div key={section.id}>{section.id === "quarter" && (<div className="pick-period-controls glass control-row">
         <label>연도<select value={year || data.year} disabled={busy || !data.years.length} onChange={e => { setYear(e.target.value); setRequest({ section: "", nonce: "" }); }}>{data.years.map(y => <option key={y}>{y}</option>)}</select></label>
         <label>분기<select value={quarter || String(data.quarter)} disabled={busy} onChange={e => { setQuarter(e.target.value); setRequest({ section: "", nonce: "" }); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}분기</option>)}</select></label>
         <p>분기별 Pick과 그해의 음악에 적용돼요.</p>
-      </div>
-      {data.sections.map(section => <div key={section.id}>{section.id === "archive" && <HiddenPick adminKey={adminKey} />}<section className="pick-shelf">
+      </div>)} {section.id === "archive" && <HiddenPick adminKey={adminKey} />}<section className="pick-shelf">
         <div className="pick-shelf-heading"><div><span className="room-eyebrow">{section.period || "—"} · {section.total.toLocaleString()}곡</span><h2>{section.id === "month" && data.fallback ? "최근 수집 월의 Pick" : titles[section.id]}</h2></div><button className="room-button subtle" disabled={busy || section.total <= section.music.length} onClick={() => setRequest({ section: section.id, nonce: String(Date.now()) })}><RefreshCw size={15} />다른 곡 보기</button></div>
         <button className="room-button subtle" disabled={!section.music.length} onClick={()=>audio.add(section.music)}>이 Pick을 듣기 목록에 담기</button><p className="pick-reason">{section.id === "archive" ? "가장 오래된 수집 연도에서 골랐어요. 발매연도 기준은 아니에요." : "표시된 기간의 재생목록에서 골랐어요."}</p>
         {!section.total ? <p className="room-message">이 기간에 수집한 음악이 아직 없어요.</p> : <div className="pick-album-grid">{section.music.map(track => <article className={`pick-album glass ${playing?.id === track.id ? "active" : ""}`} key={track.id}>

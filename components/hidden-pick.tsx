@@ -65,7 +65,7 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
               setPage(1);
             }}
           >
-            {[50, 100, 200, 500, 800, 1000, 5000, 10000, 50000, 100000].map(
+            {[100000, 50000, 10000, 5000, 1000, 800, 500, 200, 100, 50].map(
               (n) => (
                 <option value={n} key={n}>
                   {n.toLocaleString()}회 이하
@@ -89,23 +89,25 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
           </select>
         </label>
         <label>
-          게시연도
+          영상 업로드 연도
           <select
             value={before}
+            aria-describedby="hidden-upload-year-help"
             onChange={(e) => {
               setBefore(e.target.value);
               setPage(1);
             }}
           >
-            <option value="">전체</option>
+            <option value="">모든 업로드 연도</option>
             {[2025, 2023, 2020, 2015].map((y) => (
               <option value={y} key={y}>
-                {y}년 이전·포함
+                {y}년까지
               </option>
             ))}
           </select>
         </label>
       </div>
+      <p className="pick-reason" id="hidden-upload-year-help">영상이 YouTube에 올라온 연도로 찾습니다. ‘2025년까지’는 2025년과 그 이전 영상이며, 곡의 발매연도와는 달라요.</p>
       {adminKey&&<button className="room-button subtle" disabled={updating} onClick={()=>void updateViews()}>{updating?"조회수 확인 중…":"월의 픽 조회수 갱신 · 50곡"}</button>}
       {updateNote&&<p role="status">{updateNote}</p>}
       {busy && <p role="status">숨은 곡을 찾는 중…</p>}
