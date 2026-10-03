@@ -1,5 +1,6 @@
 "use client";
 import RoomExperience, { useRoomAudio } from "../components/room-experience";
+import { useAutoDismissMessage } from "../components/use-auto-dismiss-message";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
@@ -665,8 +666,8 @@ function RoomContent() {
   const [tab, setTab] = useState("pick"),
     [library, setLibrary] = useState<Saved[]>([]);
   const [loading, setLoading] = useState(true),
-    [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [error, setError] = useAutoDismissMessage(),
+    [notice, setNotice] = useAutoDismissMessage();
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all"),
     [sort, setSort] = useState("month");
