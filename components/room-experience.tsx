@@ -392,9 +392,6 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                       <p className="notranslate" translate="no">
                         {current.artist}
                       </p>
-                      <small>
-                        음악 카드 · 영상은 작은 재생기에서 계속 재생됩니다.
-                      </small>
                     </div>
                   )}
                   <div className="listening-video">
@@ -614,7 +611,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                       )}
                     </span>
                   </button>
-                  <button
+                  <div className="queue-actions"><button
                     disabled={i === 0}
                     aria-label={`${t.title} 위로`}
                     onClick={() =>
@@ -651,6 +648,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                   >
                     ×
                   </button>
+                  </div>
                 </div>
               ))}
             </div>

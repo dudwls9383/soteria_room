@@ -758,7 +758,7 @@ function RoomContent() {
     setYear("all");
     setSelected(null);
     setPlaying(null);
-    if (id === "worldcup") { audio.suspend(); setCupVisited(true); }
+    if (id === "worldcup") setCupVisited(true);
     history.replaceState(null, "", `#${id}`);
   }
   function selectLanguage(nextLanguage: TranslateLanguage) {

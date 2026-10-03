@@ -39,6 +39,8 @@ export default function HiddenPick() {
           <span className="room-eyebrow">HIDDEN GEMS · YouTube</span>
           <h2>숨은 곡 Pick</h2>
         </div>
+        <button className="room-button subtle" disabled={busy || !data || data.pages <= 1}
+          onClick={() => setPage(data.page >= data.pages ? 1 : data.page + 1)}>다른 곡 보기</button>
       </div>
       <p className="pick-reason">
         모아둔 큐레이션에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인
@@ -111,7 +113,7 @@ export default function HiddenPick() {
               동기화에서 영상 정보를 갱신해 주세요.
             </p>
           ) : (
-            <div className="pick-album-grid">
+            <div className="pick-album-grid hidden-pick-row">
               {data.music.map((t: any) => (
                 <article className="pick-album glass" key={t.id}>
                   <button

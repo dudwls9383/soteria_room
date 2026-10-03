@@ -4,12 +4,12 @@ export const channelTagOrder = [
   "ShotaVo",
   "VocalFemale",
   "KawaVo",
+  "Composer",
   "Topic",
   "Playlist",
   "ASMR",
   "Japan",
   "Korea",
-  "Composer",
 ];
 export const channelTagLabels: Record<string, string> = {
   VocalMale: "메이저 남",

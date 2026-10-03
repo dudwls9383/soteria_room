@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRoomAudio } from "./room-experience";
 import {
   ArrowRight,
   AudioLines,
@@ -44,6 +45,7 @@ export default function Home({
   initialPlaylist?: Playlist | null;
   active?: boolean;
 }) {
+  const audio = useRoomAudio();
   const [view, setView] = useState<"setup" | "play" | "result" | "ranking">(
     "setup",
   );
@@ -648,7 +650,7 @@ export default function Home({
                   ) : (
                     <button
                       className="play-cover"
-                      onClick={() => setPlaying(track.id)}
+                      onClick={() => { audio.suspend(); setPlaying(track.id); }}
                       aria-label={`${track.title} 재생`}
                     >
                       {cover(track)}

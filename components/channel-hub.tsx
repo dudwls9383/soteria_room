@@ -13,7 +13,7 @@ export default function ChannelHub({
 }) {
   return (
     <Tabs defaultValue={initialTab} className="channel-hub">
-      <TabsList aria-label="채널 탐색 방식">
+      <TabsList className="discovery-tabs glass" aria-label="채널 탐색 방식">
         <TabsTrigger value="recommend">
           {language === "ko"
             ? "하꼬 추천"

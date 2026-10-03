@@ -66,7 +66,6 @@ export default function RandomDiscovery({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
-  const [channelView,setChannelView] = useState<"random"|"all">("random");
   const [channelQuery,setChannelQuery] = useState("");
   const [channelPage,setChannelPage] = useState(1);
   const filteredChannels=snapshot.channels.filter(c=>`${c.title} ${c.id}`.toLowerCase().includes(channelQuery.trim().toLowerCase()));
@@ -151,7 +150,6 @@ export default function RandomDiscovery({
   }
   async function drawChannels() {
     const picked = sampleUnique(snapshot.channels, channelCount);
-    setChannelView("random");
     setChannels(picked);
     const missing=picked.filter(c=>!c.avatar);
     if(!missing.length) return;
@@ -403,17 +401,10 @@ export default function RandomDiscovery({
                 <Shuffle size={17} />
                 채널 뽑기
               </button>
-              <button className="room-button subtle" aria-pressed={channelView === "all"} onClick={()=>{setChannelView(channelView === "all" ? "random" : "all");setChannelPage(1);}}>전체보기 · {snapshot.channels.length.toLocaleString()}</button>
+
             </div>
           </section>
-          {channelView === "all" && <section className="subscription-all glass">
-            <div className="section-title"><h2>전체 구독 채널 <span>{filteredChannels.length.toLocaleString()}개</span></h2><input aria-label="구독 채널 검색" placeholder="채널 이름 검색" value={channelQuery} onChange={e=>{setChannelQuery(e.target.value);setChannelPage(1);}}/></div>
-            <p className="room-note">100개씩 가볍게 표시해요. 저장된 사진이 없는 채널은 이름의 첫 글자로 표시합니다.</p>
-            <div className="subscription-mini-grid">{visibleChannels.map(c=><a href={c.url} target="_blank" rel="noreferrer" key={c.id} title={c.title}>{c.avatar ? <img src={c.avatar} alt="" loading="lazy" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.style.display="none";}}/> : <span className="subscription-initial">{c.title.slice(0,1)}</span>}<strong className="notranslate" translate="no">{c.title}</strong></a>)}</div>
-            {!visibleChannels.length && <p>표시할 채널이 없어요.</p>}
-            <nav className="subscription-pages" aria-label="전체 구독 채널 페이지"><button className="room-button subtle" disabled={safePage<=1} onClick={()=>setChannelPage(safePage-1)}>이전</button><label>페이지 <select value={safePage} onChange={e=>setChannelPage(Number(e.target.value))}>{Array.from({length:pageCount},(_,i)=><option value={i+1} key={i}>{i+1}</option>)}</select> / {pageCount}</label><button className="room-button subtle" disabled={safePage>=pageCount} onClick={()=>setChannelPage(safePage+1)}>다음</button></nav>
-          </section>}
-          <div className="channel-grid" hidden={channelView !== "random"}>
+          <div className="channel-grid random-channel-results" aria-label="채널 뽑기 결과">
             {channels.map((c, i) => (
               <a
                 className="channel-card glass"
@@ -447,6 +438,13 @@ export default function RandomDiscovery({
               </a>
             ))}
           </div>
+          <section className="subscription-all glass">
+            <div className="section-title"><h2>전체 구독 채널 <span>{filteredChannels.length.toLocaleString()}개</span></h2><input aria-label="구독 채널 검색" placeholder="채널 이름 검색" value={channelQuery} onChange={e=>{setChannelQuery(e.target.value);setChannelPage(1);}}/></div>
+            <p className="room-note">100개씩 가볍게 표시해요. 저장된 사진이 없는 채널은 이름의 첫 글자로 표시합니다.</p>
+            <div className="subscription-mini-grid">{visibleChannels.map(c=><a href={c.url} target="_blank" rel="noreferrer" key={c.id} title={c.title}>{c.avatar ? <img src={c.avatar} alt="" loading="lazy" referrerPolicy="no-referrer" onError={e=>{e.currentTarget.style.display="none";}}/> : <span className="subscription-initial">{c.title.slice(0,1)}</span>}<strong className="notranslate" translate="no">{c.title}</strong></a>)}</div>
+            {!visibleChannels.length && <p>표시할 채널이 없어요.</p>}
+            <nav className="subscription-pages" aria-label="전체 구독 채널 페이지"><button className="room-button subtle" disabled={safePage<=1} onClick={()=>setChannelPage(safePage-1)}>이전</button><label>페이지 <select value={safePage} onChange={e=>setChannelPage(Number(e.target.value))}>{Array.from({length:pageCount},(_,i)=><option value={i+1} key={i}>{i+1}</option>)}</select> / {pageCount}</label><button className="room-button subtle" disabled={safePage>=pageCount} onClick={()=>setChannelPage(safePage+1)}>다음</button></nav>
+          </section>
           <section className="subscription-settings glass">
             <h2>반년에 한 번, 구독목록 새로 넣기</h2>
             <p>
