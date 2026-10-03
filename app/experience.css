@@ -135,3 +135,20 @@ body:has(.listening-room) .room-footer {padding-bottom:320px;}
 .player-mode-choices button[aria-pressed="true"] { background:var(--room-blue); color:white; box-shadow:0 2px 8px #20384318; }
 @keyframes mode-choices-in { from {opacity:.4; transform:scale(.96);} to {opacity:1; transform:scale(1);} }
 @media(prefers-reduced-motion:reduce) { .player-mode-choices {animation:none;} }
+
+/* Ambient colors belong to the backdrop; text contrast stays independent of the video. */
+:root { --room-muted:#40545f; --muted-foreground:#40545f; }
+.room-ambient { background-color:rgba(255,255,255,.6); background-blend-mode:screen; }
+body:has(.room-ambient) { --room-glass:rgba(255,255,255,.82); }
+body:has(.room-ambient) .room-sidebar { background:rgba(255,255,255,.86); }
+body:has(.room-ambient) .theater .listening-queue { background:rgba(255,255,255,.86); }
+.room-eyebrow, .room-note, .pick-reason, .pick-date,
+.pick-intro p, .pick-period-controls p, .pick-album-copy p, .pick-album-copy small,
+.section-title h2 > span, .sort-label, .random-song p, .random-song small,
+.channel-card small, .channel-card > div > span, .bottle-card small,
+.room-player-copy p, .room-player-copy small { color:var(--room-muted); }
+.room-search input::placeholder, .small-controls input::placeholder { color:var(--room-muted); opacity:1; }
+.playback-track small, .queue-track small, .small-channel-copy small,
+.small-bands small, .sync-log time, .media-failures small { opacity:1; color:var(--room-muted); }
+.listening-queue button[aria-pressed="true"] .queue-track small { color:inherit; }
+.player-settings { background:#f8fafb; }
