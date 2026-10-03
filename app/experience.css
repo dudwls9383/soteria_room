@@ -127,3 +127,11 @@ body:has(.listening-room) .room-footer {padding-bottom:320px;}
 .mini-player .listening-queue > div { align-items:center; }
 .mini-player .queue-track strong { font-size:12px; }
 .mini-player .queue-track small { font-size:11px; }
+
+/* All modes share one inline picker: fullscreen, normal window, mini window. */
+.player-mode-picker { flex-shrink:0; display:flex; align-items:center; }
+.player-mode-choices { display:flex; align-items:center; gap:4px; padding:3px; border-radius:12px; background:#ffffff70; animation:mode-choices-in .15s ease-out; }
+.player-mode-picker button { display:grid; place-items:center; width:34px; height:34px; padding:6px; }
+.player-mode-choices button[aria-pressed="true"] { background:var(--room-blue); color:white; box-shadow:0 2px 8px #20384318; }
+@keyframes mode-choices-in { from {opacity:.4; transform:scale(.96);} to {opacity:1; transform:scale(1);} }
+@media(prefers-reduced-motion:reduce) { .player-mode-choices {animation:none;} }

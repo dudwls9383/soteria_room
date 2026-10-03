@@ -23,8 +23,9 @@ import {
   Settings2,
   ChevronDown,
   ChevronUp,
-  Minimize2,
   Maximize2,
+  RectangleHorizontal,
+  PictureInPicture2,
 } from "lucide-react";
 import { playbackError } from "../lib/video-facts";
 import type { Track } from "../lib/music";
@@ -71,6 +72,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
     [volume, setVolume] = useState(80);
   const [strength, setStrength] = useState(35),
     [settingsOpen, setSettingsOpen] = useState(false),
+    [modeOpen, setModeOpen] = useState(false),
     [notice, setNotice] = useState("");
   const [failures, setFailures] = useState<Record<string, string>>({}),
     [skipFailed, setSkipFailed] = useState(true);
@@ -84,6 +86,32 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
     player = useRef<Player | null>(null),
     latest = useRef({ queue, current });
   const readyRef = useRef(false);
+  const modePicker = useRef<HTMLDivElement>(null), modeButton = useRef<HTMLButtonElement>(null);
+  const modes = [
+    { id: "full", label: "전체 모드", icon: Maximize2 },
+    { id: "normal", label: "기본 모드", icon: RectangleHorizontal },
+    { id: "mini", label: "미니 모드", icon: PictureInPicture2 },
+  ] as const;
+  const selectedMode = theater ? "full" : mini ? "mini" : "normal";
+  const ModeIcon = modes.find(mode => mode.id === selectedMode)!.icon;
+  function chooseMode(mode: "full" | "normal" | "mini") {
+    if (!current && queue[0]) play(queue[0]);
+    setTheater(mode === "full");
+    setMini(mode === "mini");
+    if (mode === "full") setList(true);
+    if (mode === "mini") setList(false);
+    setSettingsOpen(false);
+    setModeOpen(false);
+    requestAnimationFrame(() => modeButton.current?.focus());
+  }
+  useEffect(() => {
+    if (!modeOpen) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!modePicker.current?.contains(event.target as Node)) setModeOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [modeOpen]);
   readyRef.current = ready;
   latest.current = { queue, current };
   // Full-room mode changes CSS only: the iframe stays mounted and keeps playing.
@@ -345,24 +373,16 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             <strong className="notranslate" translate="no">
               {current?.title || "임시 듣기 목록"}
             </strong>
-            <button
-              aria-label={theater ? "기본 모드" : "전체 모드"}
-              aria-pressed={theater}
-              onClick={() => {
-                if (!current && queue[0]) play(queue[0]);
-                setTheater((v) => !v);
-                setMini(false);
-                setList(true);
-              }}
-            >
-              {mini ? <Maximize2 size={16}/> : theater ? "기본 모드" : "전체 모드"}
-            </button>
-            {current && <button aria-label={mini ? "기본 모드" : "PiP 모드"}
-              title={mini ? "기본 모드" : "PiP 모드"} aria-pressed={mini}
-              onClick={() => {setMini(v => !v); setTheater(false); setList(false); setSettingsOpen(false);}}>
-              {mini ? <Maximize2 size={16}/> : <Minimize2 size={16}/>}
-              {!mini && <span>PiP</span>}
-            </button>}
+            <div className="player-mode-picker" ref={modePicker}
+              onKeyDown={event => { if (event.key === "Escape") {event.stopPropagation(); setModeOpen(false); requestAnimationFrame(()=>modeButton.current?.focus());} }}>
+              {modeOpen ? <div className="player-mode-choices" role="group" aria-label="화면 모드" id="player-mode-choices">
+                {modes.map(mode => {const Icon=mode.icon; return <button key={mode.id}
+                  aria-label={mode.label} title={mode.label} aria-pressed={selectedMode===mode.id} autoFocus={selectedMode===mode.id}
+                  onClick={()=>chooseMode(mode.id)}><Icon size={18}/></button>;})}
+              </div> : <button ref={modeButton} aria-label="화면 모드 선택" aria-expanded={false}
+                aria-controls="player-mode-choices" title={modes.find(mode=>mode.id===selectedMode)!.label}
+                onClick={()=>setModeOpen(true)}><ModeIcon size={18}/></button>}
+            </div>
             {mini && <button aria-label="재생 설정" aria-expanded={settingsOpen}
               onClick={()=>setSettingsOpen(v=>!v)}><Settings2 size={16}/></button>}
             <button aria-expanded={list} aria-controls="listening-queue"
@@ -382,6 +402,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                 setTheater(false);
                 setMini(false);
                 setSettingsOpen(false);
+                setModeOpen(false);
                 setNotice("");
                 failed.current.clear();
                 setFailures({});
