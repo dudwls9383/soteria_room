@@ -161,3 +161,8 @@ body:has(.room-ambient) .theater .listening-queue { background:rgba(255,255,255,
 @keyframes song-bottle-swell { 0%,100% { transform:translateX(-3px) translateY(1px); } 50% { transform:translateX(3px) translateY(-1px); } }
 @media(max-width:560px) { .room-heading.song-bottle-heading { grid-template-columns:minmax(0,1fr) 96px; gap:10px; } }
 @media(prefers-reduced-motion:reduce) { .song-bottle-float,.song-bottle-wave { animation:none; } .song-bottle-float { transform:rotate(-9deg); } }
+
+.bottle-actions .bottle-delete { color:#9b4545; }
+.bottle-delete-confirm { grid-column:1/-1; min-width:0; padding:12px; border:1px solid rgba(155,69,69,.25); border-radius:14px; background:rgba(255,255,255,.6); }
+.bottle-delete-confirm p { font-size:12px; color:var(--room-ink); }
+.bottle-delete-confirm > div { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }

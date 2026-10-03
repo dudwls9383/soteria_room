@@ -83,6 +83,11 @@ const uiDictionary: Record<
     "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
     "채널 탐색":"Channel explorer", "메이저 남":"Mainstream men", "우타이테 남":"Male utaite", "메이저 여":"Mainstream women", "우타이테 여":"Female utaite", "토픽":"Topic", "플레이리스트":"Playlist",
     "숨은 곡 Pick": "Hidden gems Pick",
+    "삭제 중…": "Deleting…",
+    "삭제 확인": "Confirm deletion",
+    "이 추천을 삭제할까요? 삭제 후 되돌릴 수 없어요.": "Delete this recommendation? This cannot be undone.",
+    "추천을 삭제했어요.": "Recommendation deleted.",
+    "관리자 삭제": "Admin delete",
     "영상 업로드 연도": "Video upload year",
     "모든 업로드 연도": "All upload years",
     "영상이 YouTube에 올라온 연도로 찾습니다. ‘2025년까지’는 2025년과 그 이전 영상이며, 곡의 발매연도와는 달라요.": "Filter by when a video was uploaded to YouTube. “Through 2025” includes 2025 and all earlier years; this is different from a song’s release year.",
@@ -293,6 +298,11 @@ const uiDictionary: Record<
     "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
     "채널 탐색":"チャンネル探索", "메이저 남":"メジャー・男性", "우타이테 남":"歌い手・男性", "메이저 여":"メジャー・女性", "우타이테 여":"歌い手・女性", "토픽":"トピック", "플레이리스트":"プレイリスト",
     "숨은 곡 Pick": "隠れた名曲Pick",
+    "삭제 중…": "削除中…",
+    "삭제 확인": "削除を確認",
+    "이 추천을 삭제할까요? 삭제 후 되돌릴 수 없어요.": "このおすすめを削除しますか？削除後は元に戻せません。",
+    "추천을 삭제했어요.": "おすすめを削除しました。",
+    "관리자 삭제": "管理者削除",
     "영상 업로드 연도": "動画のアップロード年",
     "모든 업로드 연도": "すべてのアップロード年",
     "영상이 YouTube에 올라온 연도로 찾습니다. ‘2025년까지’는 2025년과 그 이전 영상이며, 곡의 발매연도와는 달라요.": "YouTubeに動画が公開された年で絞り込みます。「2025年まで」は2025年とそれ以前の動画を含み、曲の発売年とは異なります。",
@@ -1785,7 +1795,7 @@ function RoomContent() {
             <RandomDiscovery key={`discovery-${archiveRevision}`} library={library} adminKey={adminKey} />
           </TabsContent>
           <TabsContent value="bottle">
-            <SongBottleLite />
+            <SongBottleLite adminKey={adminKey} />
           </TabsContent>
           <TabsContent value="small"><ChannelHub key={`channels-${archiveRevision}-${channelStart}`} initialTab={channelStart} adminKey={adminKey} language={language}/></TabsContent>
           <TabsContent

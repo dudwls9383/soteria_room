@@ -1,87 +1,64 @@
-# SOTERIA ROOM — 외부 검토용 사이트 설명
+# SOTERIA ROOM — 외부 LLM 검토용 설명
 
-갱신일: 2026-10-01 (한국 시간)
+기준일: 2026-10-03. 현재 구현을 설명하며 실시간 DB 덤프는 아닙니다.
 
-최근 추가: 계절 테마(자동/봄/여름/가을/겨울), 첫 접속의 짧은 입장 모션, 탭 이동에도 유지되는 공통 YouTube 재생기, 임시 듣기 목록(중복 제거·순서 변경·삭제·셔플·연속 재생), 썸네일 기반 앰비언트(끔/은은하게/몰입). 임시 목록은 서버에 저장하지 않으며 새로고침 시 비워집니다. 영상 프레임을 읽어 실시간 색상을 추출하는 기능은 아닙니다.
+- [사이트](https://soteria-room.workspace-304435.chatgpt.site) · [저장소](https://github.com/dudwls9383/soteria_room)
+- [이 설명 raw](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/SITE_REVIEW_GUIDE.md)
+- [README raw](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/README.md)
+- [디자인 LLM 상세 인수인계 raw](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/DESIGN_LLM_HANDOFF.md)
 
-이 문서는 공개 사이트를 직접 열 수 없는 브라우저·LLM에서도 기능과 구현을 검토할 수 있도록 만든 정적 설명입니다. 실시간 DB의 목록·구독자 수·동기화 상태를 내보낸 자료가 아닙니다. 구현 여부는 아래 소스 링크로 확인할 수 있습니다. 디자인과 실제 클릭 동작은 사이트 화면 또는 사용자가 제공하는 스크린샷으로 별도 확인해야 합니다.
+## 사이트를 못 읽을 때
 
-- 사이트: https://soteria-room.workspace-304435.chatgpt.site
-- 소스: https://github.com/dudwls9383/soteria_room
-- 이 문서의 원문: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/SITE_REVIEW_GUIDE.md
-- README 원문: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/README.md
+첫 HTML에는 로딩 문구·빈 통계가 있을 수 있습니다. 브라우저가 JavaScript로 API를 읽어 채웁니다. 크롤러의 빈 결과나 도구 환경의 DNS 오류만으로 사이트 장애를 단정하지 마세요. 문서로 기능을 파악하고 실제 시각 평가는 스크린샷이나 JavaScript 실행 브라우저로 하세요.
 
-## 목적과 디자인
+## 목적과 메뉴
 
-운영자 SOTERIA ROOM의 공개 YouTube 재생목록, 구독 채널, 블로그·커뮤니티 글을 하나의 음악 탐색 공간으로 연결합니다. 한국어 UI와 영어·일본어 UI를 제공하며 곡명·채널명은 원문을 유지합니다. 밝은 색과 반투명 패널을 사용하고, 모바일에서는 메뉴를 접어 화면 공간을 확보합니다. 음악은 YouTube 임베드로 재생하며 음원 파일을 자체 저장하거나 전송하지 않습니다.
+운영자의 공개 YouTube 재생목록·구독 채널·태그를 음악 탐색 공간으로 연결합니다. 음악은 YouTube 임베드이며 음원 파일을 자체 공급하지 않습니다. 한국어·영어·일본어 UI를 제공하고 곡명·채널명은 원문을 유지합니다. Google Translate로 이동하지 않습니다.
 
-## 탭 순서와 역할
-
-| 탭 | 주요 역할 |
+| 그룹 | 화면 |
 | --- | --- |
-| 재생목록 픽 | 월의 픽·큐레이션 중심 목록, 정렬·필터, 작은 재생 버튼 |
-| 월별 큐레이션 | 월별 픽과 대량 수집 목록을 구분하여 연도별 탐색 |
-| 디깅 | 접속 시 표시되는 조건별 Pick, 랜덤 곡, 랜덤 채널과 가벼운 전체보기 |
-| 마이 리캡 | My Recap 시리즈 |
-| 카와보 시리즈 | Kawaii Voice Playlist 시리즈 |
-| 유튜브 재생목록 검색기 | 저장된 곡과 소속 재생목록 검색, 범위 필터 |
-| 재생목록 링크 추출기 | 입력한 공개 재생목록 링크에서 공유용 텍스트 생성 |
-| 음악 월드컵 | 재생목록 기반 선택 대결, YouTube 재생, 우승곡·랭킹 |
-| 하꼬 추천 | 구독자 구간·태그·이름 검색, 랜덤 12개와 전체보기 |
-| 채널 보관실 | JSON의 태그별 채널을 앨범형 목록으로 탐색 |
-| 곡추천 병 | 곡 링크와 짧은 메모를 남기는 가벼운 추천 공간 |
-| 블로그·갤러리 | 원문으로 연결하는 글 목록 |
-| 가져오기·동기화 | 단계별 수집·재시도·중단, 관리자 잠금과 자료별 초기화 |
+| 핵심 | 재생목록 픽, 월별 큐레이션, 디깅, 마이 리캡, 카와보 시리즈 |
+| 도구 | 재생목록 검색기, 재생목록 링크 추출기, 음악 월드컵 |
+| 탐색 | 채널 탐색(하꼬 추천 / 채널 보관실), 곡추천 병 |
+| 연결 | 블로그 포스트, 소무니아 갤러리, 카와이 보이스 갤러리 |
+| 관리 | 가져오기 · 동기화 |
 
-## 하꼬 추천과 채널 자료
+ASMR은 채널 태그입니다. 하꼬 추천과 보관실은 채널 탐색의 가로 하위 탭입니다.
 
-CSV 구독목록이 저장돼 있으면 이를 기준 목록으로 사용합니다. JSON의 채널 ID를 비교해 사진·태그·구독자 수를 보충하며, 공식 API로 수집한 수치가 있으면 그 수치를 사용합니다. CSV 저장본이 없으면 JSON 채널목록을 기준으로 사용합니다.
+## 구현된 경험
 
-구간은 전체 채널, 1만 명 미만 전체, 0–99, 100–499, 500–999, 1,000–1,999, 2,000–4,999, 5,000–9,999, 1만 명 이상, 미확인입니다. 전체 채널에는 미확인도 포함됩니다. 미확인을 0명으로 취급하지 않습니다. 60개씩 표시하며 태그·검색 조건 안에서 랜덤 추천할 수 있습니다.
+- 목록의 정렬·필터·곡 목록·작은 재생·임시 듣기 목록 담기.
+- 디깅 Pick은 월의 픽만 사용하며 이번 달 → 분기 → 그해 → 숨은 곡 → 오래된 음악 순서입니다. 생성형 AI가 아닙니다.
+- 연도·분기 선택줄은 분기 위. 연도는 분기와 그해 목록, 분기는 분기 목록만 바꿉니다. 시기는 수집 기준입니다.
+- 숨은 곡은 확인된 조회수·길이·영상 업로드 연도로 12곡씩 탐색합니다. 조회수는 큰 숫자 순, ‘2025년까지’는 2025년 포함 이전 영상입니다. 조건 안의 랜덤곡 보기와 페이지가 있고 가로 슬라이더는 없습니다.
+- 랜덤 뽑기는 별도 버튼 기능이며 전체·월별 수집 범위도 선택합니다. 자동 재생·자동 담기는 하지 않습니다.
+- 랜덤 채널은 결과 아래 전체 구독 목록을 항상 펼칩니다. 하꼬 추천은 구독자 구간·태그·이름·랜덤/전체·60개 페이지·미리듣기를 제공합니다.
+- CSV는 구독 기준 목록, JSON은 태그·사진 보완 자료입니다. 서로 대체되는 파일이 아닙니다. 미확인 구독자 수는 0명이 아닙니다.
+- 공통 플레이어는 기본·전체·미니, 목록 접기·순서 이동·삭제·셔플·연속 재생. 미니는 네이티브 PiP가 아닙니다. 탭 이동에도 유지하고 ×는 재생·목록을 닫습니다.
+- 월드컵은 곡 비교·우승곡·랭킹을 저장합니다. 탭 진입만으로 공통 재생을 끊지 않습니다.
+- 곡추천 병은 익명 작성·재생·담기·복사·원문 이동. 최신 40개, 방문자 기준 시간당 8개. 관리자만 확인 후 추천을 영구 삭제합니다.
 
-공식 API 키는 서버의 비밀 환경변수에 등록됐습니다. 관리자가 갱신을 실행하면 7일 이상 지난 채널을 요청당 최대 50개씩 처리해 DB에 저장합니다. 방문 시 자동으로 채널 통계를 갱신하지 않습니다. 키 연결과 단일 채널 조회는 확인됐으나, 이 문서는 전체 채널 갱신 완료를 증명하지 않습니다.
+## 연출과 권한
 
-## 동기화와 성능
+밝은 Liquid Glass, 자동·사계절 테마, 짧은 입장 모션, 썸네일 기반 앰비언트 강도 조절이 있습니다. 실시간 영상 색 분석이 아니며 데이터 절약을 보장하지 않습니다. 영상 가리는 음악 카드 모드는 제거했습니다. 추천 병에는 작은 유리병·파도 SVG가 있고 모션 줄이기를 따릅니다. 공통 알림은 5초 후 닫힙니다.
 
-- 1차 자동: 월의 픽, My Recap, Kawaii Voice, 기타 큐레이션. 관리자 접속 시 하루 한 번 갱신합니다.
-- 2차 수동: 202X.XX, 연간 수집, A bundle of songs 등 대용량 목록. 버튼을 눌렀을 때 수집합니다.
-- 곡 수·첫 곡이 같고 최근 수집한 목록은 건너뜁니다. 같은 개수의 중간 곡 변경을 놓칠 수 있어 7일 이후에는 다시 수집합니다.
-- 중단은 대기열을 보존하고 실행 중인 요청의 저장 권한을 회수합니다. 이미 전송한 외부 요청이 즉시 취소되는 것은 아닙니다.
-- HTTP 429 감지 시 남은 목록 요청을 멈추고 자동 재개하지 않습니다.
-- 최근 12개 로그를 표시하고 실패 목록은 접이식 스크롤 영역에 표시합니다.
-- 첫 화면은 목록 요약을 읽으며, 전체 곡 정보는 검색 또는 개별 목록을 열 때 읽습니다.
-- 커스텀 표지 주소가 만료되면 갱신을 시도합니다. 표지 갱신과 채널 목록 발견에는 현재 공개 YouTube 페이지를 읽는 경로도 남아 있습니다.
+전체 1차·2차 동기화, 실패 재시도·중단, 직접 저장·삭제, JSON/CSV 교체·초기화, 구독자/조회수 갱신, 추천 삭제는 서버에서도 관리자 인증을 검사합니다. 1차는 관리자가 잠금을 연 채 접속하면 24시간 기준으로 확인하고 2차는 수동입니다. 무인 예약 작업은 없습니다.
 
-## 권한과 초기화
+기존 최신 픽·선택 목록 단일 갱신은 공개이며 1분 제한과 목록별 12개 로그가 있습니다. 새 픽은 관리자 1차 동기화로 발견해야 대상이 바뀝니다. 단일 갱신은 새 목록 발견이 아닙니다. 서버 대기열·소유권 잠금·변경 없는 목록 건너뛰기·429 중단을 사용합니다. 초기화는 DB·JSON·CSV별 독립입니다.
 
-일반 사용자는 저장된 음악 탐색과 고정 운영자 채널 동기화를 사용할 수 있습니다. 재생목록 직접 저장·삭제, JSON·CSV 교체·초기화, 공식 구독자 수 갱신은 관리자 인증이 필요합니다. 재생목록 DB·JSON·CSV 초기화는 개별 버튼이며 확인 문구를 입력해야 실행됩니다. 사용자 임시 재생목록은 링크 추출기·월드컵에서 일회성으로 사용합니다.
+## 검토 기준
 
-## 핵심 소스 원문
+권한, 일회성 방문자 링크, 월의 픽/대용량 수집 분리, 공통 재생, 미확인 수치, 세 언어·모바일을 유지하세요. 배찌체, 재생목록 즐겨찾기, 거대한 체험 홍보 패널은 사용자가 제외했습니다. AI 추천·자체 음악 서버·회원 커뮤니티가 이미 있다고 설명하지 마세요.
 
-- 메인 화면과 탭: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/page.tsx
-- 디자인: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/room.css
-- 하꼬 추천 화면: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/small-channel-discovery.tsx
-- 구독자 구간: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/small-channels.ts
-- 채널 통계 갱신: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/api/small-channels/route.ts
-- 동기화: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/channel-sync.ts
-- 채널 목록 발견: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/channel.ts
-- 재생목록 읽기: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/youtube.ts
-- 추천 음악 인덱스: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/lib/music-index.ts
+최신 픽 단일 발견, 필터 기억·초기화, 모바일 탐색·재생·담기 동선은 개선 후보이며 모두 구현 완료한 기능은 아닙니다.
 
-## 검토할 개선 후보
+## 먼저 읽을 소스
 
-1. 채널 목록 발견과 커스텀 표지 갱신도 공식 API로 전환해 HTML 읽기에서 발생하는 요청 제한을 줄이기.
-2. 영상의 공개·임베드 상태를 확인해 월드컵에서 재생 불가 후보를 분리하기. API 상태와 실제 재생 가능성은 구분하기.
-3. 영상별 조회수·업로드일·길이를 저장하여 저조회 곡, 오래된 업로드, 짧은 곡 등 조건을 추가하기. 업로드일을 곡 발매일로 표시하지 않기.
-4. 하꼬 추천에서 최신 수치 확인일·자료 범위와 갱신 진행률을 더 명확하게 보여주기.
+- [메인](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/page.tsx)
+- [공통 플레이어](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/room-experience.tsx)
+- [주요 CSS](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/room.css) · [추가 CSS](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/experience.css)
+- [Pick](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/pick-discovery.tsx) · [숨은 곡](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/hidden-pick.tsx)
+- [채널 탐색](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/channel-hub.tsx)
+- [추천 병](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/components/song-bottle-lite.tsx) · [추천 API](https://raw.githubusercontent.com/dudwls9383/soteria_room/main/app/api/recommendations/route.ts)
 
-검토자는 구현된 기능, 제안 단계의 기능, 외부 서비스 때문에 확인할 수 없는 상태를 구분해 평가해 주세요.
-
-
-## 2026-10-03 추가
-
-최신 월의 픽만 갱신 / 선택 재생목록만 갱신을 지원합니다. 숨은 곡 Pick은 조회수·길이·게시연도 조건으로 정렬하며 50·100·200·500·800회 이하까지 선택하고 12곡씩 페이지를 넘길 수 있습니다. 관리자 최초 정보 갱신이 필요합니다. 랜덤 뽑기는 자동으로 재생하거나 목록에 담지 않습니다. 채널 탐색 안에 하꼬 추천과 채널 보관실을 묶었으며 구독자 구간과 카드 목록은 많은 순으로 정렬합니다. 플레이어는 하단 조작 바와 목록 접기·펼치기를 지원합니다. 음악 카드 화면 전환은 제거했으며 ×는 재생과 임시 목록을 모두 닫습니다. 앰비언트는 설정에서 끌 수 있습니다. YouTube Music의 LR 리캡은 공개 재생목록 페이지로 가져옵니다.
-
-전체 동기화·재시도·중단은 관리자만 실행합니다. 최신 월의 픽 갱신과 최근 12개 로그 조회는 누구나 가능합니다.
-
-디깅 Pick의 모든 구역은 월의 픽만 사용합니다. 숨은 곡 Pick은 그해의 음악 다음에 카드 격자로 표시하고, 정보 확인 문구 아래에 랜덤곡 보기 버튼을 둡니다. 영상 정보·재생 불가 관리 패널은 제거하며 관리자용 월의 픽 조회수 갱신만 작게 남깁니다.
+기능은 소스로, 시각 품질은 실제 화면으로 확인하며 구현·제안·외부 제한을 구분하세요.

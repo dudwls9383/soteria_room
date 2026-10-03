@@ -1,4 +1,4 @@
-// Shared server policy: visitors can refresh only the fixed source, once per 24 hours.
+// Shared bulk-sync policy: admins refresh the fixed source on a daily schedule.
 export const SYNC_DAY = 24 * 60 * 60 * 1000;
 export const SYNC_RETRY_DELAY = 5 * 60 * 1000;
 export type SyncStage = "primary" | "secondary";

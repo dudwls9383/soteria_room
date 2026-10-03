@@ -1,5 +1,5 @@
 import { database } from "../../../db";
-import { ApiError, body, failure, visitor, visitorCookie } from "../../../lib/server";
+import { ApiError, body, failure, requireAdmin, visitor, visitorCookie } from "../../../lib/server";
 
 type RecommendationRow = {
   id: string;
@@ -69,6 +69,20 @@ export async function GET() {
   } catch (event) {
     return failure(event);
   }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    // Hide the control in public UI, but also enforce authorization here.
+    requireAdmin(request);
+    const input = await body(request, 1000);
+    if (!input || typeof input.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.id))
+      throw new ApiError("삭제할 추천을 확인해 주세요.");
+    await ensureRecommendations();
+    const result = await database().prepare("DELETE FROM recommendations WHERE id=?").bind(input.id).run();
+    if (!result.meta.changes) throw new ApiError("이미 삭제되었거나 없는 추천이에요.", 404);
+    return Response.json({ deleted: input.id }, {headers:{"Cache-Control":"no-store"}});
+  } catch (event) { return failure(event); }
 }
 
 export async function POST(request: Request) {

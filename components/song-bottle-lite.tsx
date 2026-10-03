@@ -3,7 +3,8 @@ import { useRoomAudio } from "./room-experience";
 import SongBottleIllustration from "./song-bottle-illustration";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, X } from "lucide-react";
+import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, Trash2, X } from "lucide-react";
+import { useAutoDismissMessage } from "./use-auto-dismiss-message";
 
 type Recommendation = {
   id: string;
@@ -35,13 +36,15 @@ function shareLine(item: Recommendation) {
     .join("\n");
 }
 
-export default function SongBottleLite() {
+export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
   const audio=useRoomAudio();
   const [items, setItems] = useState<Recommendation[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [error, setError] = useAutoDismissMessage();
+  const [notice, setNotice] = useAutoDismissMessage();
+  const [confirmDelete,setConfirmDelete]=useState("");
+  const [deleting,setDeleting]=useState("");
   const [copiedId, setCopiedId] = useState("");
   const [playing, setPlaying] = useState<Recommendation | null>(null);
 
@@ -94,6 +97,18 @@ export default function SongBottleLite() {
     await navigator.clipboard.writeText(shareLine(item));
     setCopiedId(item.id);
     window.setTimeout(() => setCopiedId(""), 1500);
+  }
+
+  useEffect(()=>{ if(!adminKey)setConfirmDelete(""); },[adminKey]);
+  async function deleteItem(item:Recommendation) {
+    if(!adminKey||deleting)return;
+    setDeleting(item.id);setError("");
+    try {
+      const response=await fetch("/api/recommendations",{method:"DELETE",headers:{"Content-Type":"application/json","x-soteria-admin-key":adminKey},body:JSON.stringify({id:item.id})});
+      const data=await response.json() as {error?:string};if(!response.ok)throw new Error(data.error||"추천을 삭제하지 못했어요.");
+      setItems(current=>current.filter(r=>r.id!==item.id));setConfirmDelete("");setNotice("추천을 삭제했어요.");
+      // Deleting a recommendation does not remove a listener's queued song.
+    }catch(e){setError((e as Error).message);}finally{setDeleting("");}
   }
 
   function listen(item:Recommendation) { const id=videoId(item.url); if(id)audio.play({id,title:item.title,artist:item.artist,thumbnail:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}); }
@@ -249,8 +264,10 @@ export default function SongBottleLite() {
                         )}
                         {copiedId === item.id ? "복사됨" : "복사"}
                       </button>
+                      {adminKey&&<button className="bottle-delete" disabled={!!deleting} onClick={()=>setConfirmDelete(item.id)}><Trash2 size={12}/>관리자 삭제</button>}
                     </div>
                   </div>
+                  {adminKey&&confirmDelete===item.id&&<div className="bottle-delete-confirm" role="group" aria-label="추천 삭제 확인"><p>이 추천을 삭제할까요? 삭제 후 되돌릴 수 없어요.</p><div><button className="room-button subtle" disabled={!!deleting} onClick={()=>setConfirmDelete("")}>취소</button><button className="room-button" disabled={!!deleting} onClick={()=>void deleteItem(item)}>{deleting===item.id?"삭제 중…":"삭제 확인"}</button></div></div>}
                 </article>
               );
             })}
