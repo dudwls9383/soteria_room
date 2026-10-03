@@ -148,3 +148,16 @@ body:has(.room-ambient) .theater .listening-queue { background:rgba(255,255,255,
 .small-bands small, .sync-log time, .media-failures small { opacity:1; color:var(--room-muted); }
 .listening-queue button[aria-pressed="true"] .queue-track small { color:inherit; }
 .player-settings { background:#f8fafb; }
+
+/* Song Bottle: independent, gentle floating motion; edit timing here. */
+.room-heading.song-bottle-heading { display:grid; grid-template-columns:minmax(0,1fr) clamp(112px,16vw,190px); align-items:center; gap:20px; }
+.song-bottle-illustration { display:block; width:100%; height:auto; overflow:visible; pointer-events:none; }
+.song-bottle-float { transform-box:view-box; transform-origin:120px 105px; animation:song-bottle-bob 5.5s ease-in-out infinite; }
+.song-bottle-wave { fill:none; stroke:var(--room-blue); stroke-width:2; stroke-linecap:round; animation:song-bottle-swell 6s ease-in-out infinite; }
+.song-bottle-wave.back { opacity:.2; animation-delay:-2s; }
+.song-bottle-wave.front { opacity:.42; }
+.song-bottle-wave.ripple { opacity:.16; stroke-width:1.5; animation-delay:-4s; }
+@keyframes song-bottle-bob { 0%,100% { transform:translateY(0) rotate(-12deg); } 50% { transform:translateY(-4px) rotate(-6deg); } }
+@keyframes song-bottle-swell { 0%,100% { transform:translateX(-3px) translateY(1px); } 50% { transform:translateX(3px) translateY(-1px); } }
+@media(max-width:560px) { .room-heading.song-bottle-heading { grid-template-columns:minmax(0,1fr) 96px; gap:10px; } }
+@media(prefers-reduced-motion:reduce) { .song-bottle-float,.song-bottle-wave { animation:none; } .song-bottle-float { transform:rotate(-9deg); } }

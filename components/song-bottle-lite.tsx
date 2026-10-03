@@ -1,5 +1,6 @@
 "use client";
 import { useRoomAudio } from "./room-experience";
+import SongBottleIllustration from "./song-bottle-illustration";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, X } from "lucide-react";
@@ -100,12 +101,13 @@ export default function SongBottleLite() {
 
   return (
     <div>
-      <div className="room-heading">
+      <div className="room-heading song-bottle-heading">
         <div>
           <div className="room-eyebrow">SONG BOTTLE LIGHT</div>
           <h1>곡추천을 가볍게 남기는 병.</h1>
           <p>좋았던 곡 하나와 짧은 메모만 남겨도 충분해요.</p>
         </div>
+        <SongBottleIllustration />
       </div>
       {error && (
         <p className="room-message error" role="alert">
