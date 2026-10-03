@@ -94,6 +94,11 @@ const uiDictionary: Record<
     "이미 듣기 목록에 있는 곡이에요.": "Already in your listening queue.",
     "재생할 수 없는 영상을 건너뛰었어요.": "Skipped an unavailable video.",
     "최신 월의 픽만 갱신": "Refresh latest monthly Pick",
+    "갱신 로그": "Refresh history",
+    "관리자 동기화 · 공개 픽 갱신": "Admin sync · Public Pick refresh",
+    "기록을 불러오는 중이에요.": "Loading history…",
+    "아직 이 목록의 갱신 기록이 없어요. 최근 12개를 보관합니다.": "No refresh history yet. The latest 12 entries are kept.",
+
     "이 목록만 갱신": "Refresh this playlist",
     "이 목록 갱신 중…": "Refreshing this playlist…",
     "추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.": "Refresh additions, removals and order. Other playlists are kept.",
@@ -289,6 +294,10 @@ const uiDictionary: Record<
     "이미 듣기 목록에 있는 곡이에요.": "すでに再生リストに入っています。",
     "재생할 수 없는 영상을 건너뛰었어요.": "再生できない動画をスキップしました。",
     "최신 월의 픽만 갱신": "最新の月間Pickだけ更新",
+    "갱신 로그": "更新ログ",
+    "관리자 동기화 · 공개 픽 갱신": "管理者同期 · 公開Pick更新",
+    "기록을 불러오는 중이에요.": "履歴を読み込んでいます。",
+    "아직 이 목록의 갱신 기록이 없어요. 최근 12개를 보관합니다.": "更新履歴はまだありません。最新12件を保存します。",
     "이 목록만 갱신": "このプレイリストだけ更新",
     "이 목록 갱신 중…": "このプレイリストを更新中…",
     "추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.": "追加・削除・曲順の変更を反映します。他のリストはそのままです。",
@@ -802,6 +811,7 @@ function RoomContent() {
     setProgress({ done:data.done, total:data.total, title:data.title || "채널 갱신 중" });
   }
   async function synchronize(_force = false, retryOnly = false, quiet = false, stage: "primary" | "secondary" = "primary") {
+    if (!adminKey) { if (!quiet) setError("관리 잠금을 먼저 열어 주세요."); return; }
     if (lock.current) return;
     lock.current = true;
     setSyncing(true);
@@ -812,7 +822,7 @@ function RoomContent() {
     try {
       let steps = 0;
       while (true) {
-        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet,stage,continuing:steps>0});
+        const data = await request("/api/sync", {retry:retryOnly,automatic:quiet,stage,continuing:steps>0}, {adminKey});
         if (run !== syncRun.current) break;
         acceptSync(data);
         if (data.paused) { setNotice(data.stopReason || "동기화를 중단했어요."); await reload(); break; }
@@ -833,10 +843,11 @@ function RoomContent() {
     finally { if(run === syncRun.current) {lock.current = false; setSyncing(false);} }
   }
   async function stopSynchronization() {
+    if (!adminKey) { setError("관리 잠금을 먼저 열어 주세요."); return; }
     setStopping(true);
     ++syncRun.current;
     try {
-      const data=await request("/api/sync",{action:"stop",stage:syncStage});
+      const data=await request("/api/sync",{action:"stop",stage:syncStage},{adminKey});
       acceptSync(data); setNotice(data.stopReason); await reload();
     } catch(e) {setError((e as Error).message);}
     finally {lock.current=false;setSyncing(false);setStopping(false);}
@@ -871,22 +882,27 @@ function RoomContent() {
         const status = await request("/api/sync");
         if (!active) return;
         acceptSync(status);
-        // Daily refresh is activity-based: start after content is visible and
-        // resume a persisted unfinished run; never gate reading on YouTube.
-        if (!status.busy && !status.paused && (status.pending.length || Date.now() >= status.nextSyncAt)) void synchronize(false,false,true);
       } catch (e) { if (active) setError((e as Error).message); }
       finally { if (active) setLoading(false); }
     })();
-    const timer = setInterval(() => {
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    if (!adminKey) return;
+    let active = true;
+    // Only a verified administrator can start or resume daily background collection.
+    const check = () => {
       if (document.visibilityState !== "visible" || lock.current) return;
       void request("/api/sync").then(status => {
         if (!active) return;
         acceptSync(status);
         if (!status.busy && !status.paused && (status.pending.length || Date.now() >= status.nextSyncAt)) void synchronize(false,false,true);
       }).catch(() => {});
-    }, 60 * 60 * 1000);
+    };
+    check();
+    const timer = setInterval(check, 60 * 60 * 1000);
     return () => { active = false; clearInterval(timer); };
-  }, []);
+  }, [adminKey]);
   useEffect(() => {
     clearGoogleTranslateCookie();
   }, []);
@@ -1010,6 +1026,15 @@ function RoomContent() {
     } catch (e) { setError((e as Error).message); }
   }
   const [refreshingPlaylist,setRefreshingPlaylist]=useState("");
+  const [refreshLogOpen,setRefreshLogOpen]=useState(false);
+  const [refreshLogLoading,setRefreshLogLoading]=useState(false);
+  const [refreshLogs,setRefreshLogs]=useState<{at:number;message:string;success:number}[]>([]);
+  async function loadRefreshLogs(id:string) {
+    setRefreshLogLoading(true);
+    try { setRefreshLogs(await request(`/api/playlist-refresh?id=${encodeURIComponent(id)}`)); }
+    catch(e) { setError((e as Error).message); }
+    finally { setRefreshLogLoading(false); }
+  }
   async function refreshPlaylist(p:Saved) {
     if(refreshingPlaylist||syncing)return;
     setRefreshingPlaylist(p.id);setError("");
@@ -1018,7 +1043,7 @@ function RoomContent() {
       if(selected?.id===p.id)setSelected(full);
       if("caches" in window)await caches.delete("soteria-library-v1");
       await reload();setNotice(`${full.title} · ${full.tracks.length}곡으로 갱신했어요.`);
-    }catch(e){setError((e as Error).message);}finally{setRefreshingPlaylist("");}
+    }catch(e){setError((e as Error).message);}finally{setRefreshingPlaylist("");if(refreshLogOpen&&p.id===latestPick?.id)void loadRefreshLogs(p.id);}
   }
   function coverUrl(p: Saved) { return `/api/playlist-cover?id=${encodeURIComponent(p.id)}&v=${p.updatedAt||0}`; }
   async function afterLibraryReset() {
@@ -1292,7 +1317,7 @@ function RoomContent() {
                   : "채널 확인 중"}
                 <small>{progress.title}</small>
               </span>
-              <button className="room-button subtle" disabled={stopping} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
+              <button className="room-button subtle" disabled={stopping || !adminKey} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
               {progress.total > 0 && (
                 <progress value={progress.done} max={progress.total} />
               )}
@@ -1352,7 +1377,7 @@ function RoomContent() {
                               ? openPlaylist(featured)
                               : void synchronize()
                           }
-                          disabled={loading || (!featured && syncing)}
+                          disabled={loading || (!featured && (syncing || !adminKey))}
                         >
                           {featured
                             ? "재생목록 열기"
@@ -1566,7 +1591,7 @@ function RoomContent() {
                     필요합니다.{" "}
                     <button
                       className="room-button subtle"
-                      disabled={syncing || stopping}
+                      disabled={syncing || stopping || !adminKey}
                       onClick={() => void synchronize()}
                     >
                       미수집 목록 가져오기
@@ -1885,8 +1910,8 @@ function RoomContent() {
                 <div className="setting-icon">
                   <RefreshCw size={22} />
                 </div>
-                <h2>1차 자동 · 2차 수동 동기화</h2>
-                {latestPick&&<div className="latest-refresh"><strong className="notranslate" translate="no">{latestPick.title}</strong><button className="room-button" disabled={!!refreshingPlaylist||syncing} onClick={()=>void refreshPlaylist(latestPick)}><RefreshCw size={15} className={refreshingPlaylist?"spin":""}/>{refreshingPlaylist?"이 목록 갱신 중…":"최신 월의 픽만 갱신"}</button><small>추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.</small></div>}
+                <h2>관리자 동기화 · 공개 픽 갱신</h2>
+                {latestPick&&<div className="latest-refresh"><strong className="notranslate" translate="no">{latestPick.title}</strong><button className="room-button" disabled={!!refreshingPlaylist||syncing} onClick={()=>void refreshPlaylist(latestPick)}><RefreshCw size={15} className={refreshingPlaylist?"spin":""}/>{refreshingPlaylist?"이 목록 갱신 중…":"최신 월의 픽만 갱신"}</button><button className="room-button subtle" aria-expanded={refreshLogOpen} onClick={()=>{setRefreshLogOpen(v=>!v);if(!refreshLogOpen)void loadRefreshLogs(latestPick.id);}}>갱신 로그</button><small>추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.</small>{refreshLogOpen&&<div className="sync-log" role="log" aria-live="polite">{refreshLogLoading?<p>기록을 불러오는 중이에요.</p>:refreshLogs.length?refreshLogs.map((entry,i)=><p key={`${entry.at}-${i}`}><time>{new Date(entry.at).toLocaleString("ko-KR")}</time> · {entry.success?"완료":"실패"} · <span className="notranslate" translate="no">{entry.message}</span></p>):<p>아직 이 목록의 갱신 기록이 없어요. 최근 12개를 보관합니다.</p>}</div>}</div>}
                 <a
                   className="source-link"
                   href="https://www.youtube.com/@soteria_room/playlists"
@@ -1896,11 +1921,11 @@ function RoomContent() {
                   @soteria_room <ExternalLink size={14} />
                 </a>
                 <p>
-                  1차는 월의 픽·My Recap·Kawaii Voice Playlist·기타 큐레이션을 하루 한 번 자동 갱신합니다. 2차는 202X.XX와 연간 수집 목록·A bundle of songs를 아래 버튼으로 선택했을 때만 가져옵니다. 저장된 기존 자료는 그대로 이용할 수 있어요.
+                  전체 동기화와 실패 목록 재시도는 관리 잠금을 연 뒤 사용할 수 있어요. 1차는 관리자 접속 시 하루 한 번 자동 갱신합니다. 최신 월의 픽만 갱신은 누구나 사용할 수 있어요. 2차는 202X.XX와 연간 수집 목록·A bundle of songs를 아래 버튼으로 선택했을 때만 가져옵니다. 저장된 기존 자료는 그대로 이용할 수 있어요.
                 </p>
                 <button
                   className="room-button"
-                  disabled={syncing || stopping}
+                  disabled={syncing || stopping || !adminKey}
                   onClick={() => void synchronize(true)}
                 >
                   <RefreshCw size={16} className={syncing ? "spin" : ""} />
@@ -1908,7 +1933,7 @@ function RoomContent() {
                 </button>
                 <button
                   className="room-button subtle"
-                  disabled={syncing || !failures.length}
+                  disabled={syncing || !failures.length || !adminKey}
                   onClick={() => void synchronize(true, true, false, syncStage)}
                 >
                   <RefreshCw
@@ -1917,13 +1942,13 @@ function RoomContent() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
-                <button className="room-button subtle" disabled={syncing || stopping} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화 (대용량)</button>
+                <button className="room-button subtle" disabled={syncing || stopping || !adminKey} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화 (대용량)</button>
                 <div className="sync-stage-switch"><button disabled={syncing || stopping} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing || stopping} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
                 <small>{syncStage === "primary" ? "1차 큐레이션" : "2차 월별·연간 수집"} 진행 기록</small>
-                <button className="room-button subtle" disabled={stopping || syncPaused} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
+                <button className="room-button subtle" disabled={stopping || syncPaused || !adminKey} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
                 {syncStopReason && <small role="status">{syncStopReason}</small>}
                 <small>이번 확인에서 건너뛴 목록: {skipped}개</small>
-                <small>{syncStage === "primary" ? `다음 자동 갱신: ${nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "첫 방문 시"}` : "2차는 수동으로만 실행합니다."}</small>
+                <small>{syncStage === "primary" ? `다음 자동 갱신: ${nextSync ? new Date(nextSync).toLocaleString("ko-KR") : "관리자 접속 시"}` : "2차는 수동으로만 실행합니다."}</small>
                 <small>
                   선택 단계 마지막 성공:{" "}
                   {lastSync
@@ -1978,7 +2003,7 @@ function RoomContent() {
                   <h2 className="sync-failures-heading">다시 확인할 목록 · {failures.length}개</h2>
                   <button
                     className="room-button subtle"
-                    disabled={syncing || stopping}
+                    disabled={syncing || stopping || !adminKey}
                     onClick={() => void synchronize(true, true, false, syncStage)}
                   >
                     <RefreshCw size={16} className={syncing ? "spin" : ""} />
@@ -2004,7 +2029,7 @@ function RoomContent() {
               <div className="reset-button-group"><ResetDataButton target="library" label="재생목록 DB 초기화" adminKey={adminKey} onReset={afterLibraryReset} /><ResetDataButton target="json" label="JSON 초기화" adminKey={adminKey} onReset={()=>setArchiveRevision(v=>v+1)} /><ResetDataButton target="csv" label="CSV 초기화" adminKey={adminKey} onReset={()=>setArchiveRevision(v=>v+1)} /></div>
             </section>
             <div className="room-note">
-              동기화는 누구나 이용하며, 수동 추가·삭제와 초기화는 관리자 전용입니다. 방문자가 링크를
+              최신 월의 픽 갱신과 기록 조회는 누구나 이용하며, 전체 동기화·재시도·중단과 수동 추가·삭제·초기화는 관리자 전용입니다. 방문자가 링크를
               넣어 쓰는 기능은 저장하지 않고 그 자리에서만 사용합니다.
             </div>
           </TabsContent>

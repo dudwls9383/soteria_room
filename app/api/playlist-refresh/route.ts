@@ -4,8 +4,17 @@ import { ApiError, body, failure } from "../../../lib/server";
 import { ensureSync } from "../../../lib/channel-sync";
 import { ensureMeta } from "../../../lib/playlist-meta";
 import { readPlaylist } from "../../../lib/youtube";
+import { refreshHistory, recordRefresh } from "../../../lib/playlist-refresh-log";
+export async function GET(request: Request) {
+  try {
+    const id = new URL(request.url).searchParams.get("id") || "";
+    if (!/^[\w-]{10,100}$/.test(id)) throw new ApiError("재생목록을 선택해 주세요.");
+    return Response.json((await refreshHistory(id)).results, {headers:{"Cache-Control":"no-store"}});
+  } catch (e) { return failure(e); }
+}
 export async function POST(request: Request) {
   let owner: string | undefined;
+  let playlistId: string | undefined;
   try {
     const input = await body(request, 1000);
     await ensureSync();
@@ -22,6 +31,7 @@ export async function POST(request: Request) {
         }>();
     if (!saved)
       throw new ApiError("보관실에 저장된 재생목록을 선택해 주세요.", 404);
+    playlistId = saved.id;
     if (Date.now() - saved.updated_at < 60000)
       throw new ApiError(
         "방금 갱신한 목록이에요. 1분 뒤 다시 가져올 수 있어요.",
@@ -78,6 +88,7 @@ export async function POST(request: Request) {
       }>();
     if (active?.owner !== owner)
       throw new ApiError("갱신이 중단되어 기존 자료를 유지했어요.", 409);
+    await recordRefresh(saved.id, `${playlist.title} · ${playlist.tracks.length}곡으로 갱신했어요.`, true).catch(() => {});
     return Response.json(
       {
         ...playlist,
@@ -88,6 +99,7 @@ export async function POST(request: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
+    if (playlistId) await recordRefresh(playlistId, e instanceof ApiError ? e.message : "갱신에 실패했어요. 기존 자료를 유지합니다.", false).catch(() => {});
     return failure(e);
   } finally {
     if (owner)
