@@ -158,7 +158,9 @@ export async function readPlaylist(
   id: string,
   key?: string,
 ): Promise<Playlist> {
-  if (key) return readOfficial(id, key);
+  // Music-generated Recap IDs resolve on the public page but are absent from
+  // the Data API response. Route them directly, never bypass quota errors.
+  if (key && !/^LR(?:SR|YR)/.test(id)) return readOfficial(id, key);
   const response = await fetchTimed(
     `https://www.youtube.com/playlist?list=${encodeURIComponent(id)}&hl=ko`,
     {

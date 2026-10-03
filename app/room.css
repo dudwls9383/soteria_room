@@ -1739,6 +1739,7 @@ body {
   gap: 14px;
 }
 .random-song {
+  min-width: 0;
   display: flex;
   gap: 17px;
   padding: 15px;
@@ -1759,6 +1760,7 @@ body {
 }
 .random-song > div {
   min-width: 0;
+  flex: 1;
 }
 .random-song strong {
   font-size: 13px;

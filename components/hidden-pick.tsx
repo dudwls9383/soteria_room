@@ -10,12 +10,13 @@ export default function HiddenPick() {
     [before, setBefore] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(true);
+  const [page, setPage] = useState(1);
   useEffect(() => {
     const c = new AbortController();
     setBusy(true);
     setError("");
     fetch(
-      `/api/music?mode=hidden&views=${views}&seconds=${seconds}&before=${before}`,
+      `/api/music?mode=hidden&views=${views}&seconds=${seconds}&before=${before}&page=${page}`,
       { signal: c.signal },
     )
       .then(async (r) => {
@@ -30,7 +31,7 @@ export default function HiddenPick() {
         if (!c.signal.aborted) setBusy(false);
       });
     return () => c.abort();
-  }, [views, seconds, before]);
+  }, [views, seconds, before, page]);
   return (
     <section className="hidden-pick pick-shelf">
       <div className="pick-shelf-heading">
@@ -46,17 +47,31 @@ export default function HiddenPick() {
       <div className="control-row glass">
         <label>
           조회수
-          <select value={views} onChange={(e) => setViews(e.target.value)}>
-            {[1000, 5000, 10000, 50000, 100000].map((n) => (
-              <option value={n} key={n}>
-                {n.toLocaleString()}회 이하
-              </option>
-            ))}
+          <select
+            value={views}
+            onChange={(e) => {
+              setViews(e.target.value);
+              setPage(1);
+            }}
+          >
+            {[50, 100, 200, 500, 800, 1000, 5000, 10000, 50000, 100000].map(
+              (n) => (
+                <option value={n} key={n}>
+                  {n.toLocaleString()}회 이하
+                </option>
+              ),
+            )}
           </select>
         </label>
         <label>
           영상 길이
-          <select value={seconds} onChange={(e) => setSeconds(e.target.value)}>
+          <select
+            value={seconds}
+            onChange={(e) => {
+              setSeconds(e.target.value);
+              setPage(1);
+            }}
+          >
             <option value="300">5분 이하</option>
             <option value="600">10분 이하</option>
             <option value="1200">20분 이하</option>
@@ -64,7 +79,13 @@ export default function HiddenPick() {
         </label>
         <label>
           게시연도
-          <select value={before} onChange={(e) => setBefore(e.target.value)}>
+          <select
+            value={before}
+            onChange={(e) => {
+              setBefore(e.target.value);
+              setPage(1);
+            }}
+          >
             <option value="">전체</option>
             {[2025, 2023, 2020, 2015].map((y) => (
               <option value={y} key={y}>
@@ -127,6 +148,40 @@ export default function HiddenPick() {
               ))}
             </div>
           )}
+          <nav className="subscription-pages" aria-label="숨은 곡 페이지">
+            <button
+              className="room-button subtle"
+              disabled={busy || data.page <= 1}
+              onClick={() => setPage(data.page - 1)}
+            >
+              이전
+            </button>
+            {Array.from(
+              { length: Math.min(5, data.pages) },
+              (_, i) =>
+                Math.max(1, Math.min(data.page - 2, data.pages - 4)) + i,
+            ).map((n) => (
+              <button
+                className="room-button subtle"
+                key={n}
+                aria-current={n === data.page ? "page" : undefined}
+                disabled={busy || n === data.page}
+                onClick={() => setPage(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <span>
+              {data.page} / {data.pages}
+            </span>
+            <button
+              className="room-button subtle"
+              disabled={busy || data.page >= data.pages}
+              onClick={() => setPage(data.page + 1)}
+            >
+              다음
+            </button>
+          </nav>
         </>
       )}
     </section>

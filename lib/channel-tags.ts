@@ -1,3 +1,4 @@
+import {channelTagLabels} from "./channel-labels.ts";
 import fallbackData from "./channel-tags-data.ts";
 import type { Channel } from "./subscriptions";
 
@@ -78,18 +79,7 @@ const collectionKeys: Record<string, string[]> = {
   Playlist: ["Playlist"],
   Topic: ["Topic"],
 };
-const tagLabels: Record<string, string> = {
-  ASMR: "ASMR",
-  KawaVo: "카와보",
-  ShotaVo: "쇼타보",
-  VocalMale: "남성 보컬",
-  VocalFemale: "여성 보컬",
-  Composer: "작곡가",
-  Japan: "일본",
-  Korea: "한국",
-  Playlist: "재생목록",
-  Topic: "Topic",
-};
+const tagLabels=channelTagLabels;
 const defaultPicksCategories: PicksCategory[] = [
   { id: "general", label: "일반", kind: "Picks" },
   { id: "kawavo", label: "카와보", kind: "Picks", tag: "KawaVo" },

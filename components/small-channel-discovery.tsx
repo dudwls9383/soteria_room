@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import ChannelPreview from "./channel-preview";
+import {localizedChannelTags,compareChannelTags} from "../lib/channel-labels";
 import { ExternalLink, RefreshCw, Shuffle, Users } from "lucide-react";
 import { matchesBand, subscriberBands, type SmallChannel } from "../lib/small-channels";
 import { sampleUnique } from "../lib/collections";
@@ -10,8 +11,8 @@ const copy={
  en:{title:"Your next small-channel discovery.",intro:"Explore channels from the saved roster. Subscriber counts reflect the last check.",all:"All under 10,000",everything:"All channels",over:"10,000 or more",unknown:"Unknown",tag:"Tag",any:"All tags",search:"Search channel names",random:"Random 12",list:"View all",empty:"No channels match these filters.",hint:"Try another range or explore unknown counts.",loading:"Loading channels…",failed:"Could not load channels.",prev:"Previous",next:"Next",stats:"Subscriber updates",refresh:"Refresh outdated counts",stop:"Stop after this batch",configured:"Only counts older than 7 days are refreshed, 50 channels per batch. Visitors use saved data.",missing:"YouTube API setup pending · Recommendations currently use saved JSON data.",locked:"Unlock admin access in Import & sync to refresh.",saved:"Saved JSON",api:"Official API",noDate:"Date unknown",retry:"Reload",count:"subscribers",summary:"Roster / Known counts / Under 10,000",done:"Update complete",stopped:"Stopped · Completed updates were saved.",working:"Updating",remaining:"Remaining",note:"Unknown counts are not treated as zero. Public subscriber counts may be rounded."},
  ja:{title:"まだ知られていない、次の推し。",intro:"保存されたチャンネル一覧から探しましょう。登録者数は最終確認時の情報です。",all:"1万人未満すべて",everything:"全チャンネル",over:"1万人以上",unknown:"未確認",tag:"タグ",any:"すべてのタグ",search:"チャンネル名を検索",random:"ランダム12件",list:"すべて表示",empty:"条件に合うチャンネルがありません。",hint:"別の範囲や未確認のチャンネルも見てみましょう。",loading:"読み込み中…",failed:"チャンネルを読み込めませんでした。",prev:"前へ",next:"次へ",stats:"登録者数の更新",refresh:"古い情報を更新",stop:"この処理後に停止",configured:"7日以上経過した情報を50件ずつ更新します。閲覧者には保存済み情報を表示します。",missing:"YouTube APIの設定待ち · 現在はJSONの保存情報を使用します。",locked:"更新するにはインポート・同期で管理者ロックを解除してください。",saved:"JSON保存情報",api:"公式API確認",noDate:"確認日不明",retry:"再読み込み",count:"人",summary:"候補 / 登録者数確認済み / 1万人未満",done:"更新完了",stopped:"停止しました。完了分は保存済みです。",working:"更新中",remaining:"残り",note:"未確認を0人として扱いません。公開登録者数は概数の場合があります。"},
 };
-const tagNames:Record<string,string>={KawaVo:"카와보 · Kawaii voice",ASMR:"ASMR",ShotaVo:"쇼타보 · Shota voice",VocalMale:"남성 보컬 · Male vocals",VocalFemale:"여성 보컬 · Female vocals",Composer:"작곡가 · Composer",Japan:"일본 · Japan",Korea:"한국 · Korea",Topic:"Topic",Playlist:"Playlist"};
 export default function SmallChannelDiscovery({adminKey,language="ko"}:{adminKey:string;language?:"ko"|"en"|"ja"}) {
+ const tagNames:Record<string,string>=localizedChannelTags(language);
  const t=copy[language], [data,setData]=useState<Snapshot|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const [band,setBand]=useState("all"),[tag,setTag]=useState("all"),[query,setQuery]=useState(""),[page,setPage]=useState(1),[picked,setPicked]=useState<SmallChannel[]|null>(null),[refreshing,setRefreshing]=useState(false),[remaining,setRemaining]=useState(0);
  const [preview,setPreview]=useState<SmallChannel|null>(null);
@@ -24,8 +25,8 @@ export default function SmallChannelDiscovery({adminKey,language="ko"}:{adminKey
  }
  useEffect(()=>{mounted.current=true;void load().catch(e=>{if(mounted.current)setError(e.message);}).finally(()=>{if(mounted.current)setLoading(false);});return()=>{mounted.current=false;stop.current=true;};},[]);
  const channels=data?.channels || [];
- const tags=[...new Set(channels.flatMap(c=>c.tags))].sort();
- const filtered=channels.filter(c=>matchesBand(c.subscribers,band) && (tag==="all"||c.tags.includes(tag)) && c.title.toLowerCase().includes(query.trim().toLowerCase()));
+ const tags=[...new Set(channels.flatMap(c=>c.tags))].sort(compareChannelTags);
+ const filtered=channels.filter(c=>matchesBand(c.subscribers,band) && (tag==="all"||c.tags.includes(tag)) && c.title.toLowerCase().includes(query.trim().toLowerCase())).sort((a,b)=>(b.subscribers??-1)-(a.subscribers??-1)||a.title.localeCompare(b.title));
  const result=picked || filtered, pages=Math.max(1,Math.ceil(result.length/60)),currentPage=Math.min(page,pages),visible=result.slice((currentPage-1)*60,currentPage*60);
  function reset(){setPage(1);setPicked(null);}
  async function refresh() {
@@ -49,7 +50,7 @@ export default function SmallChannelDiscovery({adminKey,language="ko"}:{adminKey
    {notice && <p role="status" className="room-message">{notice}</p>}
    <section className="small-controls glass">
     <small>{t.summary}</small><div className="small-totals">{channels.length.toLocaleString()} <span>/</span> {(data?.known||0).toLocaleString()} <span>/</span> {(data?.eligible||0).toLocaleString()}</div>
-    <div className="small-bands" aria-label={t.stats}>{[{id:"everything",label:t.everything},{id:"all",label:t.all},...subscriberBands.map(b=>({id:b.id,label:language==="ko"?b.label:b.label.replace("명",language==="ja"?"人":"")})),{id:"10000plus",label:t.over},{id:"unknown",label:t.unknown}].map(b=><button key={b.id} aria-pressed={band===b.id} onClick={()=>{setBand(b.id);reset();}}>{b.label}<small>{channels.filter(c=>matchesBand(c.subscribers,b.id)).length.toLocaleString()}</small></button>)}</div>
+    <div className="small-bands" aria-label={t.stats}>{[{id:"everything",label:t.everything},{id:"10000plus",label:t.over},...[...subscriberBands].reverse().map(b=>({id:b.id,label:language==="ko"?b.label:b.label.replace("명",language==="ja"?"人":"")})),{id:"all",label:t.all},{id:"unknown",label:t.unknown}].map(b=><button key={b.id} aria-pressed={band===b.id} onClick={()=>{setBand(b.id);reset();}}>{b.label}<small>{channels.filter(c=>matchesBand(c.subscribers,b.id)).length.toLocaleString()}</small></button>)}</div>
     <div className="control-row"><label>{t.tag}<select value={tag} onChange={e=>{setTag(e.target.value);reset();}}><option value="all">{t.any}</option>{tags.map(tag=><option key={tag} value={tag}>{tagNames[tag]||tag}</option>)}</select></label><label className="wide">{t.search}<input value={query} onChange={e=>{setQuery(e.target.value);reset();}} placeholder={t.search}/></label><button className="room-button" disabled={!filtered.length||loading} onClick={()=>{setPicked(sampleUnique(filtered,12));setPage(1);}}><Shuffle size={16}/>{t.random}</button><button className="room-button subtle" aria-pressed={!picked} onClick={reset}>{t.list} · {filtered.length.toLocaleString()}</button></div>
    </section>
    {preview&&<ChannelPreview channel={preview} language={language} onClose={()=>setPreview(null)}/>}

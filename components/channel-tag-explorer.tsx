@@ -14,6 +14,7 @@ import type {
   ChannelTagSummary,
 } from "../lib/channel-tags";
 import { sampleUnique } from "../lib/collections";
+import {channelTagOrder,channelTagLabels,displayChannelTags} from "../lib/channel-labels";
 import ResetDataButton from "./reset-data-button";
 
 type Snapshot = {
@@ -25,16 +26,7 @@ type Snapshot = {
   source: string | null;
 };
 
-const tagChoices = [
-  "ASMR",
-  "KawaVo",
-  "ShotaVo",
-  "VocalFemale",
-  "VocalMale",
-  "Composer",
-  "Japan",
-  "Korea",
-];
+const tagChoices=channelTagOrder;
 export default function ChannelTagExplorer({
   initialTag = "ASMR",
   adminKey = "",
@@ -157,7 +149,7 @@ export default function ChannelTagExplorer({
                 const item = snapshot.summaries.find((s) => s.id === id);
                 return (
                   <option key={id} value={id}>
-                    {item?.label || id}
+                    {channelTagLabels[id] || item?.label || id}
                   </option>
                 );
               })}
@@ -267,7 +259,7 @@ export default function ChannelTagExplorer({
                 </h3>
                 <p>
                   <Tags size={11} />
-                  {c.tags.slice(0, 5).join(" · ") || "CHANNEL"}
+                  {displayChannelTags(c.tags).slice(0, 5).join(" · ") || "CHANNEL"}
                 </p>
               </div>
               <span className="channel-row-open">
@@ -303,7 +295,7 @@ export default function ChannelTagExplorer({
               </strong>
               <p>
                 <Tags size={10} />
-                {c.tags.slice(0, 3).join(" · ") || "CHANNEL"}
+                {displayChannelTags(c.tags).slice(0, 3).join(" · ") || "CHANNEL"}
               </p>
             </a>
           ),

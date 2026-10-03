@@ -7,7 +7,24 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Flower2, Sun, Leaf, Snowflake, CalendarDays } from "lucide-react";
+import {
+  Flower2,
+  Sun,
+  Leaf,
+  Snowflake,
+  CalendarDays,
+  Music2,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Shuffle,
+  RotateCcw,
+  RotateCw,
+  Settings2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { playbackError } from "../lib/video-facts";
 import type { Track } from "../lib/music";
 type Player = {
@@ -51,7 +68,8 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false),
     [volume, setVolume] = useState(80);
   const [strength, setStrength] = useState(35),
-    [simple, setSimple] = useState(false),
+    [musicView, setMusicView] = useState(false),
+    [settingsOpen, setSettingsOpen] = useState(false),
     [notice, setNotice] = useState("");
   const [failures, setFailures] = useState<Record<string, string>>({}),
     [skipFailed, setSkipFailed] = useState(true);
@@ -267,7 +285,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
         },
       }}
     >
-      {current && !simple && ambient !== "off" && strength > 0 && (
+      {current && ambient !== "off" && strength > 0 && (
         <div
           className={`room-ambient ${ambient}`}
           key={current.id}
@@ -317,7 +335,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
       )}
       {(current || queue.length > 0) && (
         <aside
-          className={`listening-room glass ${theater ? "theater" : ""} ${simple ? "simple" : ""} ${list ? "" : "list-hidden"}`}
+          className={`listening-room glass ${theater ? "theater" : ""} ${musicView ? "music-view" : ""} ${list ? "" : "list-hidden"}`}
           role={theater ? "dialog" : undefined}
           aria-modal={theater ? true : undefined}
           aria-label="임시 듣기 목록"
@@ -336,6 +354,16 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             >
               {theater ? "기본 모드" : "전체 모드"}
             </button>
+            {current && (
+              <button
+                aria-label={musicView ? "영상 화면" : "음악 카드 화면"}
+                aria-pressed={musicView}
+                title={musicView ? "영상 화면" : "음악 카드 화면"}
+                onClick={() => setMusicView((v) => !v)}
+              >
+                {musicView ? <Eye size={18} /> : <EyeOff size={18} />}
+              </button>
+            )}
             <button onClick={() => setList((v) => !v)}>
               목록 {queue.length}
             </button>
@@ -351,47 +379,32 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             </button>
           </div>
           {current && (
-            <div className="listening-body">
-              <div className="listening-video">
-                <div ref={mount} />
+            <>
+              <div className="listening-body">
+                <div className="listening-stage">
+                  {musicView && (
+                    <div className="music-visual">
+                      <img src={current.thumbnail} alt="" aria-hidden="true" />
+                      <Music2 size={46} />
+                      <h2 className="notranslate" translate="no">
+                        {current.title}
+                      </h2>
+                      <p className="notranslate" translate="no">
+                        {current.artist}
+                      </p>
+                      <small>
+                        음악 카드 · 영상은 작은 재생기에서 계속 재생됩니다.
+                      </small>
+                    </div>
+                  )}
+                  <div className="listening-video">
+                    <div ref={mount} />
+                  </div>
+                </div>
               </div>
               <div className="listening-controls">
-                <p className="notranslate" translate="no">
-                  {current.artist}
-                </p>
-                <div>
-                  <button onClick={() => next(-1)}>이전</button>
-                  <button
-                    disabled={!ready}
-                    onClick={() =>
-                      paused
-                        ? player.current?.playVideo()
-                        : player.current?.pauseVideo()
-                    }
-                  >
-                    {paused ? "재생" : "일시정지"}
-                  </button>
-                  <button onClick={() => next()}>다음</button>
-                  <button
-                    onClick={() =>
-                      setQueue((q) => {
-                        const shuffled = [...q];
-                        for (let i = shuffled.length - 1; i > 0; i--) {
-                          const j = Math.floor(Math.random() * (i + 1));
-                          [shuffled[i], shuffled[j]] = [
-                            shuffled[j],
-                            shuffled[i],
-                          ];
-                        }
-                        return shuffled;
-                      })
-                    }
-                  >
-                    셔플
-                  </button>
-                </div>
-                <label>
-                  진행 {clock(time)} / {clock(duration)}
+                <label className="playback-progress">
+                  <span>{clock(time)}</span>
                   <input
                     aria-label="재생 위치"
                     type="range"
@@ -403,79 +416,169 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                       player.current?.seekTo(Number(e.target.value), true)
                     }
                   />
+                  <span>{clock(duration)}</span>
                 </label>
-                <label>
-                  볼륨{" "}
-                  <input
-                    aria-label="볼륨"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={volume}
-                    disabled={!ready}
-                    onChange={(e) => {
-                      const v = Number(e.target.value);
-                      setVolume(v);
-                      player.current?.setVolume(v);
-                    }}
-                  />
-                </label>
-                <label>
-                  앰비언트 강도 · {strength}%
-                  <input
-                    aria-label="앰비언트 강도"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={strength}
-                    disabled={simple || ambient === "off"}
-                    onChange={(e) => setStrength(Number(e.target.value))}
-                  />
-                </label>
-                <label>
-                  앰비언트{" "}
-                  <select
-                    disabled={simple}
-                    value={ambient}
-                    onChange={(e) => setAmbient(e.target.value)}
-                  >
-                    <option value="off">끔</option>
-                    <option value="soft">은은하게</option>
-                    <option value="immersive">몰입</option>
-                  </select>
-                </label>
-                <label className="player-option">
-                  <input
-                    type="checkbox"
-                    checked={simple}
-                    onChange={(e) => setSimple(e.target.checked)}
-                  />
-                  간소화 화면
-                </label>
-                <label className="player-option">
-                  <input
-                    type="checkbox"
-                    checked={skipFailed}
-                    onChange={(e) => setSkipFailed(e.target.checked)}
-                  />
-                  재생 불가 영상 건너뛰기
-                </label>
-                {simple && (
-                  <small>
-                    배경 효과만 꺼집니다. 영상 데이터는 계속 사용해요. 화질은
-                    YouTube 재생기의 설정에서 조절할 수 있어요.
-                  </small>
+                <div className="playback-row">
+                  <div className="playback-track notranslate" translate="no">
+                    <img src={current.thumbnail} alt="" />
+                    <div>
+                      <strong>{current.title}</strong>
+                      <small>{current.artist}</small>
+                    </div>
+                  </div>
+                  <div className="playback-transport">
+                    <button
+                      aria-label="셔플"
+                      title="셔플"
+                      onClick={() =>
+                        setQueue((q) => {
+                          const shuffled = [...q];
+                          for (let i = shuffled.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [shuffled[i], shuffled[j]] = [
+                              shuffled[j],
+                              shuffled[i],
+                            ];
+                          }
+                          return shuffled;
+                        })
+                      }
+                    >
+                      <Shuffle size={18} />
+                    </button>
+                    <button
+                      aria-label="이전"
+                      title="이전"
+                      disabled={!ready}
+                      onClick={() => next(-1)}
+                    >
+                      <SkipBack size={20} />
+                    </button>
+                    <button
+                      aria-label="10초 뒤로"
+                      title="10초 뒤로"
+                      disabled={!ready}
+                      onClick={() =>
+                        player.current?.seekTo(Math.max(0, time - 10), true)
+                      }
+                    >
+                      <RotateCcw size={17} />
+                    </button>
+                    <button
+                      className="transport-play"
+                      aria-label={paused ? "재생" : "일시정지"}
+                      title={paused ? "재생" : "일시정지"}
+                      disabled={!ready}
+                      onClick={() =>
+                        paused
+                          ? player.current?.playVideo()
+                          : player.current?.pauseVideo()
+                      }
+                    >
+                      {paused ? (
+                        <Play size={22} fill="currentColor" />
+                      ) : (
+                        <Pause size={22} fill="currentColor" />
+                      )}
+                    </button>
+                    <button
+                      aria-label="10초 앞으로"
+                      title="10초 앞으로"
+                      disabled={!ready}
+                      onClick={() =>
+                        player.current?.seekTo(
+                          Math.min(duration, time + 10),
+                          true,
+                        )
+                      }
+                    >
+                      <RotateCw size={17} />
+                    </button>
+                    <button
+                      aria-label="다음"
+                      title="다음"
+                      disabled={!ready}
+                      onClick={() => next()}
+                    >
+                      <SkipForward size={20} />
+                    </button>
+                  </div>
+                  <div className="playback-options">
+                    <label>
+                      볼륨
+                      <input
+                        aria-label="볼륨"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={volume}
+                        disabled={!ready}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setVolume(v);
+                          player.current?.setVolume(v);
+                        }}
+                      />
+                    </label>
+                    <button
+                      aria-label="재생 설정"
+                      title="재생 설정"
+                      aria-expanded={settingsOpen}
+                      onClick={() => setSettingsOpen((v) => !v)}
+                    >
+                      <Settings2 size={20} />
+                    </button>
+                  </div>
+                </div>
+                {settingsOpen && (
+                  <div className="player-settings glass">
+                    <label>
+                      앰비언트
+                      <select
+                        value={ambient}
+                        onChange={(e) => setAmbient(e.target.value)}
+                      >
+                        <option value="off">끔</option>
+                        <option value="soft">은은하게</option>
+                        <option value="immersive">몰입</option>
+                      </select>
+                    </label>
+                    <label>
+                      앰비언트 강도 · {strength}%
+                      <input
+                        aria-label="앰비언트 강도"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={strength}
+                        disabled={ambient === "off"}
+                        onChange={(e) => setStrength(Number(e.target.value))}
+                      />
+                    </label>
+                    <label className="player-option">
+                      <input
+                        type="checkbox"
+                        checked={skipFailed}
+                        onChange={(e) => setSkipFailed(e.target.checked)}
+                      />
+                      재생 불가 영상 건너뛰기
+                    </label>
+                    <a
+                      href={`https://youtu.be/${current.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      YouTube에서 듣기
+                    </a>
+                    <small>
+                      화질은 YouTube 재생기의 설정에서 조절할 수 있어요. 음악
+                      카드 화면에서도 영상 데이터는 계속 사용합니다.
+                    </small>
+                  </div>
                 )}
-                <a
-                  href={`https://youtu.be/${current.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  YouTube에서 듣기 ↗
-                </a>
                 {error && <p role="alert">{error}</p>}
               </div>
-            </div>
+            </>
           )}
           {list && (
             <div className="listening-queue">

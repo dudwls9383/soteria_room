@@ -41,7 +41,7 @@ import { reconcileTranslation, type TranslationRecord } from "../lib/live-transl
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
 import VideoManagement from "../components/video-management";
-import SmallChannelDiscovery from "../components/small-channel-discovery";
+import ChannelHub from "../components/channel-hub";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
@@ -81,6 +81,7 @@ const uiDictionary: Record<
 > = {
   en: {
     "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
+    "채널 탐색":"Channel explorer", "메이저 남":"Mainstream men", "우타이테 남":"Male utaite", "메이저 여":"Mainstream women", "우타이테 여":"Female utaite", "토픽":"Topic", "플레이리스트":"Playlist",
     "숨은 곡 Pick": "Hidden gems Pick",
     "영상 길이": "Video length",
     "게시연도": "Upload year",
@@ -88,7 +89,8 @@ const uiDictionary: Record<
     "10분 이하": "Up to 10 minutes",
     "20분 이하": "Up to 20 minutes",
     "앰비언트 강도": "Ambient intensity",
-    "간소화 화면": "Simple view",
+    "음악 카드 화면": "Music card view", "영상 화면": "Video view", "10초 뒤로": "Back 10 seconds", "10초 앞으로": "Forward 10 seconds",
+    "음악 카드 · 영상은 작은 재생기에서 계속 재생됩니다.": "Music card · Video continues in the small player.",
     "재생 불가 영상 건너뛰기": "Skip unavailable videos",
     "이미 듣기 목록에 있는 곡이에요.": "Already in your listening queue.",
     "재생할 수 없는 영상을 건너뛰었어요.": "Skipped an unavailable video.",
@@ -275,6 +277,7 @@ const uiDictionary: Record<
   },
   ja: {
     "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
+    "채널 탐색":"チャンネル探索", "메이저 남":"メジャー・男性", "우타이테 남":"歌い手・男性", "메이저 여":"メジャー・女性", "우타이테 여":"歌い手・女性", "토픽":"トピック", "플레이리스트":"プレイリスト",
     "숨은 곡 Pick": "隠れた名曲Pick",
     "영상 길이": "動画の長さ",
     "게시연도": "公開年",
@@ -282,7 +285,8 @@ const uiDictionary: Record<
     "10분 이하": "10分以内",
     "20분 이하": "20分以内",
     "앰비언트 강도": "アンビエントの強さ",
-    "간소화 화면": "シンプル表示",
+    "음악 카드 화면": "ミュージックカード", "영상 화면": "動画表示", "10초 뒤로": "10秒戻る", "10초 앞으로": "10秒進む",
+    "음악 카드 · 영상은 작은 재생기에서 계속 재생됩니다.": "ミュージックカード · 動画は小さなプレイヤーで再生されます。",
     "재생 불가 영상 건너뛰기": "再生できない動画をスキップ",
     "이미 듣기 목록에 있는 곡이에요.": "すでに再生リストに入っています。",
     "재생할 수 없는 영상을 건너뛰었어요.": "再生できない動画をスキップしました。",
@@ -605,8 +609,7 @@ const modules = [
   { id: "search", name: "유튜브 재생목록 검색기", icon: Search, group: "도구" },
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
-  { id: "small", name: "하꼬 추천", icon: Sparkles, group: "탐색" },
-  { id: "asmr", name: "채널 보관실", icon: Headphones },
+  { id: "small", name: "채널 탐색", icon: Sparkles, group: "탐색" },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결" },
   { id: "somunia", name: "소무니아 갤러리", icon: MessageCircle },
@@ -656,6 +659,7 @@ function RoomContent() {
     [filter, setFilter] = useState("all"),
     [sort, setSort] = useState("month");
   const [selected, setSelected] = useState<Saved | null>(null);
+  const [channelStart,setChannelStart]=useState<"recommend"|"archive">("recommend");
   const [playing, setPlaying] = useState<PlayableTrack | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [quietSync, setQuietSync] = useState(false);
@@ -856,6 +860,7 @@ function RoomContent() {
   useEffect(() => {
     let active = true;
     const hash = location.hash.slice(1);
+    if(hash==="asmr"){setTab("small");setChannelStart("archive");history.replaceState(null,"","#small");}
     if (modules.some((m) => m.id === hash)) {
       setTab(hash);
       if (hash === "worldcup") setCupVisited(true);
@@ -1739,10 +1744,7 @@ function RoomContent() {
           <TabsContent value="bottle">
             <SongBottleLite />
           </TabsContent>
-          <TabsContent value="small"><SmallChannelDiscovery key={`small-${archiveRevision}`} adminKey={adminKey} language={language} /></TabsContent>
-          <TabsContent value="asmr">
-            <ChannelTagExplorer key={`channels-${archiveRevision}`} initialTag="ASMR" adminKey={adminKey} />
-          </TabsContent>
+          <TabsContent value="small"><ChannelHub key={`channels-${archiveRevision}-${channelStart}`} initialTab={channelStart} adminKey={adminKey} language={language}/></TabsContent>
           <TabsContent
             value="worldcup"
             forceMount

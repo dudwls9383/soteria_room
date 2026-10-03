@@ -5,14 +5,14 @@ import { buildMusicIndex, filterMusicIndex } from "../../../lib/music-index";
 import type { Scope } from "../../../lib/collections";
 import { buildPicks } from "../../../lib/picks";
 import { videoFacts } from "../../../lib/video-fact-store";
-import { FACT_TTL, hiddenCandidate } from "../../../lib/video-facts";
+import { FACT_TTL, hiddenCandidate, resultPage } from "../../../lib/video-facts";
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const facts=await videoFacts();
     const fresh=new Map(facts.filter(f=>Date.now()-f.checkedAt<FACT_TTL).map(f=>[f.id,f]));
-    if(url.searchParams.get("mode")==="hidden"&&!fresh.size)return Response.json({music:[],total:0,known:0,checkedAt:0},{headers:{"Cache-Control":"no-store"}});
+    if(url.searchParams.get("mode")==="hidden"&&!fresh.size)return Response.json({music:[],page:1,pages:1,total:0,known:0,checkedAt:0},{headers:{"Cache-Control":"no-store"}});
     const result = await database()
       .prepare(
         "SELECT id,title,tracks,updated_at FROM playlists ORDER BY updated_at DESC",
@@ -31,8 +31,9 @@ export async function GET(request: Request) {
     const music=allMusic.filter(t=>!fresh.has(t.id)||fresh.get(t.id)!.availability==="available");
     if(url.searchParams.get("mode")==="hidden"){
       const views=Math.max(0,Number(url.searchParams.get("views")||10000)),seconds=Math.max(60,Number(url.searchParams.get("seconds")||600)),before=url.searchParams.get("before")||"";
-      const candidates=music.filter(t=>t.scopes.includes("curation")&&fresh.has(t.id)&&hiddenCandidate(fresh.get(t.id)!,views,seconds,before)).sort((a,b)=>fresh.get(a.id)!.views!-fresh.get(b.id)!.views!);
-      return Response.json({music:candidates.slice(0,12).map(t=>({...t,fact:fresh.get(t.id)})),total:candidates.length,known:music.filter(t=>fresh.has(t.id)).length,checkedAt:facts.reduce((n,f)=>Math.max(n,f.checkedAt),0)},{headers:{"Cache-Control":"no-store"}});
+      const candidates=music.filter(t=>t.scopes.includes("curation")&&fresh.has(t.id)&&hiddenCandidate(fresh.get(t.id)!,views,seconds,before)).sort((a,b)=>fresh.get(a.id)!.views!-fresh.get(b.id)!.views!||a.id.localeCompare(b.id));
+      const page=resultPage(candidates,Number(url.searchParams.get("page")||1));
+      return Response.json({...page,music:page.music.map(t=>({...t,fact:fresh.get(t.id)})),total:candidates.length,known:music.filter(t=>fresh.has(t.id)).length,checkedAt:facts.reduce((n,f)=>Math.max(n,f.checkedAt),0)},{headers:{"Cache-Control":"no-store"}});
     }
     if (url.searchParams.get("mode") === "picks") {
       return Response.json(buildPicks(music, {

@@ -7,6 +7,11 @@ export type VideoFact = {
   checkedAt: number;
 };
 export const FACT_TTL = 7 * 86400000;
+export function resultPage<T>(items:T[],requested:number,size=12){
+ const pages=Math.max(1,Math.ceil(items.length/size));
+ const page=Math.max(1,Math.min(pages,Number.isFinite(requested)?Math.floor(requested):1));
+ return {page,pages,music:items.slice((page-1)*size,page*size)};
+}
 export function durationSeconds(value: string) {
   const m = value.match(/^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);
   return m

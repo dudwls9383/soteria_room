@@ -303,7 +303,8 @@ export default function RandomDiscovery({
                 onClick={() => {
                   const picked = sampleUnique(pool, count);
                   setSongs(picked);
-                  setPlaying(picked[0] || null);
+                  // Drawing candidates must not add or start any track.
+                  updatePlaying(null);
                   setNotice(
                     pool.length < count
                       ? `후보가 ${pool.length}곡이라 모두 뽑았어요.`
