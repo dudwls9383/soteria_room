@@ -40,6 +40,7 @@ import { unpackLibrary } from "../lib/library-wire";
 import { reconcileTranslation, type TranslationRecord } from "../lib/live-translation";
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
+import VideoManagement from "../components/video-management";
 import SmallChannelDiscovery from "../components/small-channel-discovery";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
@@ -80,6 +81,30 @@ const uiDictionary: Record<
 > = {
   en: {
     "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
+    "숨은 곡 Pick": "Hidden gems Pick",
+    "영상 길이": "Video length",
+    "게시연도": "Upload year",
+    "5분 이하": "Up to 5 minutes",
+    "10분 이하": "Up to 10 minutes",
+    "20분 이하": "Up to 20 minutes",
+    "앰비언트 강도": "Ambient intensity",
+    "간소화 화면": "Simple view",
+    "재생 불가 영상 건너뛰기": "Skip unavailable videos",
+    "이미 듣기 목록에 있는 곡이에요.": "Already in your listening queue.",
+    "재생할 수 없는 영상을 건너뛰었어요.": "Skipped an unavailable video.",
+    "최신 월의 픽만 갱신": "Refresh latest monthly Pick",
+    "이 목록만 갱신": "Refresh this playlist",
+    "이 목록 갱신 중…": "Refreshing this playlist…",
+    "추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.": "Refresh additions, removals and order. Other playlists are kept.",
+    "배경 효과만 꺼집니다. 영상 데이터는 계속 사용해요. 화질은 YouTube 재생기의 설정에서 조절할 수 있어요.": "Disables background effects only. Video data is still used. Adjust quality in the YouTube player settings.",
+    "모아둔 큐레이션에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.": "Less-viewed tracks from saved curations. Unknown view counts are excluded from numeric filters.",
+    "조건에 맞는 확인된 곡이 없어요. 조건을 넓히거나 가져오기 · 동기화에서 영상 정보를 갱신해 주세요.": "No verified tracks match. Broaden the filters or update video information in Import · Sync.",
+    "숨은 곡을 찾는 중…": "Finding hidden gems…",
+    "영상 정보 · 재생 불가 관리": "Video information · Unavailable videos",
+    "영상 정보 갱신": "Update video information",
+    "영상 정보 확인 중…": "Checking video information…",
+    "갱신하려면 관리자 잠금을 열어 주세요.": "Unlock admin access to update.",
+    "추천에서는 잠시 제외하고 원래 재생목록은 유지합니다. 국가·연령 제한은 실제 재생 환경에 따라 달라질 수 있어요.": "Temporarily excluded from recommendations; original playlists are kept. Region and age restrictions depend on the viewing context.",
     "계절 테마": "Season theme", "자동": "Auto", "봄": "Spring", "여름": "Summer", "가을": "Autumn", "겨울": "Winter",
     "임시 듣기 목록": "Listening queue", "듣기 목록에 모두 담기": "Add all to queue", "이 Pick을 듣기 목록에 담기": "Add these picks to queue", "이번 랜덤을 듣기 목록에 담기": "Add this selection to queue", "목록에 담기": "Add to queue",
     "넓게": "Expand", "작게": "Compact", "목록 비우기": "Clear queue", "재생 종료": "Stop playback", "이전": "Previous", "다음": "Next", "재생": "Play", "일시정지": "Pause", "셔플": "Shuffle", "볼륨": "Volume", "앰비언트": "Ambient", "끔": "Off", "은은하게": "Soft", "몰입": "Immersive",
@@ -250,6 +275,30 @@ const uiDictionary: Record<
   },
   ja: {
     "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
+    "숨은 곡 Pick": "隠れた名曲Pick",
+    "영상 길이": "動画の長さ",
+    "게시연도": "公開年",
+    "5분 이하": "5分以内",
+    "10분 이하": "10分以内",
+    "20분 이하": "20分以内",
+    "앰비언트 강도": "アンビエントの強さ",
+    "간소화 화면": "シンプル表示",
+    "재생 불가 영상 건너뛰기": "再生できない動画をスキップ",
+    "이미 듣기 목록에 있는 곡이에요.": "すでに再生リストに入っています。",
+    "재생할 수 없는 영상을 건너뛰었어요.": "再生できない動画をスキップしました。",
+    "최신 월의 픽만 갱신": "最新の月間Pickだけ更新",
+    "이 목록만 갱신": "このプレイリストだけ更新",
+    "이 목록 갱신 중…": "このプレイリストを更新中…",
+    "추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.": "追加・削除・曲順の変更を反映します。他のリストはそのままです。",
+    "배경 효과만 꺼집니다. 영상 데이터는 계속 사용해요. 화질은 YouTube 재생기의 설정에서 조절할 수 있어요.": "背景効果のみオフにします。動画データは引き続き使用されます。画質はYouTubeプレーヤーの設定で変更できます。",
+    "모아둔 큐레이션에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.": "保存した選曲から再生回数の少ない曲を表示します。未確認の回数は数値条件に含めません。",
+    "조건에 맞는 확인된 곡이 없어요. 조건을 넓히거나 가져오기 · 동기화에서 영상 정보를 갱신해 주세요.": "条件に合う確認済みの曲がありません。条件を広げるか、インポート・同期で動画情報を更新してください。",
+    "숨은 곡을 찾는 중…": "隠れた名曲を探しています…",
+    "영상 정보 · 재생 불가 관리": "動画情報・再生不可の管理",
+    "영상 정보 갱신": "動画情報を更新",
+    "영상 정보 확인 중…": "動画情報を確認中…",
+    "갱신하려면 관리자 잠금을 열어 주세요.": "更新するには管理者ロックを解除してください。",
+    "추천에서는 잠시 제외하고 원래 재생목록은 유지합니다. 국가·연령 제한은 실제 재생 환경에 따라 달라질 수 있어요.": "おすすめから一時的に除外し、元のプレイリストは保持します。地域や年齢の制限は再生環境により異なります。",
     "계절 테마": "季節テーマ", "자동": "自動", "봄": "春", "여름": "夏", "가을": "秋", "겨울": "冬",
     "임시 듣기 목록": "再生キュー", "듣기 목록에 모두 담기": "すべてキューに追加", "이 Pick을 듣기 목록에 담기": "このPickをキューに追加", "이번 랜덤을 듣기 목록에 담기": "この選曲をキューに追加", "목록에 담기": "キューに追加",
     "넓게": "拡大", "작게": "コンパクト", "목록 비우기": "キューを空にする", "재생 종료": "再生を終了", "이전": "前へ", "다음": "次へ", "재생": "再生", "일시정지": "一時停止", "셔플": "シャッフル", "볼륨": "音量", "앰비언트": "アンビエント", "끔": "オフ", "은은하게": "控えめ", "몰입": "没入",
@@ -957,7 +1006,18 @@ function RoomContent() {
       setSelected(current => current?.id === p.id ? {...p,...full,summaryOnly:false,trackCount:full.tracks.length} : current);
     } catch (e) { setError((e as Error).message); }
   }
-  function coverUrl(p: Saved) { return `/api/playlist-cover?id=${encodeURIComponent(p.id)}`; }
+  const [refreshingPlaylist,setRefreshingPlaylist]=useState("");
+  async function refreshPlaylist(p:Saved) {
+    if(refreshingPlaylist||syncing)return;
+    setRefreshingPlaylist(p.id);setError("");
+    try {
+      const full=await request("/api/playlist-refresh",{id:p.id});
+      if(selected?.id===p.id)setSelected(full);
+      if("caches" in window)await caches.delete("soteria-library-v1");
+      await reload();setNotice(`${full.title} · ${full.tracks.length}곡으로 갱신했어요.`);
+    }catch(e){setError((e as Error).message);}finally{setRefreshingPlaylist("");}
+  }
+  function coverUrl(p: Saved) { return `/api/playlist-cover?id=${encodeURIComponent(p.id)}&v=${p.updatedAt||0}`; }
   async function afterLibraryReset() {
     ++syncRun.current;
     ++libraryRequest.current;
@@ -1826,6 +1886,7 @@ function RoomContent() {
                   <RefreshCw size={22} />
                 </div>
                 <h2>1차 자동 · 2차 수동 동기화</h2>
+                {latestPick&&<div className="latest-refresh"><strong className="notranslate" translate="no">{latestPick.title}</strong><button className="room-button" disabled={!!refreshingPlaylist||syncing} onClick={()=>void refreshPlaylist(latestPick)}><RefreshCw size={15} className={refreshingPlaylist?"spin":""}/>{refreshingPlaylist?"이 목록 갱신 중…":"최신 월의 픽만 갱신"}</button><small>추가·삭제·순서 변경까지 다시 가져와요. 다른 목록은 유지합니다.</small></div>}
                 <a
                   className="source-link"
                   href="https://www.youtube.com/@soteria_room/playlists"
@@ -1909,6 +1970,7 @@ function RoomContent() {
                 </form>
               </section>
             </div>
+            <VideoManagement adminKey={adminKey}/>
             <details className="sync-log glass" open><summary>동기화 로그 · {syncStage === "primary" ? "1차" : "2차"} · 최근 12개</summary><div role="log">{syncLogs.length ? syncLogs.map((entry,i)=><p key={`${entry.at}-${i}`}><time>{new Date(entry.at).toLocaleTimeString("ko-KR")}</time> {entry.message}</p>) : <p>아직 기록이 없어요.</p>}</div></details>
             {failures.length > 0 && (
               <section className="settings-card glass">
@@ -1967,7 +2029,7 @@ function RoomContent() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="detail-actions"><button className="room-button subtle" disabled={selected.summaryOnly} onClick={()=>audio.add(selected.tracks)}>듣기 목록에 모두 담기</button>
+              <div className="detail-actions"><button className="room-button subtle" disabled={!!refreshingPlaylist||syncing} onClick={()=>void refreshPlaylist(selected)}><RefreshCw size={14}/>이 목록만 갱신</button><button className="room-button subtle" disabled={selected.summaryOnly} onClick={()=>audio.add(selected.tracks)}>듣기 목록에 모두 담기</button>
                 <a
                   className="room-button"
                   href={`https://www.youtube.com/playlist?list=${selected.id}`}
