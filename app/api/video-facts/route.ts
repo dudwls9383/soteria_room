@@ -35,8 +35,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     requireAdmin(request);
-    await body(request, 1000);
-    return Response.json(await refreshVideoFacts());
+    const input = await body(request, 1000);
+    return Response.json(await refreshVideoFacts(input.scope === "picks"));
   } catch (e) {
     return failure(e);
   }

@@ -70,8 +70,6 @@ body:has(.listening-room) .room-footer {padding-bottom:320px;}
 /* Compact album exploration: keep every action available without tall cards. */
 .channel-hub > .discovery-tabs { flex-direction:row; align-self:flex-start; }
 .hidden-pick .pick-shelf-heading { flex-wrap:nowrap; align-items:center; }
-.hidden-pick-row { display:grid; grid-auto-flow:column; grid-template-columns:none; grid-auto-columns:calc((100% - 32px) / 3); overflow-x:auto; padding-bottom:10px; scroll-snap-type:x proximity; }
-.hidden-pick-row > article { scroll-snap-align:start; }
 .small-channel-grid { grid-template-columns:repeat(auto-fill,minmax(165px,1fr)); gap:12px; }
 .small-card-shell { border-radius:16px; }
 .small-card-shell .small-channel-card { position:relative; flex-direction:column; align-items:center; gap:8px; padding:12px 10px 8px; text-align:center; }
@@ -97,9 +95,7 @@ body:has(.listening-room) .room-footer {padding-bottom:320px;}
 .listening-video > div { height:100%; }
 .theater .listening-stage { max-width:960px; }
 
-@media(min-width:1500px) { .hidden-pick-row { grid-auto-columns:calc((100% - 80px) / 6); } }
 @media(max-width:760px) {
-  .hidden-pick-row { grid-template-columns:none; grid-auto-columns:75%; }
   .hidden-pick .pick-shelf-heading h2 { font-size:19px; }
   .hidden-pick .pick-shelf-heading > button { flex-shrink:0; padding:8px 10px; font-size:12px; }
   .small-channel-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }

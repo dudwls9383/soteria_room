@@ -1,9 +1,9 @@
 import { database } from "../../../db";
 import { failure } from "../../../lib/server";
 import type { Playlist } from "../../../lib/music";
-import { buildMusicIndex, filterMusicIndex } from "../../../lib/music-index";
+import { buildMusicIndex, buildMonthlyPickIndex, filterMusicIndex } from "../../../lib/music-index";
 import type { Scope } from "../../../lib/collections";
-import { buildPicks } from "../../../lib/picks";
+import { buildPicks, dailySample } from "../../../lib/picks";
 import { videoFacts } from "../../../lib/video-fact-store";
 import { FACT_TTL, hiddenCandidate, resultPage } from "../../../lib/video-facts";
 
@@ -27,13 +27,15 @@ export async function GET(request: Request) {
           updatedAt: p.updated_at,
         }) as Playlist & { updatedAt: number },
     );
-    const allMusic = buildMusicIndex(playlists);
+    const mode = url.searchParams.get("mode");
+    const allMusic = mode === "picks" || mode === "hidden" ? buildMonthlyPickIndex(playlists) : buildMusicIndex(playlists);
     const music=allMusic.filter(t=>!fresh.has(t.id)||fresh.get(t.id)!.availability==="available");
     if(url.searchParams.get("mode")==="hidden"){
       const views=Math.max(0,Number(url.searchParams.get("views")||10000)),seconds=Math.max(60,Number(url.searchParams.get("seconds")||600)),before=url.searchParams.get("before")||"";
       const candidates=music.filter(t=>t.scopes.includes("curation")&&fresh.has(t.id)&&hiddenCandidate(fresh.get(t.id)!,views,seconds,before)).sort((a,b)=>fresh.get(a.id)!.views!-fresh.get(b.id)!.views!||a.id.localeCompare(b.id));
-      const page=resultPage(candidates,Number(url.searchParams.get("page")||1));
-      return Response.json({...page,music:page.music.map(t=>({...t,fact:fresh.get(t.id)})),total:candidates.length,known:music.filter(t=>fresh.has(t.id)).length,checkedAt:facts.reduce((n,f)=>Math.max(n,f.checkedAt),0)},{headers:{"Cache-Control":"no-store"}});
+      const nonce=(url.searchParams.get("nonce")||"").slice(0,80);
+      const page=resultPage(nonce ? dailySample(candidates,nonce,candidates.length) : candidates,Number(url.searchParams.get("page")||1));
+      return Response.json({...page,music:page.music.map(t=>({...t,fact:fresh.get(t.id)})),total:candidates.length,known:music.filter(t=>fresh.has(t.id)).length,checkedAt:music.reduce((n,t)=>Math.max(n,fresh.get(t.id)?.checkedAt||0),0)},{headers:{"Cache-Control":"no-store"}});
     }
     if (url.searchParams.get("mode") === "picks") {
       return Response.json(buildPicks(music, {

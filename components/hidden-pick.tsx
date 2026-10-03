@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Play, Plus } from "lucide-react";
 import { useRoomAudio } from "./room-experience";
-export default function HiddenPick() {
+export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
   const audio = useRoomAudio(),
     [data, setData] = useState<any>(null),
     [views, setViews] = useState("10000"),
@@ -11,12 +11,23 @@ export default function HiddenPick() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(true);
   const [page, setPage] = useState(1);
+  const [nonce,setNonce]=useState("");
+  const [updating,setUpdating]=useState(false);
+  const [updateNote,setUpdateNote]=useState("");
+  async function updateViews() {
+    setUpdating(true); setError("");
+    try {
+      const r=await fetch("/api/video-facts",{method:"POST",headers:{"Content-Type":"application/json","x-soteria-admin-key":adminKey},body:JSON.stringify({scope:"picks"})});
+      const d:any=await r.json(); if(!r.ok)throw new Error(d.error);
+      setUpdateNote(`${d.updated}곡 확인 · 남은 ${d.remaining}곡`);setNonce(crypto.randomUUID());setPage(1);
+    } catch(e){setError((e as Error).message);}finally{setUpdating(false);}
+  }
   useEffect(() => {
     const c = new AbortController();
     setBusy(true);
     setError("");
     fetch(
-      `/api/music?mode=hidden&views=${views}&seconds=${seconds}&before=${before}&page=${page}`,
+      `/api/music?mode=hidden&views=${views}&seconds=${seconds}&before=${before}&page=${page}&nonce=${nonce}`,
       { signal: c.signal },
     )
       .then(async (r) => {
@@ -31,7 +42,7 @@ export default function HiddenPick() {
         if (!c.signal.aborted) setBusy(false);
       });
     return () => c.abort();
-  }, [views, seconds, before, page]);
+  }, [views, seconds, before, page, nonce]);
   return (
     <section className="hidden-pick pick-shelf">
       <div className="pick-shelf-heading">
@@ -39,11 +50,9 @@ export default function HiddenPick() {
           <span className="room-eyebrow">HIDDEN GEMS · YouTube</span>
           <h2>숨은 곡 Pick</h2>
         </div>
-        <button className="room-button subtle" disabled={busy || !data || data.pages <= 1}
-          onClick={() => setPage(data.page >= data.pages ? 1 : data.page + 1)}>다른 곡 보기</button>
       </div>
       <p className="pick-reason">
-        모아둔 큐레이션에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인
+        월의 픽에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인
         영상은 숫자 조건에 포함하지 않습니다.
       </p>
       <div className="control-row glass">
@@ -97,6 +106,8 @@ export default function HiddenPick() {
           </select>
         </label>
       </div>
+      {adminKey&&<button className="room-button subtle" disabled={updating} onClick={()=>void updateViews()}>{updating?"조회수 확인 중…":"월의 픽 조회수 갱신 · 50곡"}</button>}
+      {updateNote&&<p role="status">{updateNote}</p>}
       {busy && <p role="status">숨은 곡을 찾는 중…</p>}
       {error && <p role="alert">{error}</p>}
       {data && !busy && (
@@ -107,13 +118,13 @@ export default function HiddenPick() {
             {data.checkedAt > 0 &&
               ` · ${new Date(data.checkedAt).toLocaleDateString("ko-KR")} 기준`}
           </small>
+          <div><button className="room-button subtle" disabled={busy || !data.total} onClick={()=>{setPage(1);setNonce(crypto.randomUUID());}}>랜덤곡 보기</button></div>
           {!data.music.length ? (
             <p className="room-message">
-              조건에 맞는 확인된 곡이 없어요. 조건을 넓히거나 가져오기 ·
-              동기화에서 영상 정보를 갱신해 주세요.
+              조건에 맞는 확인된 곡이 없어요. 조건을 넓혀 주세요.
             </p>
           ) : (
-            <div className="pick-album-grid hidden-pick-row">
+            <div className="pick-album-grid">
               {data.music.map((t: any) => (
                 <article className="pick-album glass" key={t.id}>
                   <button

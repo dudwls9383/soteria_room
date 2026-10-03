@@ -40,7 +40,6 @@ import { unpackLibrary } from "../lib/library-wire";
 import { reconcileTranslation, type TranslationRecord } from "../lib/live-translation";
 import WorldCup from "../components/world-cup";
 import RandomDiscovery from "../components/random-discovery";
-import VideoManagement from "../components/video-management";
 import ChannelHub from "../components/channel-hub";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
@@ -83,6 +82,8 @@ const uiDictionary: Record<
     "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
     "채널 탐색":"Channel explorer", "메이저 남":"Mainstream men", "우타이테 남":"Male utaite", "메이저 여":"Mainstream women", "우타이테 여":"Female utaite", "토픽":"Topic", "플레이리스트":"Playlist",
     "숨은 곡 Pick": "Hidden gems Pick",
+    "랜덤곡 보기": "Random songs",
+    "월의 픽에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.": "Discover less-played songs from monthly Picks. Videos with unknown views are excluded from numeric filters.",
     "영상 길이": "Video length",
     "게시연도": "Upload year",
     "5분 이하": "Up to 5 minutes",
@@ -246,6 +247,7 @@ const uiDictionary: Record<
     "최근 수집 월의 Pick": "Latest collected month",
     "분기별 Pick": "Quarterly picks",
     "그해의 음악": "Music from that year",
+    "월의 픽에서 시기별로 골라두었어요. 매일 새로운 음악을 만나보세요.": "Selected by period from monthly Picks. Discover new music every day.",
     "오래전에 모아둔 음악": "From the early collection",
     "다른 곡 보기": "Show other songs",
     "분기": "Quarter",
@@ -283,6 +285,8 @@ const uiDictionary: Record<
     "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
     "채널 탐색":"チャンネル探索", "메이저 남":"メジャー・男性", "우타이테 남":"歌い手・男性", "메이저 여":"メジャー・女性", "우타이테 여":"歌い手・女性", "토픽":"トピック", "플레이리스트":"プレイリスト",
     "숨은 곡 Pick": "隠れた名曲Pick",
+    "랜덤곡 보기": "ランダムに曲を見る",
+    "월의 픽에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.": "月間Pickから再生回数の少ない曲を紹介します。回数不明の動画は数値条件に含めません。",
     "영상 길이": "動画の長さ",
     "게시연도": "公開年",
     "5분 이하": "5分以内",
@@ -448,6 +452,7 @@ const uiDictionary: Record<
     "최근 수집 월의 Pick": "直近の収集月のPick",
     "분기별 Pick": "四半期ごとのPick",
     "그해의 음악": "あの年の音楽",
+    "월의 픽에서 시기별로 골라두었어요. 매일 새로운 음악을 만나보세요.": "月間Pickから時期別に選びました。毎日新しい音楽に出会いましょう。",
     "오래전에 모아둔 음악": "昔集めた音楽",
     "다른 곡 보기": "ほかの曲を見る",
     "분기": "四半期",
@@ -1995,7 +2000,6 @@ function RoomContent() {
                 </form>
               </section>
             </div>
-            <VideoManagement adminKey={adminKey}/>
             <details className="sync-log glass" open><summary>동기화 로그 · {syncStage === "primary" ? "1차" : "2차"} · 최근 12개</summary><div role="log">{syncLogs.length ? syncLogs.map((entry,i)=><p key={`${entry.at}-${i}`}><time>{new Date(entry.at).toLocaleTimeString("ko-KR")}</time> {entry.message}</p>) : <p>아직 기록이 없어요.</p>}</div></details>
             {failures.length > 0 && (
               <section className="settings-card glass">

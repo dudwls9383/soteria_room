@@ -14,8 +14,22 @@ import {
   parseChannelAvatar,
 } from "../lib/subscriptions.ts";
 import { parseMeta } from "../lib/youtube-metadata.ts";
-import { buildMusicIndex, filterMusicIndex } from "../lib/music-index.ts";
+import { buildMusicIndex, buildMonthlyPickIndex, filterMusicIndex } from "../lib/music-index.ts";
 import { matchesBand, subscriberBands, subscriberNumber, officialSubscriberCount } from "../lib/small-channels.ts";
+test("Digging Picks exclude collection-only songs and collection dates on shared songs", () => {
+  const track = (id:string) => ({id,title:id,artist:"artist",thumbnail:""});
+  const playlists = [
+    {id:"pick",title:"10월의 픽(2026)",tracks:[track("shared"),track("pick-only")]},
+    {id:"collection",title:"2024.01",tracks:[track("shared"),track("collection-only")]},
+    {id:"annual",title:"a bundle of songs",tracks:[track("annual-only")]},
+    {id:"other",title:"Other curation",tracks:[track("other-only")]},
+  ];
+  const result = buildMonthlyPickIndex(playlists);
+  assert.deepEqual(result.map(t=>t.id).sort(),["pick-only","shared"]);
+  assert.deepEqual(result.find(t=>t.id==="shared")!.months,["2026.10"]);
+  assert.deepEqual(result.find(t=>t.id==="shared")!.years,["2026"]);
+  assert.equal(buildMusicIndex(playlists).length,5);
+});
 test("subscriber boundaries have no overlap; unknown is not zero",()=>{
   for(const count of [0,99,100,499,500,999,1000,1999,2000,4999,5000,9999]) {
     assert.equal(subscriberBands.filter(b=>matchesBand(count,b.id)).length,1);

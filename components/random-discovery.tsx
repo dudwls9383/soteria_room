@@ -203,7 +203,7 @@ export default function RandomDiscovery({
             랜덤 채널
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="picks"><PickDiscovery /></TabsContent>
+        <TabsContent value="picks"><PickDiscovery adminKey={adminKey} /></TabsContent>
         <TabsContent value="songs">
           <section className="discovery-control glass">
             <div>

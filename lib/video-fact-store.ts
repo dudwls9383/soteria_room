@@ -48,7 +48,7 @@ export async function youtubeRequest(
     );
   return data.items as any[];
 }
-export async function refreshVideoFacts() {
+export async function refreshVideoFacts(onlyPicks = false) {
   await ensureVideoFacts();
   const db = database(),
     owner = crypto.randomUUID(),
@@ -67,7 +67,7 @@ export async function refreshVideoFacts() {
   try {
     // Prefer curated playlists, then collect the rest; never request IDs supplied by a visitor.
     const due =
-      "FROM playlists p,json_each(p.tracks) t LEFT JOIN video_facts f ON f.id=json_extract(t.value,'$.id') WHERE f.checked_at IS NULL OR f.checked_at<?";
+      "FROM playlists p,json_each(p.tracks) t LEFT JOIN video_facts f ON f.id=json_extract(t.value,'$.id') WHERE (f.checked_at IS NULL OR f.checked_at<?)" + (onlyPicks ? " AND p.title LIKE '%월의%픽%'" : "");
     const total = await db
       .prepare(
         `SELECT COUNT(DISTINCT json_extract(t.value,'$.id')) AS count ${due}`,

@@ -24,6 +24,12 @@ function addUnique<T>(target: T[], value: T) {
   if (!target.includes(value)) target.push(value);
 }
 
+// Filter playlists before deduplicating: a shared song must not inherit a
+// collection month/year from the excluded monthly or annual archive.
+export function buildMonthlyPickIndex(playlists: (Playlist & { updatedAt?: number })[]) {
+  return buildMusicIndex(playlists.filter(p => kindOf(p) === "picks"));
+}
+
 function scopeLabels(playlist: Pick<Playlist, "id" | "title">): Scope[] {
   const kind = kindOf(playlist);
   const scopes: Scope[] = ["all"];
