@@ -13,7 +13,6 @@ import {
   Leaf,
   Snowflake,
   CalendarDays,
-  Music2,
   Play,
   Pause,
   SkipBack,
@@ -22,8 +21,8 @@ import {
   RotateCcw,
   RotateCw,
   Settings2,
-  Eye,
-  EyeOff,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { playbackError } from "../lib/video-facts";
 import type { Track } from "../lib/music";
@@ -68,7 +67,6 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false),
     [volume, setVolume] = useState(80);
   const [strength, setStrength] = useState(35),
-    [musicView, setMusicView] = useState(false),
     [settingsOpen, setSettingsOpen] = useState(false),
     [notice, setNotice] = useState("");
   const [failures, setFailures] = useState<Record<string, string>>({}),
@@ -108,7 +106,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
     const updated = [...latest.current.queue, ...added];
     latest.current = { ...latest.current, queue: updated };
     setQueue(updated);
-    setList(true);
+    if (announce) setList(true);
     if (announce)
       setNotice(
         added.length
@@ -335,7 +333,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
       )}
       {(current || queue.length > 0) && (
         <aside
-          className={`listening-room glass ${theater ? "theater" : ""} ${musicView ? "music-view" : ""} ${list ? "" : "list-hidden"}`}
+          className={`listening-room glass ${theater ? "theater" : ""} ${list ? "" : "list-hidden"}`}
           role={theater ? "dialog" : undefined}
           aria-modal={theater ? true : undefined}
           aria-label="임시 듣기 목록"
@@ -354,24 +352,25 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             >
               {theater ? "기본 모드" : "전체 모드"}
             </button>
-            {current && (
-              <button
-                aria-label={musicView ? "영상 화면" : "음악 카드 화면"}
-                aria-pressed={musicView}
-                title={musicView ? "영상 화면" : "음악 카드 화면"}
-                onClick={() => setMusicView((v) => !v)}
-              >
-                {musicView ? <Eye size={18} /> : <EyeOff size={18} />}
-              </button>
-            )}
-            <button onClick={() => setList((v) => !v)}>
-              목록 {queue.length}
+            <button aria-expanded={list} aria-controls="listening-queue"
+              aria-label={list ? "듣기 목록 접기" : "듣기 목록 펼치기"}
+              onClick={() => setList((v) => !v)}>
+              {list ? <ChevronDown size={16}/> : <ChevronUp size={16}/>}
+              <span>목록 {queue.length}</span>
             </button>
             <button
-              aria-label="재생 종료"
+              aria-label="플레이어 닫기"
               onClick={() => {
+                player.current?.pauseVideo();
                 setCurrent(null);
+                setQueue([]);
+                latest.current = { queue: [], current: null };
+                setList(false);
                 setTheater(false);
+                setSettingsOpen(false);
+                setNotice("");
+                failed.current.clear();
+                setFailures({});
                 setError("");
               }}
             >
@@ -382,18 +381,6 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             <>
               <div className="listening-body">
                 <div className="listening-stage">
-                  {musicView && (
-                    <div className="music-visual">
-                      <img src={current.thumbnail} alt="" aria-hidden="true" />
-                      <Music2 size={46} />
-                      <h2 className="notranslate" translate="no">
-                        {current.title}
-                      </h2>
-                      <p className="notranslate" translate="no">
-                        {current.artist}
-                      </p>
-                    </div>
-                  )}
                   <div className="listening-video">
                     <div ref={mount} />
                   </div>
@@ -568,8 +555,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
                       YouTube에서 듣기
                     </a>
                     <small>
-                      화질은 YouTube 재생기의 설정에서 조절할 수 있어요. 음악
-                      카드 화면에서도 영상 데이터는 계속 사용합니다.
+                      화질은 YouTube 재생기의 설정에서 조절할 수 있어요.
                     </small>
                   </div>
                 )}
@@ -578,7 +564,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             </>
           )}
           {list && (
-            <div className="listening-queue">
+            <div className="listening-queue" id="listening-queue">
               <button
                 onClick={() => {
                   setCurrent(null);
