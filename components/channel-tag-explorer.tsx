@@ -30,9 +30,11 @@ const tagChoices=channelTagOrder;
 export default function ChannelTagExplorer({
   initialTag = "ASMR",
   adminKey = "",
+  picksOnly = false,
 }: {
   initialTag?: string;
   adminKey?: string;
+  picksOnly?: boolean;
 }) {
   const [tag, setTag] = useState(initialTag);
   const [query, setQuery] = useState("");
@@ -48,12 +50,13 @@ export default function ChannelTagExplorer({
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [revision,setRevision]=useState(0);
   useEffect(() => {
     const controller = new AbortController();
     setBusy(true);
     setError("");
     fetch(
-      `/api/channel-tags?tag=${encodeURIComponent(tag)}&q=${encodeURIComponent(query)}&limit=3000`,
+      `/api/channel-tags?tag=${encodeURIComponent(tag)}&q=${encodeURIComponent(query)}&limit=3000&scope=${picksOnly?'picks':'all'}`,
       {
         signal: controller.signal,
       },
@@ -68,9 +71,9 @@ export default function ChannelTagExplorer({
       .catch((e) => {
         if (e.name !== "AbortError") setError(e.message);
       })
-      .finally(() => setBusy(false));
+      .finally(() => {if(!controller.signal.aborted)setBusy(false);});
     return () => controller.abort();
-  }, [tag, query]);
+  }, [tag, query, picksOnly, revision]);
   const current = snapshot.summaries.find((s) => s.id === tag);
   const pageSize = 96;
   const totalChannels = snapshot.channels.length;
@@ -103,7 +106,8 @@ export default function ChannelTagExplorer({
       if (!r.ok) throw Error(d.error);
       setTag("ASMR");
       setQuery("");
-      setSnapshot(d);
+      if(!picksOnly)setSnapshot(d);
+      setRevision(v=>v+1);
       setPicked([]);
       setPage(1);
     } catch (e) {

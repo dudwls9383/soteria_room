@@ -12,6 +12,7 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
     [busy, setBusy] = useState(true);
   const [page, setPage] = useState(1);
   const [nonce,setNonce]=useState("");
+  const [picksOnly,setPicksOnly]=useState(true);
   const [updating,setUpdating]=useState(false);
   const [updateNote,setUpdateNote]=useState("");
   async function updateViews() {
@@ -27,7 +28,7 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
     setBusy(true);
     setError("");
     fetch(
-      `/api/music?mode=hidden&views=${views}&seconds=${seconds}&before=${before}&page=${page}&nonce=${nonce}`,
+      `/api/music?mode=hidden&scope=${picksOnly?'picks':'all'}&views=${views}&seconds=${seconds}&before=${before}&page=${page}&nonce=${nonce}`,
       { signal: c.signal },
     )
       .then(async (r) => {
@@ -42,7 +43,7 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
         if (!c.signal.aborted) setBusy(false);
       });
     return () => c.abort();
-  }, [views, seconds, before, page, nonce]);
+  }, [views, seconds, before, page, nonce, picksOnly]);
   return (
     <section className="hidden-pick pick-shelf">
       <div className="pick-shelf-heading">
@@ -52,10 +53,10 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
         </div>
       </div>
       <p className="pick-reason">
-        월의 픽에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인
-        영상은 숫자 조건에 포함하지 않습니다.
+        저장된 곡에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.
       </p>
       <div className="control-row glass">
+        <label><span>검색 범위</span><span><input type="checkbox" checked={picksOnly} onChange={e=>{setPicksOnly(e.target.checked);setPage(1);setNonce("");}}/> 월의 픽 한정</span></label>
         <label>
           조회수
           <select

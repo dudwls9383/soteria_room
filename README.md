@@ -26,8 +26,8 @@ YouTube 재생목록에서 음악을 고르고, 찾고, 함께 추천하는 음�
 ### Pick과 랜덤
 
 - 모든 디깅 **Pick은 월의 픽만** 사용합니다. 202X.XX·A bundle of songs·기타 큐레이션·시리즈를 섞지 않습니다.
-- 순서: 월의 픽 채널·저조회곡 추천 → 이번 달 → 분기별 → 그해의 음악 → 숨은 곡 → 오래전에 모아둔 음악.
-- 채널 추천은 월의 픽에 등장한 채널만 대상으로 합니다. 하꼬 추천은 기본 1만 명 미만, 저조회곡은 기본 1,000회 이하이며 조건·페이지 이동·전체 채널 보기를 제공합니다. 채널 ID를 우선하고 유일한 이름 일치는 별도 표시합니다. 미확인 수치를 0으로 분류하지 않습니다.
+- 순서: 이번 달 → 분기별 → 그해의 음악 → 숨은 곡 → 오래전에 모아둔 음악.
+- 별도 월의 픽 채널 추천 영역은 제거했습니다. 채널 탐색의 하꼬 추천·채널 보관실에 공통 ‘월의 픽 한정’ 필터가 있으며, 태그·구독자 조건·검색·랜덤·페이지에 함께 적용됩니다. 기본은 전체 자료입니다. 채널 ID를 우선하고 유일한 이름 완전 일치만 보조 연결합니다. 미확인 수치는 0으로 분류하지 않습니다.
 - 연도·분기 선택줄은 분기별 Pick 바로 위에 있습니다. **연도는 분기와 그해 목록에, 분기는 분기 목록에만 적용**됩니다.
 - 이번 달 자료가 없으면 최근 수집 월로 대체해 표시합니다. 오래된 음악은 현재 한국 시간의 같은 달을 과거 연도에서 찾아 ‘몇 년 전 이맘때’로 다시 보여줍니다. 연도별 기억을 선택할 수 있으며 정확한 수집일·발매일을 추정하지 않습니다.
 - 일반 Pick은 한국 시간의 날짜·구역·곡 ID로 선택 순위를 정해 하루 동안 안정적으로 표시합니다. 다른 곡 보기로 해당 구역을 다시 뽑습니다.
@@ -120,7 +120,7 @@ React 19·TypeScript·Next App Router 구조를 vinext/Vite로 실행하고 Clou
 | `app/page.tsx` | 탭·목록·검색·동기화·관리자·언어 사전 |
 | `components/room-experience.tsx` | 플레이어·듣기 목록·테마·앰비언트 |
 | `components/pick-discovery.tsx`, `hidden-pick.tsx` | 디깅 Pick |
-| `components/pick-channel-discovery.tsx`, `lib/pick-channels.ts` | 월의 픽 채널·저조회곡 추천 |
+| `lib/pick-channels.ts`, `lib/pick-channel-store.ts` | 월의 픽 출신 채널 판별·기존 탐색 필터 |
 | `components/thumbnail-extractor.tsx`, `lib/thumbnails.ts`, `app/api/thumbnail/route.ts` | 썸네일 추출·고정 CDN 다운로드 |
 | `components/channel-hub.tsx` | 하꼬 추천 / 채널 보관실 |
 | `components/song-bottle-lite.tsx`, `song-bottle-illustration.tsx` | 추천·삭제·움직이는 병 |
@@ -146,3 +146,5 @@ AI 추천, 자체 음악 서버, 사용자별 영구 보관실, 회원·댓글·
 ## 연결된 공간
 
 [YouTube](https://www.youtube.com/@soteria_room) · [블로그](https://blog.naver.com/dudwls9383) · [소무니아 갤러리](https://gall.dcinside.com/mgallery/board/lists/?id=somunia) · [카와이 보이스 갤러리](https://gall.dcinside.com/mini/board/lists?id=moesound) · [링크 프로필](https://lit.link/en/soteria)
+
+숨은 곡 Pick의 ‘월의 픽 한정’은 기본 선택입니다. 해제하면 저장된 전체 곡으로 확장하고, 나머지 기간별 Pick의 월의 픽 전용 범위는 유지합니다. 채널 탐색의 같은 필터는 하위 탭에 공통 적용됩니다.

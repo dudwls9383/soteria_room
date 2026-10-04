@@ -5,7 +5,6 @@ import { ExternalLink, Play, RefreshCw, X } from "lucide-react";
 import type { PickSnapshot } from "../lib/picks";
 import type { MusicRecord } from "../lib/music-index";
 import HiddenPick from "./hidden-pick";
-import PickChannelDiscovery from "./pick-channel-discovery";
 
 const titles: Record<string, string> = { month: "이번 달의 Pick", quarter: "분기별 Pick", year: "그해의 음악", archive: "오래전에 모아둔 음악" };
 export default function PickDiscovery({adminKey=""}:{adminKey?:string}) {
@@ -39,7 +38,6 @@ export default function PickDiscovery({adminKey=""}:{adminKey?:string}) {
   }
   return <div className="pick-room" aria-busy={busy}>
     <div className="pick-intro"><div><h2>오늘, 바로 듣는 Pick</h2><p>월의 픽에서 시기별로 골라두었어요. 매일 새로운 음악을 만나보세요.</p></div>{data && <span className="pick-date">{data.day} · KST</span>}</div>
-    <PickChannelDiscovery adminKey={adminKey}/>
     {error && <div className="room-message error" role="alert">{error} <button className="room-button subtle" onClick={() => setRequest({ section: "", nonce: String(Date.now()) })}>다시 시도</button></div>}
     {busy && !data && <p className="room-message" role="status">Pick을 불러오는 중…</p>}
     {data && <>

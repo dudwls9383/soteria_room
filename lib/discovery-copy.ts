@@ -1,6 +1,7 @@
 // Text introduced by monthly channel discovery, memories and thumbnail tools.
 export const discoveryCopy={
  en:{
+  '월의 픽 한정':'Monthly Picks only', '검색 범위':'Search scope', '저장된 곡에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.':'Discover saved songs with fewer views. Videos with unknown view counts are excluded from numeric filters.',
   '구독자 수':'Subscribers','월의 픽 추천 종류':'Monthly Pick recommendation type','이맘때의 음악 선택':'Choose a past-year memory',
   '썸네일 추출기':'Thumbnail extractor','월의 픽에서 만난 채널':'Channels from monthly Picks','하꼬 추천':'Small channels','저조회곡':'Low-view songs','전체 채널':'All channels','다른 추천 보기':'More recommendations','채널 찾기':'Find a channel','월의 픽에 담긴 채널 이름':'Channel name from monthly Picks',
   '월의 픽에 담긴 채널만 모았어요. 덜 알려진 목소리와 아직 덜 들은 곡을 만나보세요.':'Only channels featured in monthly Picks. Discover smaller voices and less-heard songs.',
@@ -14,6 +15,7 @@ export const discoveryCopy={
   'YouTube 영상 주소를 입력해 주세요. 재생목록 주소만으로는 추출할 수 없어요.':'Enter a YouTube video URL. A playlist-only URL is not supported.',
  },
  ja:{
+  '월의 픽 한정':'月のPickのみ', '검색 범위':'検索範囲', '저장된 곡에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.':'保存された曲を再生数の少ない順に表示します。再生数が未確認の動画は数値条件に含めません。',
   '구독자 수':'登録者数','월의 픽 추천 종류':'月のPickのおすすめ種類','이맘때의 음악 선택':'過去の同じ月を選択',
   '썸네일 추출기':'サムネイル抽出','월의 픽에서 만난 채널':'月のPickで出会ったチャンネル','하꼬 추천':'小規模チャンネル','저조회곡':'再生数の少ない曲','전체 채널':'全チャンネル','다른 추천 보기':'ほかのおすすめ','채널 찾기':'チャンネル検索','월의 픽에 담긴 채널 이름':'月のPickに登場するチャンネル名',
   '월의 픽에 담긴 채널만 모았어요. 덜 알려진 목소리와 아직 덜 들은 곡을 만나보세요.':'月のPickに登場したチャンネルだけを集めました。まだ知られていない歌声や曲に出会ってみませんか。',

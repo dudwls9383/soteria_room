@@ -11,19 +11,19 @@ const copy={
  en:{title:"Your next small-channel discovery.",intro:"Explore channels from the saved roster. Subscriber counts reflect the last check.",all:"All under 10,000",everything:"All channels",over:"10,000 or more",unknown:"Unknown",tag:"Tag",any:"All tags",search:"Search channel names",random:"Random 12",list:"View all",empty:"No channels match these filters.",hint:"Try another range or explore unknown counts.",loading:"Loading channels…",failed:"Could not load channels.",prev:"Previous",next:"Next",stats:"Subscriber updates",refresh:"Refresh outdated counts",stop:"Stop after this batch",configured:"Only counts older than 7 days are refreshed, 50 channels per batch. Visitors use saved data.",missing:"YouTube API setup pending · Recommendations currently use saved JSON data.",locked:"Unlock admin access in Import & sync to refresh.",saved:"Saved JSON",api:"Official API",noDate:"Date unknown",retry:"Reload",count:"subscribers",summary:"Roster / Known counts / Under 10,000",done:"Update complete",stopped:"Stopped · Completed updates were saved.",working:"Updating",remaining:"Remaining",note:"Unknown counts are not treated as zero. Public subscriber counts may be rounded."},
  ja:{title:"まだ知られていない、次の推し。",intro:"保存されたチャンネル一覧から探しましょう。登録者数は最終確認時の情報です。",all:"1万人未満すべて",everything:"全チャンネル",over:"1万人以上",unknown:"未確認",tag:"タグ",any:"すべてのタグ",search:"チャンネル名を検索",random:"ランダム12件",list:"すべて表示",empty:"条件に合うチャンネルがありません。",hint:"別の範囲や未確認のチャンネルも見てみましょう。",loading:"読み込み中…",failed:"チャンネルを読み込めませんでした。",prev:"前へ",next:"次へ",stats:"登録者数の更新",refresh:"古い情報を更新",stop:"この処理後に停止",configured:"7日以上経過した情報を50件ずつ更新します。閲覧者には保存済み情報を表示します。",missing:"YouTube APIの設定待ち · 現在はJSONの保存情報を使用します。",locked:"更新するにはインポート・同期で管理者ロックを解除してください。",saved:"JSON保存情報",api:"公式API確認",noDate:"確認日不明",retry:"再読み込み",count:"人",summary:"候補 / 登録者数確認済み / 1万人未満",done:"更新完了",stopped:"停止しました。完了分は保存済みです。",working:"更新中",remaining:"残り",note:"未確認を0人として扱いません。公開登録者数は概数の場合があります。"},
 };
-export default function SmallChannelDiscovery({adminKey,language="ko"}:{adminKey:string;language?:"ko"|"en"|"ja"}) {
+export default function SmallChannelDiscovery({adminKey,language="ko",picksOnly=false}:{adminKey:string;language?:"ko"|"en"|"ja";picksOnly?:boolean}) {
  const tagNames:Record<string,string>=localizedChannelTags(language);
  const t=copy[language], [data,setData]=useState<Snapshot|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const [band,setBand]=useState("all"),[tag,setTag]=useState("all"),[query,setQuery]=useState(""),[page,setPage]=useState(1),[picked,setPicked]=useState<SmallChannel[]|null>(null),[refreshing,setRefreshing]=useState(false),[remaining,setRemaining]=useState(0);
  const [preview,setPreview]=useState<SmallChannel|null>(null);
  const stop=useRef(false),mounted=useRef(true);
- async function load() {
-   const response=await fetch("/api/small-channels",{cache:"no-store"});
+ async function load(signal?:AbortSignal) {
+   const response=await fetch(`/api/small-channels?scope=${picksOnly?'picks':'all'}`,{cache:"no-store",signal});
    const value=await response.json() as Snapshot & {error?:string};
    if(!response.ok) throw new Error(value.error || t.failed);
-   if(mounted.current){setData(value);setRemaining(value.remaining);}
+   if(mounted.current&&!signal?.aborted){setData(value);setRemaining(value.remaining);}
  }
- useEffect(()=>{mounted.current=true;void load().catch(e=>{if(mounted.current)setError(e.message);}).finally(()=>{if(mounted.current)setLoading(false);});return()=>{mounted.current=false;stop.current=true;};},[]);
+ useEffect(()=>{const c=new AbortController();mounted.current=true;setLoading(true);setData(null);setError("");setPicked(null);setPage(1);setPreview(null);void load(c.signal).catch(e=>{if(!c.signal.aborted)setError(e.message);}).finally(()=>{if(!c.signal.aborted)setLoading(false);});return()=>{c.abort();mounted.current=false;stop.current=true;};},[picksOnly]);
  const channels=data?.channels || [];
  const tags=[...new Set(channels.flatMap(c=>c.tags))].sort(compareChannelTags);
  const filtered=channels.filter(c=>matchesBand(c.subscribers,band) && (tag==="all"||c.tags.includes(tag)) && c.title.toLowerCase().includes(query.trim().toLowerCase())).sort((a,b)=>(b.subscribers??-1)-(a.subscribers??-1)||a.title.localeCompare(b.title));
@@ -34,7 +34,7 @@ export default function SmallChannelDiscovery({adminKey,language="ko"}:{adminKey
    setRefreshing(true);setError("");setNotice("");stop.current=false;
    try {
      while(!stop.current){
-       const response=await fetch("/api/small-channels",{method:"POST",headers:{"Content-Type":"application/json","x-soteria-admin-key":adminKey},body:"{}"});
+       const response=await fetch("/api/small-channels",{method:"POST",headers:{"Content-Type":"application/json","x-soteria-admin-key":adminKey},body:JSON.stringify({scope:picksOnly?"picks":"all"})});
        const value=await response.json() as {error?:string;remaining:number};
        if(!response.ok) throw new Error(value.error || t.failed);
        if(mounted.current)setRemaining(value.remaining);

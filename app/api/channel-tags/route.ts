@@ -10,6 +10,8 @@ import {
 
 async function init() { await database().prepare("CREATE TABLE IF NOT EXISTS channel_tag_snapshots (id TEXT PRIMARY KEY, dataset TEXT NOT NULL, updated_at INTEGER NOT NULL, source TEXT NOT NULL)").run(); }
 import { currentDataset } from "../../../lib/channel-dataset";
+import {pickChannelSources} from "../../../lib/pick-channel-store";
+import {buildPickChannels} from "../../../lib/pick-channels";
 
 export async function GET(request: Request) {
   try {
@@ -18,12 +20,19 @@ export async function GET(request: Request) {
     const query = url.searchParams.get("q") || "";
     const limit = Math.min(Number(url.searchParams.get("limit") || 240), 3000);
     const { dataset, updatedAt, source } = await currentDataset();
-    const channels = searchTaggedChannels(dataset, tag, query, limit);
+    let scoped=dataset;
+    if(url.searchParams.get('scope')==='picks'){
+      const source=await pickChannelSources();
+      const ids=new Set(buildPickChannels(source.music,source.roster,source.facts).channels.flatMap(c=>c.id?[c.id]:[]));
+      // Restrict the saved tag archive before searching or applying the result limit.
+      scoped={...dataset,channels:Object.fromEntries(Object.entries(dataset.channels).filter(([id])=>ids.has(id))),tags:Object.fromEntries(Object.entries(dataset.tags).map(([tag,idsInTag])=>[tag,idsInTag.filter(id=>ids.has(id))])),collections:Object.fromEntries(Object.entries(dataset.collections).map(([tag,idsInTag])=>[tag,idsInTag.filter(id=>ids.has(id))]))};
+    }
+    const channels = searchTaggedChannels(scoped, tag, query, limit);
     return Response.json({
       tag,
       query,
       channels,
-      summaries: channelTagSummaries(dataset),
+      summaries: channelTagSummaries(scoped),
       picksCategories: dataset.picksCategories,
       updatedAt,
       source,

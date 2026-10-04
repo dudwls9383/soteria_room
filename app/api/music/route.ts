@@ -28,11 +28,14 @@ export async function GET(request: Request) {
         }) as Playlist & { updatedAt: number },
     );
     const mode = url.searchParams.get("mode");
-    const allMusic = mode === "picks" || mode === "hidden" ? buildMonthlyPickIndex(playlists) : buildMusicIndex(playlists);
+    // Other Pick shelves always use monthly Picks. Hidden gems default to that same
+    // scope, but visitors can explicitly expand this one filter to all saved songs.
+    const monthlyOnly=mode==="picks" || (mode==="hidden"&&url.searchParams.get("scope")!=="all");
+    const allMusic = monthlyOnly ? buildMonthlyPickIndex(playlists) : buildMusicIndex(playlists);
     const music=allMusic.filter(t=>!fresh.has(t.id)||fresh.get(t.id)!.availability==="available");
     if(url.searchParams.get("mode")==="hidden"){
       const views=Math.max(0,Number(url.searchParams.get("views")||10000)),seconds=Math.max(60,Number(url.searchParams.get("seconds")||600)),before=url.searchParams.get("before")||"";
-      const candidates=music.filter(t=>t.scopes.includes("curation")&&fresh.has(t.id)&&hiddenCandidate(fresh.get(t.id)!,views,seconds,before)).sort((a,b)=>fresh.get(a.id)!.views!-fresh.get(b.id)!.views!||a.id.localeCompare(b.id));
+      const candidates=music.filter(t=>fresh.has(t.id)&&hiddenCandidate(fresh.get(t.id)!,views,seconds,before)).sort((a,b)=>fresh.get(a.id)!.views!-fresh.get(b.id)!.views!||a.id.localeCompare(b.id));
       const nonce=(url.searchParams.get("nonce")||"").slice(0,80);
       const page=resultPage(nonce ? dailySample(candidates,nonce,candidates.length) : candidates,Number(url.searchParams.get("page")||1));
       return Response.json({...page,music:page.music.map(t=>({...t,fact:fresh.get(t.id)})),total:candidates.length,known:music.filter(t=>fresh.has(t.id)).length,checkedAt:music.reduce((n,t)=>Math.max(n,fresh.get(t.id)?.checkedAt||0),0)},{headers:{"Cache-Control":"no-store"}});

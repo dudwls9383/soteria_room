@@ -6,9 +6,17 @@ import { matchesBand, officialSubscriberCount } from "../../../lib/small-channel
 import {pickChannelSources} from "../../../lib/pick-channel-store";
 import {buildPickChannels} from "../../../lib/pick-channels";
 import {STATS_TTL} from "../../../lib/small-channel-store";
-export async function GET() {
+export async function GET(request:Request) {
   try {
     const pool=await smallChannelPool();
+    if(new URL(request.url).searchParams.get('scope')==='picks'){
+      const source=await pickChannelSources();
+      const roster=new Map(source.roster.map(c=>[c.id,c]));
+      pool.channels=buildPickChannels(source.music,source.roster,source.facts).channels.filter(c=>c.id).map(c=>({id:c.id!,title:c.title,url:`https://www.youtube.com/channel/${c.id}`,avatar:c.avatar,tags:roster.get(c.id!)?.tags||[],subscribers:c.subscribers,checkedAt:c.checkedAt,source:roster.get(c.id!)?.source||'unknown'}));
+      const saved=await database().prepare('SELECT id,checked_at FROM channel_statistics').all<{id:string;checked_at:number}>();
+      const checked=new Map(saved.results.map(c=>[c.id,c.checked_at]));
+      pool.due=pool.channels.filter(c=>!checked.has(c.id)||Date.now()-checked.get(c.id)!>=STATS_TTL);
+    }
     return Response.json({channels:pool.channels,remaining:pool.due.length,rosterSource:pool.rosterSource,apiConfigured:!!(env as any).YOUTUBE_API_KEY,known:pool.channels.filter(c=>c.subscribers!==null).length,eligible:pool.channels.filter(c=>matchesBand(c.subscribers,"all")).length},{headers:{"Cache-Control":"no-store"}});
   } catch(error) {return failure(error);}
 }
