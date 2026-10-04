@@ -4,7 +4,7 @@ YouTube 재생목록에서 음악을 고르고, 찾고, 함께 추천하는 음�
 
 [공개 사이트](https://soteria-room.workspace-304435.chatgpt.site) · [외부 LLM 검토 설명](SITE_REVIEW_GUIDE.md) · [디자인 LLM 상세 인수인계](DESIGN_LLM_HANDOFF.md)
 
-기준: **2026-10-03**. 현재 구현을 설명하며 실시간 곡 수·채널 수·구독자 수를 고정한 자료가 아닙니다.
+기준: **2026-10-04**. 현재 구현을 설명하며 실시간 곡 수·채널 수·구독자 수를 고정한 자료가 아닙니다.
 
 ## 메뉴와 기능
 
@@ -17,6 +17,7 @@ YouTube 재생목록에서 음악을 고르고, 찾고, 함께 추천하는 음�
 | 도구 | 재생목록 검색기 | 곡 검색, 범위·연도·월 조건, 소속 목록 표시 |
 | 도구 | 재생목록 링크 추출기 | 공개 URL 입력 → 커뮤니티 공유용 텍스트 생성·복사 |
 | 도구 | 음악 월드컵 | 곡 비교 토너먼트, 우승곡·결과·랭킹 |
+| 도구 | 썸네일 추출기 | 영상 주소 입력, 5가지 크기 미리보기·저장·주소 복사 |
 | 탐색 | 채널 탐색 | 하꼬 추천 / 채널 보관실을 가로 하위 탭으로 통합 |
 | 탐색 | 곡추천 병 | 익명 추천·메모, 재생·담기·복사, 관리자 삭제 |
 | 연결 | 블로그·소무니아·카와이 보이스 갤러리 | 최신 글과 원문 이동 |
@@ -25,9 +26,10 @@ YouTube 재생목록에서 음악을 고르고, 찾고, 함께 추천하는 음�
 ### Pick과 랜덤
 
 - 모든 디깅 **Pick은 월의 픽만** 사용합니다. 202X.XX·A bundle of songs·기타 큐레이션·시리즈를 섞지 않습니다.
-- 순서: 이번 달 → 분기별 → 그해의 음악 → 숨은 곡 → 오래전에 모아둔 음악.
+- 순서: 월의 픽 채널·저조회곡 추천 → 이번 달 → 분기별 → 그해의 음악 → 숨은 곡 → 오래전에 모아둔 음악.
+- 채널 추천은 월의 픽에 등장한 채널만 대상으로 합니다. 하꼬 추천은 기본 1만 명 미만, 저조회곡은 기본 1,000회 이하이며 조건·페이지 이동·전체 채널 보기를 제공합니다. 채널 ID를 우선하고 유일한 이름 일치는 별도 표시합니다. 미확인 수치를 0으로 분류하지 않습니다.
 - 연도·분기 선택줄은 분기별 Pick 바로 위에 있습니다. **연도는 분기와 그해 목록에, 분기는 분기 목록에만 적용**됩니다.
-- 이번 달 자료가 없으면 최근 수집 월로 대체해 표시합니다. 오래된 음악은 수집 시점 기준이며 발매연도가 아닙니다.
+- 이번 달 자료가 없으면 최근 수집 월로 대체해 표시합니다. 오래된 음악은 현재 한국 시간의 같은 달을 과거 연도에서 찾아 ‘몇 년 전 이맘때’로 다시 보여줍니다. 연도별 기억을 선택할 수 있으며 정확한 수집일·발매일을 추정하지 않습니다.
 - 일반 Pick은 한국 시간의 날짜·구역·곡 ID로 선택 순위를 정해 하루 동안 안정적으로 표시합니다. 다른 곡 보기로 해당 구역을 다시 뽑습니다.
 - 숨은 곡은 확인된 조회수·길이·영상 업로드 연도로 필터링하고 12곡씩 넘깁니다. 조회수는 100,000회부터 50회까지 큰 순서입니다. ‘2025년까지’는 2025년 포함 이전 업로드입니다.
 - 숨은 곡의 랜덤곡 보기는 조건 안에서 섞습니다. 가로 슬라이더 대신 카드 격자입니다.
@@ -102,6 +104,7 @@ npm run dev           # DB 준비 후 개발
 npx tsc --noEmit
 npm test
 node --experimental-strip-types --test tests/picks.test.ts
+node --experimental-strip-types --test tests/pick-tools.test.ts
 npm run build
 npm start             # 빌드된 Worker의 로컬 실행
 ```
@@ -117,6 +120,8 @@ React 19·TypeScript·Next App Router 구조를 vinext/Vite로 실행하고 Clou
 | `app/page.tsx` | 탭·목록·검색·동기화·관리자·언어 사전 |
 | `components/room-experience.tsx` | 플레이어·듣기 목록·테마·앰비언트 |
 | `components/pick-discovery.tsx`, `hidden-pick.tsx` | 디깅 Pick |
+| `components/pick-channel-discovery.tsx`, `lib/pick-channels.ts` | 월의 픽 채널·저조회곡 추천 |
+| `components/thumbnail-extractor.tsx`, `lib/thumbnails.ts`, `app/api/thumbnail/route.ts` | 썸네일 추출·고정 CDN 다운로드 |
 | `components/channel-hub.tsx` | 하꼬 추천 / 채널 보관실 |
 | `components/song-bottle-lite.tsx`, `song-bottle-illustration.tsx` | 추천·삭제·움직이는 병 |
 | `app/room.css`, `app/experience.css` | 외관·반응형·모션 |

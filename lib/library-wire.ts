@@ -1,6 +1,6 @@
 import type { Playlist, Track } from "./music";
 export type SavedPlaylist = Playlist & { updatedAt: number };
-type PackedTrack = [string,string,string,string?];
+type PackedTrack = [string,string,string,(string | undefined)?,string?];
 type PackedLibrary = { version: 1; songs: PackedTrack[]; playlists: (Omit<SavedPlaylist,"tracks"> & {tracks:number[]})[]; lastUpdatedAt:number };
 // Repeated tracks share one wire record. Restore the regular Playlist type at
 // the boundary so search, World Cup and the archive keep their existing APIs.
@@ -8,7 +8,7 @@ export function packLibrary(playlists: SavedPlaylist[], lastUpdatedAt: number): 
   const songs: PackedTrack[] = [], indices = new Map<string,number>();
   return { version:1, lastUpdatedAt, songs, playlists: playlists.map(p => ({...p, tracks:p.tracks.map(t => {
     const defaultThumb = `https://i.ytimg.com/vi/${t.id}/hqdefault.jpg`;
-    const tuple: PackedTrack = t.thumbnail === defaultThumb ? [t.id,t.title,t.artist] : [t.id,t.title,t.artist,t.thumbnail];
+    const tuple: PackedTrack = t.channelId ? [t.id,t.title,t.artist,t.thumbnail === defaultThumb ? undefined : t.thumbnail,t.channelId] : t.thumbnail === defaultThumb ? [t.id,t.title,t.artist] : [t.id,t.title,t.artist,t.thumbnail];
     const key = JSON.stringify(tuple);
     let index = indices.get(key);
     if (index === undefined) { index = songs.length; songs.push(tuple); indices.set(key,index); }
@@ -16,6 +16,6 @@ export function packLibrary(playlists: SavedPlaylist[], lastUpdatedAt: number): 
   })})) };
 }
 export function unpackLibrary(data: PackedLibrary): SavedPlaylist[] {
-  const songs: Track[] = data.songs.map(([id,title,artist,thumbnail]) => ({id,title,artist,thumbnail:thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`}));
+  const songs: Track[] = data.songs.map(([id,title,artist,thumbnail,channelId]) => ({id,title,artist,thumbnail:thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,...(channelId ? {channelId} : {})}));
   return data.playlists.map(p => ({...p,tracks:p.tracks.map(index => songs[index])}));
 }

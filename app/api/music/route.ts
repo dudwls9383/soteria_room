@@ -43,6 +43,7 @@ export async function GET(request: Request) {
         quarter: Number(url.searchParams.get("quarter")) || undefined,
         refresh: url.searchParams.get("refresh") || undefined,
         nonce: (url.searchParams.get("nonce") || "").slice(0, 80),
+        memoryYear: url.searchParams.get("memoryYear") || undefined,
       }), { headers: { "Cache-Control": "no-store" } });
     }
     const filtered = filterMusicIndex(music, {

@@ -67,7 +67,7 @@ export async function refreshVideoFacts(onlyPicks = false) {
   try {
     // Prefer curated playlists, then collect the rest; never request IDs supplied by a visitor.
     const due =
-      "FROM playlists p,json_each(p.tracks) t LEFT JOIN video_facts f ON f.id=json_extract(t.value,'$.id') WHERE (f.checked_at IS NULL OR f.checked_at<?)" + (onlyPicks ? " AND p.title LIKE '%월의%픽%'" : "");
+      "FROM playlists p,json_each(p.tracks) t LEFT JOIN video_facts f ON f.id=json_extract(t.value,'$.id') WHERE (f.checked_at IS NULL OR f.checked_at<? OR (json_extract(f.data,'$.availability')='available' AND json_extract(f.data,'$.channelId') IS NULL))" + (onlyPicks ? " AND p.title LIKE '%월의%픽%'" : "");
     const total = await db
       .prepare(
         `SELECT COUNT(DISTINCT json_extract(t.value,'$.id')) AS count ${due}`,
@@ -113,6 +113,8 @@ export async function refreshVideoFacts(onlyPicks = false) {
               ? "restricted"
               : "available",
           checkedAt: now,
+          channelId: v?.snippet?.channelId || undefined,
+          channelTitle: v?.snippet?.channelTitle || undefined,
         };
         return db
           .prepare(

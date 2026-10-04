@@ -59,6 +59,7 @@ export function buildMusicIndex(
         updatedAt: playlist.updatedAt || 0,
       };
       addUnique(current.playlistIds, playlist.id);
+      if (!current.channelId && track.channelId) current.channelId = track.channelId;
       addUnique(current.playlists, collection);
       addUnique(current.collections, kindOf(playlist));
       for (const scope of scopes) addUnique(current.scopes, scope);

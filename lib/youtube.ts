@@ -93,6 +93,7 @@ export function extractTracks(data: Tree): {
           id,
           title: title || "제목 없는 영상",
           artist: plain(r.shortBylineText) || "YouTube",
+          channelId: r.shortBylineText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId || undefined,
           thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
         });
       }
@@ -271,6 +272,7 @@ async function readOfficial(id: string, key: string): Promise<Playlist> {
         id: video,
         title: s.title,
         artist: s.videoOwnerChannelTitle || s.channelTitle || "YouTube",
+        channelId: s.videoOwnerChannelId || undefined,
         thumbnail: `https://i.ytimg.com/vi/${video}/hqdefault.jpg`,
       });
     }

@@ -3,6 +3,9 @@ import { database } from "../../../db";
 import { body, failure, requireAdmin, ApiError } from "../../../lib/server";
 import { smallChannelPool } from "../../../lib/small-channel-store";
 import { matchesBand, officialSubscriberCount } from "../../../lib/small-channels";
+import {pickChannelSources} from "../../../lib/pick-channel-store";
+import {buildPickChannels} from "../../../lib/pick-channels";
+import {STATS_TTL} from "../../../lib/small-channel-store";
 export async function GET() {
   try {
     const pool=await smallChannelPool();
@@ -14,10 +17,18 @@ export async function GET() {
 export async function POST(request:Request) {
   let owner:string|undefined;
   try {
-    requireAdmin(request); await body(request,1000);
+    requireAdmin(request); const input=await body(request,1000);
     const key=(env as any).YOUTUBE_API_KEY;
     if(!key) throw new ApiError("공식 YouTube API 연결이 아직 준비되지 않았어요. 저장된 JSON 정보로 추천을 이용할 수 있습니다.");
     const pool=await smallChannelPool();
+    if(input.scope==='picks'){
+      const source=await pickChannelSources();
+      const channels=buildPickChannels(source.music,source.roster,source.facts).channels;
+      const saved=await database().prepare('SELECT id,checked_at FROM channel_statistics').all<{id:string;checked_at:number}>();
+      const checked=new Map(saved.results.map(c=>[c.id,c.checked_at]));
+      // Only channels proven to appear in saved monthly Picks; never arbitrary visitor IDs.
+      pool.due=channels.filter(c=>c.id&&/^UC[\w-]{22}$/.test(c.id)&&(!checked.has(c.id)||Date.now()-checked.get(c.id)!>=STATS_TTL)).map(c=>({id:c.id!,title:c.title,url:`https://www.youtube.com/channel/${c.id}`,tags:[],subscribers:c.subscribers,checkedAt:c.checkedAt,source:'unknown' as const}));
+    }
     owner=crypto.randomUUID();
     const claimed=await database().prepare("UPDATE channel_statistics_lock SET owner=?,lease_until=? WHERE id='main' AND lease_until<=?").bind(owner,Date.now()+60000,Date.now()).run();
     if(!claimed.meta.changes) throw new ApiError("다른 창에서 구독자 수를 갱신하고 있어요.",409);

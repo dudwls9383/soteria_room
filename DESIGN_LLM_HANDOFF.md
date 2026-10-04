@@ -1,6 +1,6 @@
 # SOTERIA ROOM — 디자인 LLM 인수인계
 
-기준일: **2026-10-03**. 실제 구현을 기준으로 작성한 문서입니다. 실시간 재생목록·구독자 수를 담은 DB 덤프가 아니며, 아래의 개선 제안은 구현 완료 기능과 구분합니다.
+기준일: **2026-10-04**. 실제 구현을 기준으로 작성한 문서입니다. 실시간 재생목록·구독자 수를 담은 DB 덤프가 아니며, 아래의 개선 제안은 구현 완료 기능과 구분합니다.
 
 - 서비스: https://soteria-room.workspace-304435.chatgpt.site
 - 코드: https://github.com/dudwls9383/soteria_room
@@ -67,6 +67,7 @@
 | 도구 | 재생목록 검색기 | `#search` | 저장 자료에서 곡 검색 |
 | 도구 | 재생목록 링크 추출기 | `#extract` | 사용자 입력 링크 → 공유용 텍스트 |
 | 도구 | 음악 월드컵 | `#worldcup` | 두 곡 비교·우승곡·랭킹 |
+| 도구 | 썸네일 추출기 | `#thumbnail` | 영상 주소 → 크기별 이미지 보기·저장·주소 복사 |
 | 탐색 | 채널 탐색 | `#small` | 하꼬 추천 / 채널 보관실 내부 탭 |
 | 탐색 | 곡추천 병 | `#bottle` | 가벼운 추천 작성·듣기 |
 | 연결 | 블로그 포스트 | `#blog` | 최신 글과 원문 링크 |
@@ -90,6 +91,10 @@
 
 한 탭 안에 가로 하위 탭으로 **Pick / 랜덤 뽑기 / 랜덤 채널**이 있습니다. Pick은 이번 달, 분기별, 그해, 숨은 곡, 오래전에 모아둔 음악의 흐름입니다. 숨은 곡은 그해와 오래전 사이에 배치합니다.
 
+이번 달 위에 **월의 픽에서 만난 채널** 영역이 추가되었습니다. 하꼬 추천 / 저조회곡 / 전체 채널 하위 선택, 구독자·조회수 조건, 페이지 이동, 해당 채널의 월의 픽 곡 재생을 제공합니다. 전체 CSV/JSON 채널을 그대로 추천하지 않고 월의 픽 출신으로 제한합니다. 채널 ID가 우선이며 기존 자료의 이름을 유일하게 완전 일치시켜 연결한 경우에는 ID 재확인 전임을 표시합니다. 관리자 정보 갱신은 월의 픽 영상·채널을 각각 최대 50개씩 확인합니다.
+
+오래전에 모아둔 음악은 가장 오래된 해를 무조건 고르지 않습니다. 한국 시간의 현재 월과 같은 달을 과거 연도에서 찾아 **몇 년 전 이맘때**로 표시하고 각 연도를 선택할 수 있습니다. 수집 시점이 월 단위라 ‘정확히 오늘’이라는 표현이나 발매일 추정은 사용하지 않습니다. 해당 월의 과거 자료가 없으면 빈 상태를 보여줍니다.
+
 연도·분기 선택은 분기별 Pick 위에 놓입니다. **연도는 분기별 Pick과 그해의 음악에, 분기는 분기별 Pick에만** 적용됩니다. 현재 안내 문구도 이 의미를 설명합니다. 연도가 곡의 발매연도라고 단정하지 마세요. 목록의 수집 시기와 영상의 업로드 연도는 다릅니다.
 
 숨은 곡 Pick은 알려진 YouTube 조회수·영상 길이·업로드 연도로 필터합니다.
@@ -107,6 +112,8 @@
 검색기는 저장된 자료에서 곡을 찾습니다. 월의 픽과 전체 수집 범위를 사용자가 선택합니다. 여러 목록에 들어 있는 같은 영상의 출처를 유지합니다. 검색 결과 위의 재생 영역과 작은 재생 버튼으로 사이트 안에서 듣습니다.
 
 링크 추출기는 **방문자가 자신의 재생목록 URL을 입력**하는 도구입니다. 운영자 목록을 모두 나열해 고르게 하는 방식이 아닙니다. 불러온 곡을 커뮤니티에 붙여넣기 좋은 텍스트로 복사합니다. 이 읽기 작업은 운영자 DB에 목록을 영구 추가하는 관리 작업과 다릅니다.
+
+썸네일 추출기는 영상 URL/ID, Shorts, live, embed 주소를 지원합니다. 최대·고·표준·중간·작은 이미지 5개를 확인하고 실제 픽셀 크기를 표시합니다. 없는 해상도의 저장 버튼을 노출하지 않습니다. 서버 다운로드는 검증한 영상 ID·해상도로 고정 YouTube CDN만 호출하며 사용자 URL을 임의로 fetch하지 않습니다. 재생목록 자체의 커스텀 표지 추출 도구는 아닙니다.
 
 ### 5.4 음악 월드컵
 
@@ -170,6 +177,8 @@ Naver 블로그와 두 DC 갤러리의 최신 글을 폭넓게 보여주고 원�
 | `components/room-experience.tsx` | 공통 재생·듣기 목록·계절 | 탭 사이 재생 지속과 iframe 수명 |
 | `components/random-discovery.tsx` | 디깅 하위 탭·랜덤·구독 목록 | 랜덤 결과 위치·전체 펼침 유지 |
 | `components/pick-discovery.tsx` | 기간 Pick·숨은 곡·페이지 | 범위·필터·정렬 의미 보존 |
+| `components/pick-channel-discovery.tsx`, `lib/pick-channels.ts`, `lib/pick-channel-store.ts` | 월의 픽 출신 채널·저조회곡 | 출신 범위·ID/이름 일치·null 통계 |
+| `components/thumbnail-extractor.tsx`, `lib/thumbnails.ts` | 썸네일 입력·크기·저장 | 실제 이미지 크기·없는 해상도·URL 검증 |
 | `components/channel-hub.tsx` | 채널 탐색 가로 하위 탭 | 추천과 보관실 연결 |
 | `components/small-channel-discovery.tsx` | 구독자 기반 채널 탐색 | null 구독자·페이지·API 비용 |
 | `components/channel-tag-explorer.tsx` | 태그 기반 채널 보관실 | 전체 채널·JSON 갱신 연결 |
@@ -238,6 +247,8 @@ CSV는 Google Takeout 구독 목록 등을 읽는 채널 풀입니다. 확장 �
 | `/api/channel` | GET | 운영 채널 재생목록 발견 |
 | `/api/sync` | GET / POST | 상태 읽기 공개; 동기화·재시도·중단 관리자 |
 | `/api/music` | GET | 곡 인덱스·Pick·숨은 곡 |
+| `/api/pick-channels` | GET | 월의 픽 채널·저조회곡·조건·페이지 |
+| `/api/thumbnail` | GET | 고정 YouTube CDN의 검증된 이미지 다운로드 |
 | `/api/subscriptions` | GET / POST | CSV 읽기 공개; 갱신 관리자 |
 | `/api/channel-tags` | GET / POST | JSON 태그 읽기 공개; 갱신 관리자 |
 | `/api/channel-avatars` | POST | 채널 프로필 보완 |
@@ -276,6 +287,7 @@ npm run dev
 npx tsc --noEmit
 npm test
 node --experimental-strip-types --test tests/picks.test.ts
+node --experimental-strip-types --test tests/pick-tools.test.ts
 npm run build
 ```
 

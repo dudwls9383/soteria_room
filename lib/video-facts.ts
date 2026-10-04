@@ -5,6 +5,8 @@ export type VideoFact = {
   seconds: number;
   availability: "available" | "missing" | "restricted";
   checkedAt: number;
+  channelId?: string;
+  channelTitle?: string;
 };
 export const FACT_TTL = 7 * 86400000;
 export function resultPage<T>(items:T[],requested:number,size=12){

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
   Headphones,
+  ImageIcon,
   ArrowUpRight,
   BookOpen,
   CalendarDays,
@@ -45,6 +46,8 @@ import ChannelHub from "../components/channel-hub";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
+import ThumbnailExtractor from "../components/thumbnail-extractor";
+import {discoveryCopy} from "../lib/discovery-copy";
 import {
   inScope,
   kindOf,
@@ -80,6 +83,7 @@ const uiDictionary: Record<
   Record<string, string>
 > = {
   en: {
+    ...discoveryCopy.en,
     "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
     "채널 탐색":"Channel explorer", "메이저 남":"Mainstream men", "우타이테 남":"Male utaite", "메이저 여":"Mainstream women", "우타이테 여":"Female utaite", "토픽":"Topic", "플레이리스트":"Playlist",
     "숨은 곡 Pick": "Hidden gems Pick",
@@ -295,6 +299,7 @@ const uiDictionary: Record<
       "Switched to Japanese UI. Song and playlist titles stay in the original language.",
   },
   ja: {
+    ...discoveryCopy.ja,
     "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
     "채널 탐색":"チャンネル探索", "메이저 남":"メジャー・男性", "우타이테 남":"歌い手・男性", "메이저 여":"メジャー・女性", "우타이테 여":"歌い手・女性", "토픽":"トピック", "플레이리스트":"プレイリスト",
     "숨은 곡 Pick": "隠れた名曲Pick",
@@ -524,6 +529,14 @@ function translatedStaticText(
   let translated = dictionary[trimmed];
   if (!translated) {
     translated = trimmed
+      .replace(/^([\d,]+)명 미만$/,language==='ja'?'$1人未満':'Under $1 subscribers')
+      .replace(/^([\d,]+)회 이하$/,language==='ja'?'$1回以下':'Up to $1 views')
+      .replace(/^(\d+)년 전 이맘때 · (\d+)월$/,language==='ja'?'$1年前の今ごろ・$2月':'$1 years ago · month $2')
+      .replace(/^1 years ago/, '1 year ago')
+      .replace(/^월의 픽 채널 ([\d,]+)개 · ID 연결 ([\d,]+)개 · 조회수 확인 ([\d,]+)곡$/,language==='ja'?'月のPick $1チャンネル・ID接続 $2件・再生数確認 $3曲':'$1 monthly Pick channels · $2 linked IDs · $3 songs with view counts')
+      .replace(/^조건에 맞는 ([\d,]+)개 채널$/,language==='ja'?'条件に合う$1チャンネル':'$1 matching channels')
+      .replace(/^조건에 맞는 ([\d,]+)곡(.*)$/,language==='ja'?'条件に合う$1曲$2':'$1 matching songs$2')
+      .replace(/^(구독자 수 미확인|[\d,]+명) · 월의 픽 (\d+)곡$/,(_,count,songs)=>`${count==='구독자 수 미확인'?(language==='ja'?'登録者数未確認':'Subscriber count unknown'):count.replace('명',language==='ja'?'人':' subscribers')} · ${songs}${language==='ja'?'曲（月のPick）':' monthly Pick songs'}`)
       .replace(/^(\d+)곡$/, language === "ja" ? "$1曲" : "$1 songs")
       .replace(
         /^(\d+)개 가져오는 중$/,
@@ -646,6 +659,7 @@ const modules = [
   { id: "search", name: "재생목록 검색기", icon: Search, group: "도구" },
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
+  { id: "thumbnail", name: "썸네일 추출기", icon: ImageIcon },
   { id: "small", name: "채널 탐색", icon: Sparkles, group: "탐색" },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결" },
@@ -1791,6 +1805,7 @@ function RoomContent() {
           <TabsContent value="extract">
             <PlaylistShareTool library={library.filter(p=>!p.summaryOnly)} />
           </TabsContent>
+          <TabsContent value="thumbnail"><ThumbnailExtractor/></TabsContent>
           <TabsContent value="random">
             <RandomDiscovery key={`discovery-${archiveRevision}`} library={library} adminKey={adminKey} />
           </TabsContent>

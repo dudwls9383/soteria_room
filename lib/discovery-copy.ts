@@ -1,0 +1,29 @@
+// Text introduced by monthly channel discovery, memories and thumbnail tools.
+export const discoveryCopy={
+ en:{
+  '구독자 수':'Subscribers','월의 픽 추천 종류':'Monthly Pick recommendation type','이맘때의 음악 선택':'Choose a past-year memory',
+  '썸네일 추출기':'Thumbnail extractor','월의 픽에서 만난 채널':'Channels from monthly Picks','하꼬 추천':'Small channels','저조회곡':'Low-view songs','전체 채널':'All channels','다른 추천 보기':'More recommendations','채널 찾기':'Find a channel','월의 픽에 담긴 채널 이름':'Channel name from monthly Picks',
+  '월의 픽에 담긴 채널만 모았어요. 덜 알려진 목소리와 아직 덜 들은 곡을 만나보세요.':'Only channels featured in monthly Picks. Discover smaller voices and less-heard songs.',
+  '미확인 구독자 수와 조회수는 0으로 분류하지 않아요. 구독자 수는 마지막 확인값이며, 저조회곡은 7일 이내 확인한 정보를 사용해요.':'Unknown counts are never treated as zero. Subscriber counts reflect the last check; view counts are checked within 7 days.',
+  '월의 픽 추천 정보 갱신':'Refresh monthly Pick statistics','정보 확인 중…':'Checking statistics…','한 번에 영상·채널 각각 최대 50개만 확인해요.':'Up to 50 videos and 50 channels per request.','월의 픽 추천을 불러오는 중…':'Loading monthly Pick recommendations…',
+  '조건에 맞는 추천이 아직 없어요. 다른 조건이나 전체 채널을 확인해 주세요.':'No recommendations match yet. Try another filter or view all channels.','구독자 수 미확인':'Subscriber count unknown','채널 이름 일치로 연결 · ID 재확인 전':'Exact name match · ID verification pending','채널 ID 확인 전':'Channel ID not yet verified',
+  '오늘과 같은 달의 월의 픽을 다시 꺼냈어요. 월 단위 수집 기록이며 정확히 같은 날짜나 곡의 발매일은 아니에요.':'Revisit monthly Picks from this month in past years. These are collection months, not exact anniversary dates or release dates.',
+  '영상의 첫인상을 꺼내기.':'A video’s first impression.','YouTube 영상 주소를 넣고, 썸네일을 크기별로 확인하거나 저장하세요.':'Paste a YouTube video URL to preview and save its thumbnails in different sizes.','YouTube 영상 주소':'YouTube video URL','https://youtu.be/… 또는 영상 ID':'https://youtu.be/… or video ID','썸네일 추출':'Extract thumbnails',
+  '일반 영상 · Shorts · 라이브 주소를 지원해요. 영상에 따라 최대 해상도 이미지가 없을 수 있어요.':'Supports videos, Shorts and live URLs. The highest-resolution thumbnail may not be available.',
+  '최대 해상도':'Maximum resolution','고해상도':'High resolution','표준':'Standard','중간':'Medium','작게':'Small','이미지 확인 중…':'Checking image…','저장':'Save','원본 보기':'View original','주소 복사':'Copy URL','썸네일 주소를 복사했어요.':'Thumbnail URL copied.','이 크기의 썸네일이 없어요.':'This thumbnail size is unavailable.','다른 크기를 선택해 주세요.':'Choose another size.',
+  'YouTube 영상 주소를 입력해 주세요. 재생목록 주소만으로는 추출할 수 없어요.':'Enter a YouTube video URL. A playlist-only URL is not supported.',
+ },
+ ja:{
+  '구독자 수':'登録者数','월의 픽 추천 종류':'月のPickのおすすめ種類','이맘때의 음악 선택':'過去の同じ月を選択',
+  '썸네일 추출기':'サムネイル抽出','월의 픽에서 만난 채널':'月のPickで出会ったチャンネル','하꼬 추천':'小規模チャンネル','저조회곡':'再生数の少ない曲','전체 채널':'全チャンネル','다른 추천 보기':'ほかのおすすめ','채널 찾기':'チャンネル検索','월의 픽에 담긴 채널 이름':'月のPickに登場するチャンネル名',
+  '월의 픽에 담긴 채널만 모았어요. 덜 알려진 목소리와 아직 덜 들은 곡을 만나보세요.':'月のPickに登場したチャンネルだけを集めました。まだ知られていない歌声や曲に出会ってみませんか。',
+  '미확인 구독자 수와 조회수는 0으로 분류하지 않아요. 구독자 수는 마지막 확인값이며, 저조회곡은 7일 이내 확인한 정보를 사용해요.':'未確認の数値は0として扱いません。登録者数は最終確認値、再生数は7日以内に確認した情報です。',
+  '월의 픽 추천 정보 갱신':'月のPickの情報を更新','정보 확인 중…':'情報を確認中…','한 번에 영상·채널 각각 최대 50개만 확인해요.':'1回につき動画・チャンネルをそれぞれ最大50件確認します。','월의 픽 추천을 불러오는 중…':'月のPickのおすすめを読み込み中…',
+  '조건에 맞는 추천이 아직 없어요. 다른 조건이나 전체 채널을 확인해 주세요.':'条件に合うおすすめがありません。条件を変えるか全チャンネルをご覧ください。','구독자 수 미확인':'登録者数未確認','채널 이름 일치로 연결 · ID 재확인 전':'名前の完全一致で接続・ID確認前','채널 ID 확인 전':'チャンネルID確認前',
+  '오늘과 같은 달의 월의 픽을 다시 꺼냈어요. 월 단위 수집 기록이며 정확히 같은 날짜나 곡의 발매일은 아니에요.':'過去の同じ月のPickを振り返ります。月単位の収集記録で、同じ日や曲の発売日ではありません。',
+  '영상의 첫인상을 꺼내기.':'動画の第一印象を取り出す。','YouTube 영상 주소를 넣고, 썸네일을 크기별로 확인하거나 저장하세요.':'YouTube動画のURLから、サイズ別のサムネイルを確認・保存できます。','YouTube 영상 주소':'YouTube動画URL','https://youtu.be/… 또는 영상 ID':'https://youtu.be/… または動画ID','썸네일 추출':'サムネイルを抽出',
+  '일반 영상 · Shorts · 라이브 주소를 지원해요. 영상에 따라 최대 해상도 이미지가 없을 수 있어요.':'動画・Shorts・ライブURLに対応します。最高解像度の画像がない動画もあります。',
+  '최대 해상도':'最高解像度','고해상도':'高解像度','표준':'標準','중간':'中','작게':'小','이미지 확인 중…':'画像を確認中…','저장':'保存','원본 보기':'元の画像','주소 복사':'URLをコピー','썸네일 주소를 복사했어요.':'サムネイルURLをコピーしました。','이 크기의 썸네일이 없어요.':'このサイズのサムネイルはありません。','다른 크기를 선택해 주세요.':'別のサイズを選んでください。',
+  'YouTube 영상 주소를 입력해 주세요. 재생목록 주소만으로는 추출할 수 없어요.':'YouTube動画URLを入力してください。再生リストだけのURLには対応していません。',
+ }
+};
