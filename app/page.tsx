@@ -64,6 +64,7 @@ import ResetDataButton from "../components/reset-data-button";
 import { monthOf, searchLibrary } from "../lib/archive";
 import "./room.css";
 import "./experience.css";
+import "./refinement.css";
 import "./connected.css";
 
 type Saved = Playlist & { updatedAt: number };
@@ -530,6 +531,8 @@ function translatedStaticText(
   let translated = dictionary[trimmed];
   if (!translated) {
     translated = trimmed
+      .replace(/^([\d,]+)곡 후보 중 ([\d,]+)곡을 골랐어요\.$/,language==='ja'?'候補$1曲から$2曲を選びました。':'Picked $2 songs from $1 candidates.')
+      .replace(/^(.+) · 사이트에서 듣기$/,language==='ja'?'$1 · サイトで再生':'$1 · Play here')
       .replace(/^([\d,]+)명 미만$/,language==='ja'?'$1人未満':'Under $1 subscribers')
       .replace(/^([\d,]+)회 이하$/,language==='ja'?'$1回以下':'Up to $1 views')
       .replace(/^(\d+)년 전 이맘때 · (\d+)월$/,language==='ja'?'$1年前の今ごろ・$2月':'$1 years ago · month $2')
@@ -609,10 +612,10 @@ function applyUiLanguage(language: TranslateLanguage) {
     if (node.nodeValue !== record.rendered) node.nodeValue = record.rendered;
   }
   for (const element of document.querySelectorAll<HTMLElement>(
-    "[placeholder],[aria-label]",
+    "[placeholder],[aria-label],[title]",
   )) {
     if (element.closest(".notranslate,[translate='no']")) continue;
-    for (const attr of ["placeholder", "aria-label"] as const) {
+    for (const attr of ["placeholder", "aria-label", "title"] as const) {
       const current = element.getAttribute(attr);
       if (!current) continue;
       const records = translatedAttributes.get(element) ?? new Map<string,TranslationRecord>();
@@ -640,14 +643,14 @@ const pageCopy: Record<
     description: "월별 수집 목록과 선별한 월의 픽을 나누어 살펴보세요.",
   },
   recap: {
-    eyebrow: "MY RECAP · 2026—2021",
+    eyebrow: "MY RECAP",
     title: "나의 계절을 채운 음악.",
-    description: "My Recap 2026~2021 · 채널에서 묶어 둔 22개의 리캡.",
+    description: "한 해의 음악을 다시 꺼내 들어요.",
   },
   kawaii: {
     eyebrow: "KAWAII VOICE PLAYLIST",
-    title: "카와이 보이스, 하나의 시리즈.",
-    description: "room부터 괴멸적 카와보 플리까지 · 10개의 큐레이션.",
+    title: "카와보 시리즈",
+    description: "room부터 괴멸적 카와보 플리까지.",
   },
 };
 // 새 기능은 이 목록과 아래 TabsContent를 추가하면 독립 탭으로 확장할 수 있습니다.
@@ -956,7 +959,7 @@ function RoomContent() {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => applyUiLanguage(language));
     });
-    observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:["placeholder","aria-label"]});
+    observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:["placeholder","aria-label","title"]});
     return () => { observer.disconnect(); cancelAnimationFrame(frame); };
   }, [language]);
   async function importOne(e: React.FormEvent) {
@@ -1122,7 +1125,7 @@ function RoomContent() {
             <Play size={18} />
           </button>
         </div>
-        <div className="card-meta">
+        {tab !== "recap" && tab !== "kawaii" && <div className="card-meta">
           <span>
             {kindOf(p) === "recap"
               ? "MY RECAP"
@@ -1134,7 +1137,7 @@ function RoomContent() {
                     ? "월의 픽"
                     : "큐레이션"}
           </span>
-        </div>
+        </div>}
         <button
           className="card-title notranslate"
           translate="no"
@@ -1143,9 +1146,8 @@ function RoomContent() {
           {displayTitle(p)}
         </button>
         <p>
-          SOTERIA ROOM{" "}
           <span>
-            · {playlistCount(p)}곡 ·{" "}
+            {playlistCount(p)}곡 ·{" "}
             {p.views == null
               ? "조회수 미제공"
               : `${p.views.toLocaleString()}회 조회`}
@@ -1346,7 +1348,7 @@ function RoomContent() {
           )}
           {["pick", "archive", "recap", "kawaii"].map((id) => (
             <TabsContent value={id} key={id}>
-              <div className="room-heading">
+              <div className={`room-heading ${id === "recap" || id === "kawaii" ? "series-heading" : ""}`}>
                 <div>
                   <div className="room-eyebrow">{pageCopy[id].eyebrow}</div>
                   <h1>{pageCopy[id].title}</h1>
@@ -1462,9 +1464,9 @@ function RoomContent() {
                     {id === "archive"
                       ? "분류해서 꺼내 듣기"
                       : id === "recap"
-                        ? "My Recap"
+                        ? "재생목록"
                         : id === "kawaii"
-                          ? "Kawaii Voice Playlist"
+                          ? "재생목록"
                           : "큐레이션 재생목록"}
                     <span>
                       {loading ? "…" : visible.length}

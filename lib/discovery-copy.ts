@@ -1,6 +1,12 @@
 // Text introduced by monthly channel discovery, memories and thumbnail tools.
 export const discoveryCopy={
  en:{
+  '음악을 다시 발견하는 방.':'Rediscover your music.', '재생목록':'Playlists', '곡, 채널, 재생목록':'Song, channel or playlist',
+  '연도':'Year', '월':'Month', '분기':'Quarter', '전체':'All', '검색어':'Search', '후보 곡을 확인하는 중…':'Checking candidate songs…',
+  '월의 픽만':'Monthly Picks only', '전체 · 월별 수집 포함':'All · including collections', '큐레이션 전체 · 수집 제외':'Curated · excluding collections', '월별·연간 수집 목록만':'Monthly and annual collections only',
+  '모두 담기':'Add all', '듣기 목록에 담기':'Add to listening queue', '곡 뽑기':'Pick songs', '뽑는 중…':'Picking…', '조건을 정하고 음악을 뽑아보세요.':'Set your filters and pick songs.',
+  '관리 도구':'Admin tools', '구독목록 관리':'Manage subscriptions', '채널 데이터 관리':'Manage channel data', '선택 범위에서':'Within the selected scope',
+  '한 해의 음악을 다시 꺼내 들어요.':'Revisit the music of each year.', 'room부터 괴멸적 카와보 플리까지.':'From room to the Kawaii Voice playlists.',
   '월의 픽 한정':'Monthly Picks only', '검색 범위':'Search scope', '저장된 곡에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.':'Discover saved songs with fewer views. Videos with unknown view counts are excluded from numeric filters.',
   '구독자 수':'Subscribers','월의 픽 추천 종류':'Monthly Pick recommendation type','이맘때의 음악 선택':'Choose a past-year memory',
   '썸네일 추출기':'Thumbnail extractor','월의 픽에서 만난 채널':'Channels from monthly Picks','하꼬 추천':'Small channels','저조회곡':'Low-view songs','전체 채널':'All channels','다른 추천 보기':'More recommendations','채널 찾기':'Find a channel','월의 픽에 담긴 채널 이름':'Channel name from monthly Picks',
@@ -15,6 +21,12 @@ export const discoveryCopy={
   'YouTube 영상 주소를 입력해 주세요. 재생목록 주소만으로는 추출할 수 없어요.':'Enter a YouTube video URL. A playlist-only URL is not supported.',
  },
  ja:{
+  '음악을 다시 발견하는 방.':'音楽をもう一度、発見。', '재생목록':'プレイリスト', '곡, 채널, 재생목록':'曲・チャンネル・プレイリスト',
+  '연도':'年', '월':'月', '분기':'四半期', '전체':'すべて', '검색어':'検索', '후보 곡을 확인하는 중…':'候補曲を確認中…',
+  '월의 픽만':'月のPickのみ', '전체 · 월별 수집 포함':'すべて・収集リストを含む', '큐레이션 전체 · 수집 제외':'キュレーション・収集リストを除く', '월별·연간 수집 목록만':'月別・年別収集リストのみ',
+  '모두 담기':'すべて追加', '듣기 목록에 담기':'再生キューに追加', '곡 뽑기':'曲を選ぶ', '뽑는 중…':'選曲中…', '조건을 정하고 음악을 뽑아보세요.':'条件を決めて曲を選びましょう。',
+  '관리 도구':'管理ツール', '구독목록 관리':'登録リスト管理', '채널 데이터 관리':'チャンネルデータ管理', '선택 범위에서':'選択範囲内で',
+  '한 해의 음악을 다시 꺼내 들어요.':'一年の音楽を振り返って聴きましょう。', 'room부터 괴멸적 카와보 플리까지.':'roomからカワイイボイスのプレイリストまで。',
   '월의 픽 한정':'月のPickのみ', '검색 범위':'検索範囲', '저장된 곡에서 조회수가 낮은 곡부터 보여드려요. 조회수 미확인 영상은 숫자 조건에 포함하지 않습니다.':'保存された曲を再生数の少ない順に表示します。再生数が未確認の動画は数値条件に含めません。',
   '구독자 수':'登録者数','월의 픽 추천 종류':'月のPickのおすすめ種類','이맘때의 음악 선택':'過去の同じ月を選択',
   '썸네일 추출기':'サムネイル抽出','월의 픽에서 만난 채널':'月のPickで出会ったチャンネル','하꼬 추천':'小規模チャンネル','저조회곡':'再生数の少ない曲','전체 채널':'全チャンネル','다른 추천 보기':'ほかのおすすめ','채널 찾기':'チャンネル検索','월의 픽에 담긴 채널 이름':'月のPickに登場するチャンネル名',

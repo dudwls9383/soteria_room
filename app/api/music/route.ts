@@ -2,7 +2,7 @@ import { database } from "../../../db";
 import { failure } from "../../../lib/server";
 import type { Playlist } from "../../../lib/music";
 import { buildMusicIndex, buildMonthlyPickIndex, filterMusicIndex } from "../../../lib/music-index";
-import type { Scope } from "../../../lib/collections";
+import { sampleUnique, type Scope } from "../../../lib/collections";
 import { buildPicks, dailySample } from "../../../lib/picks";
 import { videoFacts } from "../../../lib/video-fact-store";
 import { FACT_TTL, hiddenCandidate, resultPage } from "../../../lib/video-facts";
@@ -57,10 +57,13 @@ export async function GET(request: Request) {
       collection: url.searchParams.get("collection") || "all",
     });
     const limit = Math.min(Number(url.searchParams.get("limit") || 200), 5000);
+    // Draw from the entire filtered index, not the first page of 5,000 tracks.
+    const requested = Number(url.searchParams.get("count") || 10);
+    const count = Number.isFinite(requested) ? Math.min(100, Math.max(1, Math.floor(requested))) : 10;
     return Response.json(
       {
         total: filtered.length,
-        music: filtered.slice(0, limit),
+        music: mode === "draw" ? sampleUnique(filtered, count) : filtered.slice(0, limit),
         available: {
           years: [...new Set(music.flatMap((m) => m.years))].sort().reverse(),
           months: [...new Set(music.flatMap((m) => m.months))].sort().reverse(),

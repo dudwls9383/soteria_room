@@ -1,10 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Play, Plus } from "lucide-react";
-import { useRoomAudio } from "./room-experience";
+import SongCard from "./song-card";
 export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
-  const audio = useRoomAudio(),
-    [data, setData] = useState<any>(null),
+  const [data, setData] = useState<any>(null),
     [views, setViews] = useState("10000"),
     [seconds, setSeconds] = useState("600"),
     [before, setBefore] = useState(""),
@@ -109,14 +107,13 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
         </label>
       </div>
       <p className="pick-reason" id="hidden-upload-year-help">영상이 YouTube에 올라온 연도로 찾습니다. ‘2025년까지’는 2025년과 그 이전 영상이며, 곡의 발매연도와는 달라요.</p>
-      {adminKey&&<button className="room-button subtle" disabled={updating} onClick={()=>void updateViews()}>{updating?"조회수 확인 중…":"월의 픽 조회수 갱신 · 50곡"}</button>}
-      {updateNote&&<p role="status">{updateNote}</p>}
+      {adminKey&&<details className="inline-admin"><summary>관리 도구</summary><button className="room-button subtle" disabled={updating} onClick={()=>void updateViews()}>{updating?"조회수 확인 중…":"월의 픽 조회수 갱신 · 50곡"}</button>{updateNote&&<p role="status">{updateNote}</p>}</details>}
       {busy && <p role="status">숨은 곡을 찾는 중…</p>}
       {error && <p role="alert">{error}</p>}
       {data && !busy && (
         <>
           <small>
-            {data.known.toLocaleString()}곡 정보 확인 · 조건에 맞는{" "}
+            선택 범위에서 {data.known.toLocaleString()}곡 정보 확인 · 조건에 맞는{" "}
             {data.total.toLocaleString()}곡
             {data.checkedAt > 0 &&
               ` · ${new Date(data.checkedAt).toLocaleDateString("ko-KR")} 기준`}
@@ -129,38 +126,7 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
           ) : (
             <div className="pick-album-grid">
               {data.music.map((t: any) => (
-                <article className="pick-album glass" key={t.id}>
-                  <button
-                    className="pick-cover"
-                    aria-label={`${t.title} 재생`}
-                    onClick={() => audio.play(t)}
-                  >
-                    <img src={t.thumbnail} alt="" loading="lazy" />
-                    <span>
-                      <Play size={19} />
-                    </span>
-                  </button>
-                  <div className="pick-album-copy">
-                    <h3 className="notranslate" translate="no">
-                      {t.title}
-                    </h3>
-                    <p className="notranslate" translate="no">
-                      {t.artist}
-                    </p>
-                    <small>
-                      {t.fact.views.toLocaleString()}회 ·{" "}
-                      {Math.floor(t.fact.seconds / 60)}:
-                      {String(t.fact.seconds % 60).padStart(2, "0")}
-                    </small>
-                    <button
-                      className="room-button subtle"
-                      onClick={() => audio.add([t])}
-                    >
-                      <Plus size={14} />
-                      목록에 담기
-                    </button>
-                  </div>
-                </article>
+                <SongCard key={t.id} track={t} meta={<>{t.fact.views.toLocaleString()}회 · {Math.floor(t.fact.seconds / 60)}:{String(t.fact.seconds % 60).padStart(2, "0")}</>} />
               ))}
             </div>
           )}

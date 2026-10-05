@@ -215,8 +215,9 @@ export default function ChannelTagExplorer({
           </label>
         </div>
       </section>
+      {adminKey && <details className="inline-admin"><summary>채널 데이터 관리</summary><ResetDataButton target="json" label="JSON 초기화" adminKey={adminKey} disabled={busy} onReset={() => {setSnapshot({tag,query,channels:[],summaries:[],updatedAt:Date.now(),source:"초기화됨"});setPicked([]);setPage(1);}} /></details>}
       <div className="section-title">
-        <ResetDataButton target="json" label="JSON 초기화" adminKey={adminKey} disabled={busy} onReset={() => {setSnapshot({tag,query,channels:[],summaries:[],updatedAt:Date.now(),source:"초기화됨"});setPicked([]);setPage(1);}} />
+
         <h2>
           {picked.length ? "이번 랜덤 채널" : "전체 채널 목록"}
           <span>

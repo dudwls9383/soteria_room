@@ -32,7 +32,7 @@
 
 1. `app/page.tsx`: 메뉴, 관리 권한, 메인 화면, 번역 연결.
 2. `components/room-experience.tsx`: 모든 탭에서 공유하는 플레이어·계절·앰비언트.
-3. `app/room.css`, `app/experience.css`: 실제 화면 스타일과 반응형 규칙.
+3. `app/room.css`, `app/experience.css`, `app/refinement.css`: 실제 화면 스타일과 반응형 규칙.
 4. `components/random-discovery.tsx`, `components/pick-discovery.tsx`: 디깅 구조와 Pick.
 5. `components/channel-hub.tsx`, `components/small-channel-discovery.tsx`, `components/channel-tag-explorer.tsx`: 채널 탐색.
 6. `components/song-bottle-lite.tsx`: 추천 작성·목록·관리자 삭제.
@@ -173,6 +173,8 @@ Naver 블로그와 두 DC 갤러리를 하나의 연결된 공간으로 통합�
 | `app/room.css` | 보관실·카드·탭·반응형 | 뒤쪽 규칙이 앞쪽 스타일을 덮을 수 있음 |
 | `app/experience.css` | 플레이어·테마·앰비언트·추가 UI | room.css 뒤에 적용되는 규칙 확인 |
 | `components/room-experience.tsx` | 공통 재생·듣기 목록·계절 | 탭 사이 재생 지속과 iframe 수명 |
+| `app/refinement.css` | 카드 면·대비·간결한 헤더·필터 정렬 | 마지막에 적용; 계절·전체 구독 목록·기간 적용 범위 보존 |
+| `components/song-card.tsx` | Pick·랜덤·숨은 곡 공통 카드 | 재생 → 담기 → 원문 순서; 원문 곡명 유지 |
 | `components/random-discovery.tsx` | 디깅 하위 탭·랜덤·구독 목록 | 랜덤 결과 위치·전체 펼침 유지 |
 | `components/pick-discovery.tsx` | 기간 Pick·숨은 곡·페이지 | 범위·필터·정렬 의미 보존 |
 | `lib/pick-channels.ts`, `lib/pick-channel-store.ts` | 월의 픽 출신 채널 판별·기존 탐색 필터 | 채널 ID 우선·유일한 이름 완전 일치·미확인 통계 |
@@ -361,3 +363,10 @@ SITE_REVIEW_GUIDE 및 관련 소스를 읽고, 구현된 기능과 미구현 기
 연결 공간 관련 파일: `components/connected-spaces.tsx`(다국어 화면), `app/connected.css`(전용 반응형 스타일), `lib/posts.ts`(원문 추출), `lib/post-store.ts`(공유 글 캐시), `app/api/posts/route.ts`, `app/api/post-preview/route.ts`. 원문 응답 실패를 빈 성공으로 감추지 않고 출처별 상태를 보여주는 것이 중요합니다.
 
 연결 글 캐시: D1 `connected_post_cache`는 출처 3개별 10분 TTL·동시 갱신 잠금을 사용합니다. 저장된 글은 우선 표시하고 Worker 요청 문맥의 `waitUntil`로 오래된 자료를 갱신합니다. 명시적 새로고침도 같은 10분 제한을 유지합니다. `connected_preview_cache`는 선택한 최신 글 미리보기를 24시간·최근 160개까지만 보관합니다. 본문 확인은 전체 사이트 기준 2초 간격, 같은 글 실패 시 1분 간격으로 제한합니다. 이 자료는 원문 최신 목록의 공유 캐시이며 음악 DB 초기화 대상이 아닙니다.
+
+## 15. 2026-10-05 UI 정리 반영
+
+- 중복 소개·시리즈 카드 브랜드를 줄이고, 곡 카드를 공통 컴포넌트로 통일했습니다. 재생 오버레이는 어두운 원, 담기와 원문은 44px 클릭 영역입니다.
+- 카드와 입력창은 거의 불투명하게, 본문·보조 글자는 고정된 진한 색으로 유지합니다. 계절 배경과 강조색·기존 앰비언트는 유지합니다.
+- 랜덤 폼은 데스크톱 두 줄 격자, 모바일 두 열로 정리했습니다. 후보 숫자와 결과 안내는 전체 필터 범위를 기준으로 일치하며 채널 탭으로 안내가 새지 않습니다. `/api/music?mode=draw`는 기존 필터를 사용해 전체 후보에서 최대 100곡을 반환합니다. 기본 GET 동작은 유지합니다.
+- 랜덤 채널의 전체 목록 기본 펼침, 분기별 Pick 바로 위의 연도·분기 선택줄, 기존 권한·해시·API는 보존합니다. CSV·JSON 초기화와 숨은 곡의 조회수 갱신은 관리자에게만 접힌 영역으로 표시합니다.

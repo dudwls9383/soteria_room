@@ -1,6 +1,6 @@
 "use client";
 import { useRoomAudio } from "./room-experience";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Shuffle,
   ExternalLink,
@@ -8,10 +8,7 @@ import {
   Upload,
   Copy,
   Music2,
-  Play,
-  SkipForward,
   Users,
-  X,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import type { Playlist } from "../lib/music";
@@ -20,6 +17,7 @@ import { scopes, sampleUnique, type Scope } from "../lib/collections";
 import { SHEET_URL, type Channel } from "../lib/subscriptions";
 import PickDiscovery from "./pick-discovery";
 import ResetDataButton from "./reset-data-button";
+import SongCard from "./song-card";
 type Snapshot = {
   channels: Channel[];
   updatedAt: number | null;
@@ -66,13 +64,16 @@ export default function RandomDiscovery({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [activeTab,setActiveTab]=useState("picks");
+  const [songNotice,setSongNotice]=useState("");
+  const [drawing,setDrawing]=useState(false);
+  const drawRequest=useRef<AbortController | null>(null);
   const [channelQuery,setChannelQuery] = useState("");
   const [channelPage,setChannelPage] = useState(1);
   const filteredChannels=snapshot.channels.filter(c=>`${c.title} ${c.id}`.toLowerCase().includes(channelQuery.trim().toLowerCase()));
   const pageCount=Math.max(1,Math.ceil(filteredChannels.length/100));
   const safePage=Math.min(channelPage,pageCount);
   const visibleChannels=filteredChannels.slice((safePage-1)*100,safePage*100);
-  const pool = musicSnapshot.music;
   const monthChoices = [
     ...new Set(musicSnapshot.available.months.map((item) => item.slice(-2))),
   ].sort((a, b) => Number(a) - Number(b));
@@ -87,14 +88,18 @@ export default function RandomDiscovery({
   }, []);
   useEffect(() => {
     const controller = new AbortController();
+    drawRequest.current?.abort();
+    setDrawing(false);
     const params = new URLSearchParams({
       scope,
       year,
       month,
       q: songQuery,
-      limit: "5000",
+      limit: "0",
     });
     setMusicLoading(true);
+    setSongNotice("");
+    setSongs([]);
     fetch(`/api/music?${params.toString()}`, { signal: controller.signal })
       .then(async (r) => {
         const d: any = await r.json();
@@ -104,9 +109,23 @@ export default function RandomDiscovery({
       .catch((e) => {
         if (e.name !== "AbortError") setError(e.message);
       })
-      .finally(() => setMusicLoading(false));
-    return () => controller.abort();
+      .finally(() => { if (!controller.signal.aborted) setMusicLoading(false); });
+    return () => { controller.abort(); drawRequest.current?.abort(); };
   }, [scope, year, month, songQuery, library.length]);
+  async function drawSongs() {
+    const controller=new AbortController();
+    drawRequest.current?.abort(); drawRequest.current=controller;
+    setDrawing(true); setError(""); setSongNotice("");
+    const params=new URLSearchParams({mode:"draw",scope,year,month,q:songQuery,count:String(count)});
+    try {
+      const r=await fetch(`/api/music?${params}`,{signal:controller.signal});
+      const d:MusicSnapshot & {error?:string}=await r.json();
+      if(!r.ok)throw new Error(d.error || "음악을 뽑지 못했어요.");
+      // Sampling happens on the server across every candidate; drawing never starts playback.
+      setSongs(d.music); updatePlaying(null);
+      setSongNotice(`${d.total.toLocaleString()}곡 후보 중 ${d.music.length}곡을 골랐어요.`);
+    } catch(e){if(!controller.signal.aborted)setError((e as Error).message);} finally {if(!controller.signal.aborted)setDrawing(false);}
+  }
   async function update(input: object) {
     setBusy(true);
     setError("");
@@ -143,7 +162,7 @@ export default function RandomDiscovery({
       await navigator.clipboard.writeText(
         songs.map((t) => `https://youtu.be/${t.id}`).join("\n"),
       );
-      setNotice(`${songs.length}곡의 YouTube 링크를 복사했어요.`);
+      setSongNotice(`${songs.length}곡의 YouTube 링크를 복사했어요.`);
     } catch {
       setError("클립보드 권한을 확인해 주세요.");
     }
@@ -175,10 +194,10 @@ export default function RandomDiscovery({
   }
   return (
     <div>
-      <div className="room-heading">
+      <div className="room-heading discovery-heading">
         <div>
           <div className="room-eyebrow">DIGGING ROOM</div>
-          <h1>오늘의 음악을 다시 발견하는 방.</h1>
+          <h1>음악을 다시 발견하는 방.</h1>
           <p>모아둔 음악에서는 Pick을, 구독목록에서는 랜덤 채널을 꺼내요.</p>
         </div>
       </div>
@@ -187,12 +206,12 @@ export default function RandomDiscovery({
           {error}
         </p>
       )}
-      {notice && (
+      {notice && activeTab === "channels" && (
         <p className="room-message" role="status">
           {notice}
         </p>
       )}
-      <Tabs defaultValue="picks">
+      <Tabs value={activeTab} onValueChange={value=>{setActiveTab(value);setError("");}}>
         <TabsList className="discovery-tabs">
           <TabsTrigger value="picks"><Music2 size={16} />Pick</TabsTrigger>
           <TabsTrigger value="songs">
@@ -205,15 +224,13 @@ export default function RandomDiscovery({
         </TabsList>
         <TabsContent value="picks"><PickDiscovery adminKey={adminKey} /></TabsContent>
         <TabsContent value="songs">
+          {songNotice && <p className="room-message" role="status">{songNotice}</p>}
           <section className="discovery-control glass">
             <div>
-              <h2>오늘의 Pick을 골라볼까요?</h2>
-              <p>
-                후보 {musicSnapshot.total.toLocaleString()}곡 · 같은 영상은 한
-                번만 뽑아요.{musicLoading ? " 새로 고르는 중…" : ""}
-              </p>
+              <h2>조건을 정하고 음악을 뽑아보세요.</h2>
+              <p>{musicLoading ? "후보 곡을 확인하는 중…" : `후보 ${musicSnapshot.total.toLocaleString()}곡 · 같은 영상은 한 번만 뽑아요.`}</p>
             </div>
-            <div className="control-row">
+            <div className="control-row random-song-filters">
               <label>
                 뽑을 범위
                 <select
@@ -292,77 +309,37 @@ export default function RandomDiscovery({
               <button
                 className="room-button"
                 disabled={
-                  !pool.length ||
+                  !musicSnapshot.total || drawing ||
                   musicLoading ||
                   !Number.isInteger(count) ||
                   count < 1 ||
                   count > 100
                 }
-                onClick={() => {
-                  const picked = sampleUnique(pool, count);
-                  setSongs(picked);
-                  // Drawing candidates must not add or start any track.
-                  updatePlaying(null);
-                  setNotice(
-                    pool.length < count
-                      ? `후보가 ${pool.length}곡이라 모두 뽑았어요.`
-                      : `${pool.length.toLocaleString()}곡 후보에서 골랐어요.`,
-                  );
-                }}
+                onClick={() => void drawSongs()}
               >
                 <Shuffle size={17} />
-                Random Pick
+                {drawing ? "뽑는 중…" : "곡 뽑기"}
               </button>
             </div>
           </section>
           {songs.length > 0 && (
             <>
-<button className="room-button subtle" onClick={()=>audio.add(songs)}>이번 랜덤을 듣기 목록에 담기</button>
+
               <div className="section-title">
                 <h2>
-                  이번 Pick<span>{songs.length}곡</span>
+                  이번 Pick<span>{`${songs.length}곡`}</span>
                 </h2>
-                <button
+                <div className="shelf-actions"><button className="room-button subtle" onClick={()=>audio.add(songs)}>모두 담기</button><button
                   className="room-button subtle"
                   onClick={() => void copy()}
                 >
                   <Copy size={16} />
                   YouTube 링크 복사
-                </button>
+                </button></div>
               </div>
-              <div className="random-song-grid">
+              <div className="pick-album-grid">
                 {songs.map((t) => (
-                  <article
-                    className={`random-song glass ${
-                      playing?.id === t.id ? "active" : ""
-                    }`}
-                    key={t.id}
-                  >
-                    <img src={t.thumbnail} alt="" loading="lazy" />
-                    <div>
-                      <strong className="notranslate" translate="no">
-                        {t.title}
-                      </strong>
-                      <p className="notranslate" translate="no">
-                        {t.artist}
-                      </p>
-                      <small className="notranslate" translate="no">
-                        {t.playlists.slice(0, 2).join(" / ")}
-                      </small>
-                      <div className="random-song-actions">
-                        <button onClick={() => setPlaying(t)}>
-                          <Play size={13} /> 사이트에서 듣기
-                        </button>
-                        <a
-                          href={`https://youtu.be/${t.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          YouTube <ExternalLink size={12} />
-                        </a>
-                      </div>
-                    </div>
-                  </article>
+                  <SongCard key={t.id} track={t} active={playing?.id===t.id} onPlay={()=>setPlaying(t)} meta={<span className="notranslate" translate="no">{t.playlists.slice(0,2).join(" / ")}</span>} />
                 ))}
               </div>
             </>
@@ -445,7 +422,7 @@ export default function RandomDiscovery({
             {!visibleChannels.length && <p>표시할 채널이 없어요.</p>}
             <nav className="subscription-pages" aria-label="전체 구독 채널 페이지"><button className="room-button subtle" disabled={safePage<=1} onClick={()=>setChannelPage(safePage-1)}>이전</button><label>페이지 <select value={safePage} onChange={e=>setChannelPage(Number(e.target.value))}>{Array.from({length:pageCount},(_,i)=><option value={i+1} key={i}>{i+1}</option>)}</select> / {pageCount}</label><button className="room-button subtle" disabled={safePage>=pageCount} onClick={()=>setChannelPage(safePage+1)}>다음</button></nav>
           </section>
-          <section className="subscription-settings glass">
+          {adminKey && <details className="subscription-settings glass inline-admin"><summary>구독목록 관리</summary>
             <h2>반년에 한 번, 구독목록 새로 넣기</h2>
             <p>
               마지막 가져오기:{" "}
@@ -491,7 +468,7 @@ export default function RandomDiscovery({
               관리 잠금이 열린 상태에서만 목록을 교체합니다. 채널 URL과
               채널 제목 열을 사용해요.
             </p>
-          </section>
+          </details>}
           <div className="digging-guides">
             <a
               href="https://gall.dcinside.com/mini/board/view/?id=moesound&no=1025"
