@@ -47,6 +47,7 @@ import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
 import ThumbnailExtractor from "../components/thumbnail-extractor";
+import ConnectedSpaces from "../components/connected-spaces";
 import {discoveryCopy} from "../lib/discovery-copy";
 import {
   inScope,
@@ -63,10 +64,10 @@ import ResetDataButton from "../components/reset-data-button";
 import { monthOf, searchLibrary } from "../lib/archive";
 import "./room.css";
 import "./experience.css";
+import "./connected.css";
 
 type Saved = Playlist & { updatedAt: number };
 type PlayableTrack = Track & { playlists?: string[] };
-type Post = { title: string; url: string; date: string; description?: string };
 type TranslateLanguage = "ko" | "ja" | "en";
 const linkPage = "https://lit.link/en/soteria";
 const translateOptions: { value: TranslateLanguage; label: string }[] = [
@@ -662,16 +663,9 @@ const modules = [
   { id: "thumbnail", name: "썸네일 추출기", icon: ImageIcon },
   { id: "small", name: "채널 탐색", icon: Sparkles, group: "탐색" },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
-  { id: "blog", name: "블로그 포스트", icon: BookOpen, group: "연결" },
-  { id: "somunia", name: "소무니아 갤러리", icon: MessageCircle },
-  { id: "moesound", name: "카와이 보이스 갤러리", icon: MessageCircle },
+  { id: "connected", name: "연결된 공간", icon: BookOpen, group: "연결" },
   { id: "settings", name: "가져오기 · 동기화", icon: Settings2, group: "관리" },
 ];
-const sources: Record<string, string> = {
-  blog: "https://blog.naver.com/dudwls9383",
-  somunia: "https://gall.dcinside.com/mgallery/board/lists/?id=somunia",
-  moesound: "https://gall.dcinside.com/mini/board/lists?id=moesound",
-};
 async function request(
   path: string,
   input?: object,
@@ -742,9 +736,7 @@ function RoomContent() {
   const [featuredId, setFeaturedId] = useState(""),
     [cupVisited, setCupVisited] = useState(false),
     [cupPlaylist, setCupPlaylist] = useState<Playlist | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]),
-    [postLoading, setPostLoading] = useState(false),
-    [postError, setPostError] = useState("");
+  const [connectedSource,setConnectedSource]=useState<"all"|"blog"|"somunia"|"moesound">("all");
   const [direction, setDirection] = useState<"asc" | "desc">("desc");
   const [searchScope, setSearchScope] = useState<Scope>("picks");
   const [archiveScope, setArchiveScope] = useState<Scope>("picks");
@@ -802,6 +794,7 @@ function RoomContent() {
     baseLibrary[0];
   function navigate(id: string) {
     setTab(id);
+    if(id==="connected")setConnectedSource("all");
     setMobileMenu(false);
     window.scrollTo(0, 0);
     setQuery("");
@@ -913,6 +906,10 @@ function RoomContent() {
   useEffect(() => {
     let active = true;
     const hash = location.hash.slice(1);
+    // Keep old shared links usable after merging the three connected spaces.
+    if(hash==="blog"||hash==="somunia"||hash==="moesound"){
+      setConnectedSource(hash);setTab("connected");history.replaceState(null,"","#connected");
+    }
     if(hash==="asmr"){setTab("small");setChannelStart("archive");history.replaceState(null,"","#small");}
     if (modules.some((m) => m.id === hash)) {
       setTab(hash);
@@ -962,26 +959,6 @@ function RoomContent() {
     observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:["placeholder","aria-label"]});
     return () => { observer.disconnect(); cancelAnimationFrame(frame); };
   }, [language]);
-  useEffect(() => {
-    if (!sources[tab]) return;
-    let active = true;
-    setPosts([]);
-    setPostLoading(true);
-    setPostError("");
-    request(`/api/posts?source=${tab}`)
-      .then((data) => {
-        if (active) setPosts(data.posts);
-      })
-      .catch((e) => {
-        if (active) setPostError(e.message);
-      })
-      .finally(() => {
-        if (active) setPostLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [tab]);
   async function importOne(e: React.FormEvent) {
     e.preventDefault();
     setImporting(true);
@@ -1826,78 +1803,9 @@ function RoomContent() {
               />
             )}
           </TabsContent>
-          {["blog", "somunia", "moesound"].map((id) => (
-            <TabsContent value={id} key={id}>
-              <div className="room-heading">
-                <div>
-                  <div className="room-eyebrow">CONNECTED SPACES</div>
-                  <h1>{modules.find((m) => m.id === id)?.name}</h1>
-                  <p>
-                    {id === "blog"
-                      ? "음악과 함께 남겨 둔 이야기."
-                      : "함께 듣고, 이야기하는 공간."}
-                  </p>
-                </div>
-                <a
-                  className="room-button"
-                  href={sources[id]}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  원문 공간 열기
-                  <ExternalLink size={16} />
-                </a>
-              </div>
-              {postLoading ? (
-                <div className="room-empty">
-                  <LoaderCircle className="spin" />
-                  최근 글을 불러오고 있어요.
-                </div>
-              ) : postError ? (
-                <div className="room-empty glass">
-                  <BookOpen size={30} />
-                  <h3>현재 글 목록을 불러올 수 없어요.</h3>
-                  <p>{postError}</p>
-                  <a
-                    className="room-button"
-                    href={sources[id]}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    원문에서 보기
-                    <ArrowUpRight size={16} />
-                  </a>
-                </div>
-              ) : (
-                <div className="posts-grid">
-                  {posts.map((p) => (
-                    <a
-                      className="post-card glass"
-                      key={p.url}
-                      href={p.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <span>
-                        {p.date || "최근 글"}
-                        <ArrowUpRight size={17} />
-                      </span>
-                      <h2 className="notranslate" translate="no">
-                        {p.title}
-                      </h2>
-                      {p.description && <p>{p.description}</p>}
-                      <small>원문 읽기</small>
-                    </a>
-                  ))}
-                  {!posts.length && (
-                    <div className="room-empty">
-                      표시할 최근 글이 없습니다. 원문 공간에서 확인해 주세요.
-                    </div>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-          ))}
+          <TabsContent value="connected">
+            <ConnectedSpaces language={language} initialSource={connectedSource}/>
+          </TabsContent>
           <TabsContent value="settings">
             <div className="room-heading">
               <div>
