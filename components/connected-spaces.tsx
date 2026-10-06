@@ -76,7 +76,7 @@ const copy = {
     previewError: "미리보기를 가져오지 못했어요. 원문에서 확인하거나 잠시 후 다시 시도해 주세요.", noPreview: "글 내용을 미리 볼 수 없어요. 원문에서 확인해 주세요.",
     previewNote: "글에 담긴 이야기와 YouTube 링크를 잠깐 살펴보세요.", retry: "다시 시도", play: "재생", add: "듣기 목록에 담기", added: "목록에 담았어요", video: "글에 담긴 영상", imageMissing: "이미지 대신 글로 만나보세요.",
     partial: "일부 공간의 새 글을 확인하지 못했어요.", saved: "마지막으로 확인한 글을 보여드려요.", failed: "글 목록을 가져오지 못했어요.", failedNote: "잠시 후 다시 시도하거나 위의 원래 공간에서 확인해 주세요.",
-    comments: "댓글", views: "조회", filter: "연결 공간 선택", original: "제목과 글 내용은 원문 언어로 표시돼요.",
+    comments: "댓글", views: "조회", filter: "커뮤니티 선택", original: "제목과 글 내용은 원문 언어로 표시돼요.",
   },
   en: {
     title: "Where music becomes a conversation.", intro: "Three spaces for discovering music and recording taste, together.",

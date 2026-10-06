@@ -682,7 +682,7 @@ const modules = [
   { id: "asmr", name: "좌우 ASMR 플레이어", icon: Headphones },
   { id: "small", name: "채널 탐색", icon: Sparkles, group: "탐색" },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
-  { id: "connected", name: "연결된 공간", icon: BookOpen, group: "연결" },
+  { id: "connected", name: "커뮤니티", icon: BookOpen, group: "연결" },
   { id: "settings", name: "가져오기 · 동기화", icon: Settings2, group: "관리" },
 ];
 const moduleGroups=modules.reduce<{name:string;items:typeof modules}[]>((groups,module)=>{

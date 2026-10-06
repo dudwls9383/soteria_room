@@ -110,7 +110,7 @@ export async function readPostPreview(source: PostSource, input: string) {
   await ensurePostCache();
   // Do not turn a public endpoint into an unlimited gallery crawler.
   const post = savedPosts(await sourceRow(source)).find((p) => p.url === url);
-  if (!post) throw new ApiError("현재 연결된 공간 목록에 있는 글만 미리 볼 수 있어요.");
+  if (!post) throw new ApiError("현재 커뮤니티 목록에 있는 글만 미리 볼 수 있어요.");
   const db = database(), now = Date.now();
   const row = await db.prepare("SELECT data,updated_at,last_attempt,error,lease_owner,lease_until FROM connected_preview_cache WHERE url=?").bind(url).first<CacheRow>();
   const saved = savedPreview(row);
