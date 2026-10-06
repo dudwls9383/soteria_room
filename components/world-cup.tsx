@@ -17,6 +17,8 @@ import {
   X,
 } from "lucide-react";
 import type { Playlist, Track } from "../lib/music";
+import {displayTitle} from '../lib/collections';
+import {playlistCount} from '../lib/music';
 type Match = { left: string; right: string; winner: string; round: number };
 type Game = {
   id: string;
@@ -41,9 +43,11 @@ const roundLabel = (n: number) =>
 export default function Home({
   initialPlaylist,
   active = true,
+  library=[],
 }: {
   initialPlaylist?: Playlist | null;
   active?: boolean;
+  library?:Playlist[];
 }) {
   const audio = useRoomAudio();
   const [view, setView] = useState<"setup" | "play" | "result" | "ranking">(
@@ -169,6 +173,17 @@ export default function Home({
     } finally {
       setBusy(false);
     }
+  }
+  async function selectSaved(id:string){
+    if(!id&&!busy){setPlaylist(null);setUrl('');return;}
+    const saved=library.find(p=>p.id===id);if(!saved||busy)return;
+    setBusy(true);setError('');
+    try{
+      let full=saved;
+      if(saved.summaryOnly){const res=await fetch(`/api/playlist?id=${encodeURIComponent(id)}`);const data=await res.json() as Playlist&{error?:string};if(!res.ok)throw new Error(data.error||'재생목록을 가져오지 못했어요.');full=data;}
+      setPlaylist(full);setUrl(`https://www.youtube.com/playlist?list=${id}`);
+      setSize(Math.max(2,Math.min(32,2**Math.floor(Math.log2(full.tracks.length||1)))));
+    }catch(e){setError((e as Error).message);}finally{setBusy(false);}
   }
   async function start() {
     if (!playlist) return;
@@ -495,6 +510,13 @@ export default function Home({
                       <ArrowRight size={18} />
                     </button>
                   </form>
+                  <details className="saved-playlist-helper worldcup-saved-playlists">
+                    <summary>저장된 재생목록에서 고르기</summary>
+                    <select aria-label="월드컵에 사용할 저장된 재생목록" disabled={busy||!library.length} value={library.some(p=>p.id===playlist?.id)?playlist?.id||'':''} onChange={e=>void selectSaved(e.target.value)}>
+                      <option value="">선택 안 함</option>
+                      {[...library].sort((a,b)=>displayTitle(a).localeCompare(displayTitle(b),'ko',{numeric:true})).map(p=><option key={p.id} value={p.id}>{displayTitle(p)} · {playlistCount(p)}곡</option>)}
+                    </select>
+                  </details>
                   <p className="help">
                     공개 또는 일부 공개 재생목록을 사용할 수 있어요.
                   </p>

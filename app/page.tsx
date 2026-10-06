@@ -46,6 +46,7 @@ import ChannelHub from "../components/channel-hub";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
+import {playlistPlaybackTracks,PLAYLIST_QUEUE_LIMIT} from '../lib/playlist-playback';
 import RecentPickAdditions from '../components/recent-pick-additions';
 import SyncNextAction from '../components/sync-next-action';
 import ThumbnailExtractor from "../components/thumbnail-extractor";
@@ -1110,6 +1111,19 @@ function RoomContent() {
     if (!track) return;
     setPlaying(track); audio.play(track);
   }
+  const [queueingPlaylist,setQueueingPlaylist]=useState('');
+  const playlistPlayRun=useRef(0);
+  async function playPlaylist(p:Saved){
+    const run=++playlistPlayRun.current;setQueueingPlaylist(p.id);
+    try{
+      const full:Playlist=p.summaryOnly?await request(`/api/playlist?id=${encodeURIComponent(p.id)}&limit=${PLAYLIST_QUEUE_LIMIT}`):p;
+      if(run!==playlistPlayRun.current)return;
+      const tracks=playlistPlaybackTracks(full.tracks);
+      if(!tracks.length)throw new Error('재생할 곡이 없어요.');
+      audio.add(tracks);playTrack(tracks[0]);
+      if(playlistCount(full)>PLAYLIST_QUEUE_LIMIT)setNotice(language==='ja'?`大きなリストの先頭${PLAYLIST_QUEUE_LIMIT}曲まで追加しました。`:language==='en'?`Added up to the first ${PLAYLIST_QUEUE_LIMIT} songs from this large playlist.`:`대용량 목록은 앞쪽 ${PLAYLIST_QUEUE_LIMIT}곡까지 담았어요. 나머지는 검색하거나 YouTube에서 들을 수 있어요.`);
+    }catch(e){if(run===playlistPlayRun.current)setError((e as Error).message);}finally{if(run===playlistPlayRun.current)setQueueingPlaylist('');}
+  }
   function playerPanel() { return null; }
   useEffect(() => {
     if (selected)
@@ -1144,11 +1158,12 @@ function RoomContent() {
           </span>
           <button
             className="cover-open"
-            disabled={!firstTrack}
-            onClick={() => playTrack(firstTrack)}
-            aria-label={`${p.title} 첫 곡 재생`}
+            disabled={!firstTrack||queueingPlaylist===p.id}
+            onClick={() => void playPlaylist(p)}
+            aria-label={`${p.title} 재생목록 재생`}
+            title="목록의 곡을 담고 재생 · 최대 500곡"
           >
-            <Play size={18} />
+            {queueingPlaylist===p.id?<LoaderCircle size={18} className="spin"/>:<Play size={18} />}
           </button>
         </div>
         {tab !== "recap" && tab !== "kawaii" && <div className="card-meta">
@@ -1822,6 +1837,7 @@ function RoomContent() {
             {cupVisited && (
               <WorldCup
                 initialPlaylist={cupPlaylist}
+                library={library}
                 active={tab === "worldcup"}
               />
             )}

@@ -5,10 +5,14 @@ import { readPlaylist, playlistId } from "../../../lib/youtube";
 import { ApiError, body, failure, requireAdmin } from "../../../lib/server";
 export async function GET(request: Request) {
   try {
-    const id = new URL(request.url).searchParams.get("id") || "";
-    const saved = await database().prepare("SELECT id,title,tracks,updated_at FROM playlists WHERE id=?").bind(id).first<{id:string;title:string;tracks:string;updated_at:number}>();
+    const params=new URL(request.url).searchParams,id=params.get('id')||'',rawLimit=params.get('limit');
+    const limit=rawLimit===null?null:Number(rawLimit);
+    if(limit!==null&&(!Number.isInteger(limit)||limit<1||limit>500))throw new ApiError('곡 수 제한은 1~500 사이여야 합니다.');
+    // Large collections send only the requested prefix, not thousands of songs.
+    const query=limit===null?database().prepare("SELECT id,title,tracks,updated_at,json_array_length(tracks) AS count FROM playlists WHERE id=?").bind(id):database().prepare("SELECT p.id,p.title,p.updated_at,json_array_length(p.tracks) AS count,(SELECT json_group_array(json(value)) FROM (SELECT value FROM json_each(p.tracks) LIMIT ?)) AS tracks FROM playlists p WHERE p.id=?").bind(limit,id);
+    const saved=await query.first<{id:string;title:string;tracks:string;updated_at:number;count:number}>();
     if (!saved) throw new ApiError("저장된 재생목록이 없어요. 목록을 새로고침해 주세요.",404);
-    return Response.json({id:saved.id,title:saved.title,tracks:JSON.parse(saved.tracks),updatedAt:saved.updated_at}, {headers:{"Cache-Control":"no-store"}});
+    return Response.json({id:saved.id,title:saved.title,tracks:JSON.parse(saved.tracks),trackCount:saved.count,summaryOnly:limit!==null&&saved.count>limit,updatedAt:saved.updated_at}, {headers:{"Cache-Control":"no-store"}});
   } catch (error) { return failure(error); }
 }
 export async function POST(request: Request) {

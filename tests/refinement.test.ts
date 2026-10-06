@@ -6,6 +6,14 @@ import {youtubeVideoId} from "../lib/thumbnails.ts";
 import {emptySync,syncCooldown,SECONDARY_STEP_DELAY} from "../lib/sync-policy.ts";
 import {mergeAdditions,monthStart} from '../lib/recent-additions.ts';
 import {unseenBottles,bottleKey} from '../lib/bottle-draw.ts';
+import {playlistPlaybackTracks} from '../lib/playlist-playback.ts';
+test('playlist playback preserves source order, removes duplicates and caps large queues at 500',()=>{
+ const track=(id:string)=>({id,title:id,artist:'',thumbnail:''});
+ const tracks=Array.from({length:5000},(_,i)=>track(String(i)));
+ assert.deepEqual(playlistPlaybackTracks([tracks[0],tracks[0],...tracks]).map(t=>t.id),tracks.slice(0,500).map(t=>t.id));
+ assert.deepEqual(playlistPlaybackTracks(tracks.slice(0,221)),tracks.slice(0,221));
+ assert.deepEqual(playlistPlaybackTracks([track('')]),[]);
+});
 
 test('bottle draws exclude duplicate video URLs and already drawn songs until an explicit restart',()=>{
  const items=[{id:'a',url:'https://youtu.be/dQw4w9WgXcQ'},{id:'b',url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ'},{id:'c',url:'https://youtu.be/gdZLi9oWNZg'}];

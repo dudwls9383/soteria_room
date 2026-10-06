@@ -1,6 +1,8 @@
 // UI labels only. Imported music titles and channel names keep their original language.
 export const updatesCopy={
  en:{
+  '목록의 곡을 담고 재생 · 최대 500곡':'Add playlist songs and play · up to 500 songs',
+  '월드컵에 사용할 저장된 재생목록':'Saved playlist for the tournament',
   '관리자 확인됨':'Admin verified','확인 중':'Checking','2차는 수동으로만 실행합니다.':'Secondary sync runs manually only.',
   '개 목록':' playlists','개 링크':' links','강':' songs','현재 상태:':'Status:','잠김':'Locked','열림':'Unlocked','다음 자동 갱신: 관리자 접속 시':'Next automatic update: on admin visit',
   '1차 큐레이션':'Primary curation','2차 월별·연간 수집':'Secondary collections','진행 기록':'progress log','동기화 로그 ·':'Sync log ·','1차':'Stage 1','2차':'Stage 2','· 최근 12개':'· latest 12',
@@ -41,6 +43,8 @@ export const updatesCopy={
   '메이저 남':'Mainstream male','우타이테 남':'Male utaite','메이저 여':'Mainstream female','우타이테 여':'Female utaite','작곡가':'Composers','토픽':'Topic','플레이리스트':'Playlists','일본':'Japan','한국':'Korea',
  },
  ja:{
+  '목록의 곡을 담고 재생 · 최대 500곡':'曲をリストに追加して再生・最大500曲',
+  '월드컵에 사용할 저장된 재생목록':'トーナメント用の保存済みプレイリスト',
   '관리자 확인됨':'管理者確認済み','확인 중':'確認中','2차는 수동으로만 실행합니다.':'2次同期は手動のみです。',
   '개 목록':'件のプレイリスト','개 링크':'件のリンク','강':'曲','현재 상태:':'状態：','잠김':'ロック中','열림':'解除済み','다음 자동 갱신: 관리자 접속 시':'次の自動更新：管理者のアクセス時',
   '1차 큐레이션':'1次キュレーション','2차 월별·연간 수집':'2次月別・年別収集','진행 기록':'進行記録','동기화 로그 ·':'同期記録・','1차':'第1段階','2차':'第2段階','· 최근 12개':'・直近12件',

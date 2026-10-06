@@ -2,6 +2,7 @@
 export function translateCounts(text:string,language:"en"|"ja"):string {
   const ja=language==="ja";
   return text
+    .replace(/^(.+) 재생목록 재생$/,ja?'$1のプレイリストを再生':'Play playlist $1')
     .replace(/^선택 범위에서 ([\d,]+)곡 정보 확인 · 조건에 맞는 ([\d,]+)곡$/,ja?'選択範囲の$1曲を確認済み・条件に合う$2曲':'$1 songs checked within scope · $2 matching songs')
     .replace(/^([\d,]+)곡$/,ja?'$1曲':'$1 songs')
     .replace(/^([\d,]+)개$/,ja?'$1件':'$1 items')

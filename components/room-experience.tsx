@@ -394,7 +394,9 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             <button
               aria-label="플레이어 닫기"
               onClick={() => {
-                player.current?.pauseVideo();
+                // YouTube adds control methods only after iframe initialization.
+                // Closing during that interval must still clear the whole queue.
+                player.current?.pauseVideo?.();
                 setCurrent(null);
                 setQueue([]);
                 latest.current = { queue: [], current: null };
