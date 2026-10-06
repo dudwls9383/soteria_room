@@ -4,6 +4,7 @@ import { discoverChannel } from "./channel";
 import { readPlaylist } from "./youtube";
 import { ensureMeta } from "./playlist-meta";
 import { kindOf } from "./collections";
+import {additionWrite} from './pick-additions-store';
 import series from "./series.json";
 import { emptySync, syncAction, syncCooldown, canSkipPlaylist, SYNC_DAY, SYNC_RETRY_DELAY, SECONDARY_STEP_DELAY, type SyncState, type SyncStage, isRateLimited } from "./sync-policy";
 
@@ -98,6 +99,7 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
     const owned = `EXISTS (SELECT 1 FROM channel_sync WHERE id='${stage}' AND owner=?)`;
     const writes = [];
     if (playlist) {
+      writes.push(...await additionWrite(playlist,stage,owner,Date.now()));
       // A superseded request must never overwrite a newer worker's result.
       writes.push(db.prepare(`INSERT INTO playlists (id,title,tracks,updated_at) SELECT ?,?,?,? WHERE ${owned} ON CONFLICT(id) DO UPDATE SET title=excluded.title,tracks=excluded.tracks,updated_at=excluded.updated_at`).bind(playlist.id,playlist.title,JSON.stringify(playlist.tracks),Date.now(),owner));
       writes.push(db.prepare(`INSERT INTO playlist_meta (id,thumbnail,views,checked_at) SELECT ?,?,?,? WHERE ${owned} ON CONFLICT(id) DO UPDATE SET thumbnail=COALESCE(NULLIF(excluded.thumbnail,''),playlist_meta.thumbnail),views=excluded.views,checked_at=excluded.checked_at`).bind(playlist.id,(item.thumbnail.includes("/pl_c/") ? item.thumbnail : playlist.thumbnail || item.thumbnail) || "",playlist.views ?? null,Date.now(),owner));

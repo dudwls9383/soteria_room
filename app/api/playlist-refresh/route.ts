@@ -5,6 +5,7 @@ import { ensureSync } from "../../../lib/channel-sync";
 import { ensureMeta } from "../../../lib/playlist-meta";
 import { readPlaylist } from "../../../lib/youtube";
 import { refreshHistory, recordRefresh } from "../../../lib/playlist-refresh-log";
+import {additionWrite} from '../../../lib/pick-additions-store';
 export async function GET(request: Request) {
   try {
     const id = new URL(request.url).searchParams.get("id") || "";
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       );
     const now = Date.now();
     await db.batch([
+      ...await additionWrite(playlist,'primary',owner,now),
       db
         .prepare(
           "UPDATE playlists SET title=?,tracks=?,updated_at=? WHERE id=? AND EXISTS(SELECT 1 FROM channel_sync WHERE id='primary' AND owner=?)",

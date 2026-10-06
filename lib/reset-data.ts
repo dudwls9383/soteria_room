@@ -15,5 +15,7 @@ export async function resetData(target: ResetTarget) {
   } else {
     await db.prepare("CREATE TABLE IF NOT EXISTS subscription_snapshots (id TEXT PRIMARY KEY, channels TEXT NOT NULL, updated_at INTEGER NOT NULL, source TEXT NOT NULL)").run();
   }
-  await db.batch(resetPlan(target,Date.now()).map(({sql,params})=>params.length ? db.prepare(sql).bind(...params) : db.prepare(sql)));
+  const writes=resetPlan(target,Date.now()).map(({sql,params})=>params.length ? db.prepare(sql).bind(...params) : db.prepare(sql));
+  if(target==='library')writes.push(db.prepare('DELETE FROM pick_additions'));
+  await db.batch(writes);
 }

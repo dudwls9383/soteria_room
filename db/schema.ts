@@ -1,4 +1,7 @@
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+export const pickAdditions=sqliteTable('pick_additions',{
+ playlistId:text('playlist_id').primaryKey(),data:text('data').notNull(),updatedAt:integer('updated_at').notNull()
+});
 export const playlists = sqliteTable("playlists", {
  id:text("id").primaryKey(), title:text("title").notNull(), tracks:text("tracks").notNull(), updatedAt:integer("updated_at").notNull()
 });

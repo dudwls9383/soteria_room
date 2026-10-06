@@ -3,8 +3,9 @@ import { useRoomAudio } from "./room-experience";
 import SongBottleIllustration from "./song-bottle-illustration";
 import { useEffect, useRef, useState } from "react";
 import { youtubeVideoId } from "../lib/thumbnails";
+import {bottleKey,unseenBottles} from '../lib/bottle-draw';
 import type { FormEvent } from "react";
-import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, Trash2, X } from "lucide-react";
+import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, Shuffle, Trash2, X } from "lucide-react";
 import { useAutoDismissMessage } from "./use-auto-dismiss-message";
 
 type Recommendation = {
@@ -33,9 +34,15 @@ function shareLine(item: Recommendation) {
     .join("\n");
 }
 
-export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
+export default function SongBottleLite({adminKey="",language='ko'}:{adminKey?:string;language?:'ko'|'en'|'ja'}) {
   const audio=useRoomAudio();
   const [items, setItems] = useState<Recommendation[]>([]);
+  const [seen,setSeen]=useState<string[]>([]),[historyReady,setHistoryReady]=useState(false),[drawnId,setDrawnId]=useState('');
+  const ja=language==='ja',en=language==='en';
+  useEffect(()=>{try{const saved=JSON.parse(localStorage.getItem('room-bottle-seen-v1')||'[]');if(Array.isArray(saved))setSeen(saved.filter(x=>typeof x==='string').slice(-10000));}catch{}setHistoryReady(true);},[]);
+  const unseen=unseenBottles(items,seen);
+  function remember(next:string[]){setSeen(next);try{localStorage.setItem('room-bottle-seen-v1',JSON.stringify(next.slice(-10000)));}catch{/* Private browsing still keeps session-level history. */}}
+  function drawBottle(){if(!unseen.length)return;const random=crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;const item=unseen[Math.floor(random*unseen.length)];setDrawnId(item.id);remember([...seen,bottleKey(item)]);}
   const [form, setForm] = useState(emptyForm);
   const [metadataState,setMetadataState]=useState("");
   const lastAutofill=useRef({title:"",artist:""});
@@ -230,6 +237,12 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
           </p>
         </form>
         <section className="bottle-list">
+          <div className="bottle-draw-bar notranslate" translate="no">
+            <button className="room-button" disabled={!historyReady||!unseen.length} onClick={drawBottle}><Shuffle size={15}/>{ja?'ボトルを一つ引く':en?'Draw a bottle':'한 병 뽑기'}</button>
+            <p aria-live="polite">{!items.length?(ja?'おすすめが届くのを待っています':en?'Waiting for recommendations':'도착한 추천을 기다리고 있어요'):unseen.length?(ja?`まだ引いていない${unseen.length}曲`:en?`${unseen.length} unseen songs`:`아직 뽑지 않은 ${unseen.length}곡`):(ja?'届いた曲をすべて引きました':en?'You have drawn every available song':'도착한 곡을 모두 뽑았어요')}{drawnId&&items.some(x=>x.id===drawnId)&&<span> · {ja?'引いたボトルを先頭に表示':en?'Your bottle is shown first':'뽑은 병을 맨 앞에 표시해요'}</span>}</p>
+            {!!items.length&&!unseen.length&&<button className="room-button subtle" onClick={()=>{remember([]);setDrawnId('');}}>{ja?'もう一度引く準備':en?'Start a new round':'처음부터 다시 뽑기'}</button>}
+            <small>{ja?'この端末で引いた曲を除外します。履歴を消すと重複する場合があります。':en?'Excludes songs drawn on this device. Clearing browser history may allow repeats.':'이 기기에서 뽑은 곡을 제외해요. 브라우저 기록을 지우면 다시 나올 수 있어요.'}</small>
+          </div>
           <div className="section-title compact-title">
             <h2>
               도착한 추천<span>{items.length}곡</span>
@@ -237,10 +250,10 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
           </div>
           {playerPanel()}
           <div className="bottle-grid">
-            {items.map((item) => {
+            {[...items.filter(item=>item.id===drawnId),...items.filter(item=>item.id!==drawnId)].map((item) => {
               const id = videoId(item.url);
               return (
-                <article className="bottle-card glass" key={item.id}>
+                <article className={`bottle-card glass ${item.id===drawnId?'bottle-drawn':''}`} key={item.id}>
                   {id ? (
                     <button
                       className="bottle-cover"
@@ -272,7 +285,7 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
                         {item.artist}
                       </p>
                     )}
-                    {item.note && <blockquote>{item.note}</blockquote>}
+                    {item.note && <blockquote className="notranslate" translate="no">{item.note}</blockquote>}
                     <div className="bottle-actions">
                       {id && (<>
                         <button onClick={() => {const id=videoId(item.url);if(id)audio.add([{id,title:item.title,artist:item.artist,thumbnail:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}]);}}>목록에 담기</button><button onClick={() => listen(item)}>

@@ -46,6 +46,8 @@ import ChannelHub from "../components/channel-hub";
 import ChannelTagExplorer from "../components/channel-tag-explorer";
 import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
+import RecentPickAdditions from '../components/recent-pick-additions';
+import SyncNextAction from '../components/sync-next-action';
 import ThumbnailExtractor from "../components/thumbnail-extractor";
 import ConnectedSpaces from "../components/connected-spaces";
 import {SECONDARY_BATCH_SIZE,SECONDARY_STEP_DELAY} from "../lib/sync-policy";
@@ -728,6 +730,7 @@ function RoomContent() {
   const [totalTracks, setTotalTracks] = useState<number | null>(null);
   const [fullLoading, setFullLoading] = useState(false);
   const [syncStage, setSyncStage] = useState<"primary" | "secondary">("primary");
+  const [syncPending,setSyncPending]=useState(0),[syncRetryAt,setSyncRetryAt]=useState(0);
   const [stopping,setStopping] = useState(false);
   const [syncPaused,setSyncPaused] = useState(false);
   const [syncStopReason,setSyncStopReason] = useState("");
@@ -857,6 +860,7 @@ function RoomContent() {
     void reload(true).catch(e=>setError(e.message)).finally(()=>setFullLoading(false));
   }, [tab, loading]);
   function acceptSync(data: any) {
+    setSyncPending(data.pending?.length||0);setSyncRetryAt(data.retryAt||0);
     setSyncStage(data.stage || "primary");
     setSyncPaused(!!data.paused);
     setSyncStopReason(data.stopReason || "");
@@ -1475,6 +1479,7 @@ function RoomContent() {
                 </section>
               )}
               <section className="library-section">
+                {id==='pick'&&<RecentPickAdditions revision={archiveRevision+(latestPick?.updatedAt||0)} language={language}/>}
                 <div className="section-title">
                   <h2>
                     {id === "archive"
@@ -1805,7 +1810,7 @@ function RoomContent() {
             <RandomDiscovery key={`discovery-${archiveRevision}`} library={library} adminKey={adminKey} language={language} />
           </TabsContent>
           <TabsContent value="bottle">
-            <SongBottleLite adminKey={adminKey} />
+            <SongBottleLite adminKey={adminKey} language={language}/>
           </TabsContent>
           <TabsContent value="small"><ChannelHub key={`channels-${archiveRevision}-${channelStart}`} initialTab={channelStart} adminKey={adminKey} language={language}/></TabsContent>
           <TabsContent
@@ -1916,6 +1921,7 @@ function RoomContent() {
                 <button className="room-button subtle" disabled={syncing || stopping || !adminKey} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화 (대용량)</button><p className="room-note">한 번에 2개씩 순차로 가져와요. 남은 목록은 다음 실행에서 이어집니다.</p>
                 <div className="sync-stage-switch"><button disabled={syncing || stopping} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing || stopping} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
                 <small>{syncStage === "primary" ? "1차 큐레이션" : "2차 월별·연간 수집"} 진행 기록</small>
+                <SyncNextAction done={progress.done} total={progress.total} failed={failures.length} skipped={skipped} pending={syncPending} retryAt={syncRetryAt} paused={syncPaused} syncing={syncing} admin={!!adminKey} stage={syncStage} language={language}/>
                 <button className="room-button subtle" disabled={stopping || syncPaused || !adminKey} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
                 {syncStopReason && <small role="status">{syncStopReason}</small>}
                 <small>이번 확인에서 건너뛴 목록: {skipped}개</small>

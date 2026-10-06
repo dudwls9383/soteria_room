@@ -2,6 +2,14 @@
 
 기준일: **2026-10-06**. 실제 구현을 기준으로 작성한 문서입니다. 실시간 재생목록·구독자 수를 담은 DB 덤프가 아니며, 아래의 개선 제안은 구현 완료 기능과 구분합니다.
 
+이번 추가분: 첫 화면 큐레이션 위의 작은 신규 곡 줄(`RecentPickAdditions`), 추천 병 뽑기, 동기화 다음 행동 안내(`SyncNextAction`). 리캡 썸네일 잘림과 플레이어의 기존 재생 동작은 운영자 결정으로 유지합니다.
+
+- `lib/recent-additions.ts`: 영상 ID의 목록 포함 여부 비교. 초기 가져오기는 기준점, 재정렬은 추가 아님, 삭제는 제외. 재추가는 새 기록입니다. 날짜는 실제 YouTube 추가일이 아닌 서버가 갱신 중 확인한 시각입니다.
+- `lib/pick-additions-store.ts`: 월의 픽만 기록하며 `channel_sync` 소유권 조건과 재생목록 저장을 같은 D1 배치에 넣습니다. `pick_additions` 테이블의 목록별 기록은 최대 2,000개입니다. 운영 마이그레이션은 `drizzle/0002_moaning_speed.sql`; 로컬 초기화 스키마도 이를 반영합니다.
+- `GET /api/pick-additions`: 한국 시간의 이번 달 월의 픽에서 이달 확인한 신규 곡만 반환합니다. 공개 읽기, 최근 100곡 표시, 전체 해당 곡 수 별도 반환. 재생목록 삭제·DB 초기화 시 기록도 지웁니다.
+- `lib/bottle-draw.ts`: 최신 추천 40개에서 영상 ID 중복과 이미 받은 영상을 제외합니다. `room-bottle-seen-v1`은 계정 자료가 아닌 기기별 뽑기 기록이며 저장소 삭제·다른 기기 사이의 중복은 막지 않습니다. 전부 뽑으면 자동으로 반복하지 않고 회차 초기화를 제공합니다. 자동 재생은 하지 않습니다.
+- 새로운 세 안내 컴포넌트는 언어 선택 값을 직접 받아 KO/EN/JA 문구를 표시합니다. 원본 곡 제목·채널 이름·메모는 번역하지 않습니다.
+
 - 서비스: https://soteria-room.workspace-304435.chatgpt.site
 - 코드: https://github.com/dudwls9383/soteria_room
 - 이 문서 원문: https://raw.githubusercontent.com/dudwls9383/soteria_room/main/DESIGN_LLM_HANDOFF.md

@@ -15,6 +15,13 @@
       "when": 1791005506059,
       "tag": "0001_amazing_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791288811259,
+      "tag": "0002_moaning_speed",
+      "breakpoints": true
     }
   ]
 }

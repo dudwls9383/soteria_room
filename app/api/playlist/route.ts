@@ -76,8 +76,11 @@ export async function DELETE(request: Request) {
     if (typeof input.id !== "string" || !input.id.trim())
       throw new ApiError("삭제할 재생목록을 찾지 못했어요.");
     await ensureMeta();
-    await database().prepare("DELETE FROM playlists WHERE id = ?").bind(input.id).run();
-    await database().prepare("DELETE FROM playlist_meta WHERE id = ?").bind(input.id).run();
+    await database().batch([
+      database().prepare("DELETE FROM playlists WHERE id = ?").bind(input.id),
+      database().prepare("DELETE FROM playlist_meta WHERE id = ?").bind(input.id),
+      database().prepare("DELETE FROM pick_additions WHERE playlist_id = ?").bind(input.id),
+    ]);
     return Response.json({ ok: true, id: input.id });
   } catch (e) {
     return failure(e);
