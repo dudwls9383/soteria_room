@@ -44,7 +44,7 @@ export default function PickDiscovery({adminKey=""}:{adminKey?:string}) {
     {data && <>
       {data.sections.map(section => <div key={section.id}>{section.id === "quarter" && (<div className="pick-period-controls glass control-row">
         <label>연도<select value={year || data.year} disabled={busy || !data.years.length} onChange={e => { setYear(e.target.value); setRequest({ section: "", nonce: "" }); }}>{data.years.map(y => <option key={y}>{y}</option>)}</select></label>
-        <label>분기<select value={quarter || String(data.quarter)} disabled={busy} onChange={e => { setQuarter(e.target.value); setRequest({ section: "", nonce: "" }); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{q}분기</option>)}</select></label>
+        <label>분기<select value={quarter || String(data.quarter)} disabled={busy} onChange={e => { setQuarter(e.target.value); setRequest({ section: "", nonce: "" }); }}>{[1,2,3,4].map(q => <option key={q} value={q}>{`${q}분기`}</option>)}</select></label>
         <p>연도는 두 목록에, 분기는 분기별 Pick에만 적용돼요.</p>
       </div>)} {section.id === "archive" && <HiddenPick adminKey={adminKey} />}<section className="pick-shelf">
         <div className="pick-shelf-heading"><div><span className="room-eyebrow">{section.period || "—"} · {section.total.toLocaleString()}곡</span><h2>{section.id === "month" && data.fallback ? "최근 수집 월의 Pick" : titles[section.id]}</h2></div><div className="shelf-actions"><button className="room-button subtle" disabled={!section.music.length} onClick={()=>audio.add(section.music)}>모두 담기</button><button className="room-button subtle" disabled={busy || section.total <= section.music.length} onClick={() => setRequest({ section: section.id, nonce: String(Date.now()) })}><RefreshCw size={15} />다른 곡 보기</button></div></div>

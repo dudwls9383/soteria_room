@@ -9,4 +9,8 @@
 - `lib/archive.ts`: 원본 Python의 대소문자 무시 부분 일치, 재생목록 소속, 링크 추출 개념을 웹용으로 이식했습니다. Python의 실행 시 자동 설치·전역 메모리 캐시는 직접 실행하지 않습니다. 수집은 이미 있는 월드컵 수집기를 공유하여 중복 구현하지 않습니다.
 - `reference/playlist-searcher`의 과거 URL 50개는 채널 전체 자동 발견으로 대체되었습니다. 예전 코드에 없는 새 재생목록도 자동 발견합니다.
 
-원격 GitHub 및 기존 호스팅에는 변경을 업로드하지 않았습니다. 이 작업은 로컬 실행용입니다.
+공개 사이트와 GitHub에 같은 소스를 게시하며 로컬 실행도 지원합니다.
+
+
+- SUIT Variable: SUNN / sun-typeface/SUIT, SIL Open Font License 1.1. 원본 라이선스를 `public/fonts/SUIT-LICENSE.txt`에 포함했습니다.
+- `public/soteria-avatar.jpg`: 사용자 YouTube 채널 @soteria_room의 공개 프로필 사진. 이번 업데이트 시점의 사진입니다.

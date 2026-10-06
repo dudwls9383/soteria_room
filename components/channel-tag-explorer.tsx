@@ -121,11 +121,8 @@ export default function ChannelTagExplorer({
       <div className="room-heading">
         <div>
           <div className="room-eyebrow">CHANNEL TAG DB</div>
-          <h1>채널 보관실.</h1>
-          <p>
-            {current?.label || tag} 태그의 채널을 둘러보고, 확장 프로그램
-            JSON으로 주기적으로 갱신해요.
-          </p>
+          <h1>전체 채널 보관실.</h1>
+          <p>태그별 채널을 둘러보고, 확장 프로그램 JSON으로 주기적으로 갱신해요.</p>
         </div>
       </div>
       {error && (
@@ -138,8 +135,7 @@ export default function ChannelTagExplorer({
           <span className="room-eyebrow">TAG COLLECTION</span>
           <h2>{current?.label || tag}</h2>
           <p>
-            {(current?.count || snapshot.channels.length).toLocaleString()}개
-            채널 · {snapshot.source || "기본 데이터"}
+            {`${(current?.count || snapshot.channels.length).toLocaleString()}개 채널`} · {snapshot.source || "기본 데이터"}
             {snapshot.updatedAt
               ? ` · ${new Date(snapshot.updatedAt).toLocaleDateString("ko-KR")}`
               : ""}

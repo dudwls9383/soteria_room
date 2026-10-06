@@ -65,7 +65,7 @@ const CACHE_AGE = 10 * 60 * 1000;
 // Keep interface copy separate from original post titles and excerpts.
 const copy = {
   ko: {
-    title: "음악을 찾고, 이야기하는 곳.", intro: "소테리아가 음악을 찾고 취향을 기록하는 세 공간을 한곳에서 만나요.",
+    title: "음악을 찾고, 이야기하는 곳.", intro: "음악을 찾고 취향을 기록하는 세 공간을 한곳에서.",
     all: "전체", blog: "블로그", somunia: "소무니아 갤러리", moesound: "카와이 보이스 갤러리",
     blogNote: "음악과 취향의 기록", somuniaNote: "소무니아를 함께 듣는 이야기", moesoundNote: "새로운 목소리를 발견하는 곳",
     space: "원래 공간으로", recent: "최근 이야기", search: "제목과 내용 검색", clear: "검색 지우기", count: "개의 글", read: "원문 읽기",
@@ -79,7 +79,7 @@ const copy = {
     comments: "댓글", views: "조회", filter: "연결 공간 선택", original: "제목과 글 내용은 원문 언어로 표시돼요.",
   },
   en: {
-    title: "Where music becomes a conversation.", intro: "Explore the three spaces where Soteria discovers music and keeps a record of their taste.",
+    title: "Where music becomes a conversation.", intro: "Three spaces for discovering music and recording taste, together.",
     all: "All", blog: "Blog", somunia: "Somunia Gallery", moesound: "Kawaii Voice Gallery",
     blogNote: "Music and personal notes", somuniaNote: "Conversations about Somunia", moesoundNote: "Discovering new voices",
     space: "Visit space", recent: "Recent stories", search: "Search titles and excerpts", clear: "Clear search", count: " posts", read: "Read original",
@@ -93,7 +93,7 @@ const copy = {
     comments: "Comments", views: "Views", filter: "Choose a connected space", original: "Post titles and excerpts are shown in their original language.",
   },
   ja: {
-    title: "音楽を見つけ、語り合う場所。", intro: "ソテリアが音楽を探し、好みを記録する3つの場所をひとつに。",
+    title: "音楽を見つけ、語り合う場所。", intro: "音楽を探し、好みを記録する3つの場所をひとつに。",
     all: "すべて", blog: "ブログ", somunia: "ソムニア・ギャラリー", moesound: "カワイイボイス・ギャラリー",
     blogNote: "音楽と好みの記録", somuniaNote: "ソムニアについて語る場所", moesoundNote: "新しい声との出会い",
     space: "元のサイトへ", recent: "最近の話題", search: "タイトルと本文を検索", clear: "検索を消去", count: "件の投稿", read: "原文を読む",
@@ -260,7 +260,7 @@ export default function ConnectedSpaces({ language, initialSource = "all" }: { l
       </div>
       <div className="connected-feed-heading"><div><h2>{text.recent}</h2>{feed && <span>{posts.length.toLocaleString()}{text.count}</span>}</div><button type="button" className="room-button subtle connected-refresh" disabled={loading || remaining > 0} aria-label={remaining > 0 ? `${text.refresh} · ${wait} ${text.waiting}` : text.refresh} onClick={() => void load(true)}><RefreshCw size={14} className={loading ? "spin" : ""} />{loading ? text.refreshing : text.refresh}{!loading && remaining > 0 && <span>{wait}</span>}</button></div>
       <div className="connected-feed-meta"><span>{feed?.updatedAt ? `${text.update} · ${localDate(feed.updatedAt, language)}` : text.cache}</span>{feed?.updatedAt && <span>{text.cache}</span>}</div>
-      {(error || issues.length > 0) && <div className="connected-feed-warning" role="status"><BookOpen size={17} aria-hidden="true" /><div><strong>{error ? text.failed : text.partial}</strong><p>{feed?.posts.length ? text.saved : text.failedNote}{issues.length > 0 && <span> · {issues.map(item => text[item.id]).join(" / ")}</span>}</p></div></div>}
+      {error && <div className="connected-feed-warning" role="status"><BookOpen size={17} aria-hidden="true" /><div><strong>{text.failed}</strong><p>{feed?.posts.length ? text.saved : text.failedNote}</p></div></div>}
 
       {loading && !feed ? <div className="connected-loading" aria-busy="true"><p role="status"><LoaderCircle size={17} className="spin" />{text.loading}</p><div className="connected-skeleton-grid">{Array.from({ length: 6 }, (_, index) => <div className="connected-skeleton glass" key={index}><span /><i /><i /></div>)}</div></div> : posts.length === 0 ? <div className="connected-empty glass"><BookOpen size={28} /><h3>{query.trim() ? text.noResults : error ? text.failed : text.empty}</h3><p>{query.trim() ? text.noResultsNote : error ? text.failedNote : text.emptyNote}</p>{query.trim() && <button type="button" className="room-button subtle" onClick={() => setQuery("")}>{text.reset}</button>}</div> : <>
         <div className={`connected-feed ${source === "blog" ? "blog-only" : "mixed"}`}>

@@ -1,6 +1,7 @@
 import { database } from "../../../db";
 import { ensureMeta, refreshMeta } from "../../../lib/playlist-meta";
 import { ApiError, failure } from "../../../lib/server";
+import { isSeasonalCover } from "../../../lib/music-cover";
 
 // YouTube custom covers have expiring signatures. Serve only saved playlist
 // covers through a stable URL; refresh expired source URLs without song sync.
@@ -15,18 +16,18 @@ export async function GET(request: Request) {
     let source = saved.thumbnail || saved.fallback || "";
     const readImage = async (url:string) => {
       const target = new URL(url);
-      if (target.protocol !== "https:" || !/(^|\.)ytimg\.com$/.test(target.hostname)) throw new Error("Invalid cover source");
+      if (target.protocol !== "https:" || (!/(^|\.)ytimg\.com$/.test(target.hostname) && !isSeasonalCover(url))) throw new Error("Invalid cover source");
       return fetch(target, {signal:AbortSignal.timeout(8000)});
     };
     let response: Response | undefined;
     if (source) response = await readImage(source).catch(() => undefined);
-    if (!response?.ok || Date.now() - (saved.checked_at || 0) > 86400000) {
+    if (!response?.ok || (/^LR(?:SR|YR)/.test(id) && !isSeasonalCover(source)) || Date.now() - (saved.checked_at || 0) > 86400000) {
       try {
         const meta = await refreshMeta(id);
         if (meta.thumbnail) { source = meta.thumbnail; response = await readImage(source); }
       } catch { /* Keep a still-valid stored cover if YouTube is unavailable. */ }
     }
-    const custom = source.includes("/pl_c/");
+    const custom = source.includes("/pl_c/") || isSeasonalCover(source);
     if (!response?.ok && saved.fallback) response = await readImage(saved.fallback);
     if (!response?.ok) throw new ApiError("표지를 불러오지 못했어요.",502);
     // A fallback is cached briefly so temporary errors cannot replace the

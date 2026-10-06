@@ -48,6 +48,9 @@ import PlaylistShareTool from "../components/playlist-share-tool";
 import SongBottleLite from "../components/song-bottle-lite";
 import ThumbnailExtractor from "../components/thumbnail-extractor";
 import ConnectedSpaces from "../components/connected-spaces";
+import {SECONDARY_BATCH_SIZE,SECONDARY_STEP_DELAY} from "../lib/sync-policy";
+import {updatesCopy} from "../lib/updates-copy";
+import {translateCounts} from "../lib/translate-counts";
 import {discoveryCopy} from "../lib/discovery-copy";
 import {
   inScope,
@@ -66,6 +69,7 @@ import "./room.css";
 import "./experience.css";
 import "./refinement.css";
 import "./connected.css";
+import "./updates.css";
 
 type Saved = Playlist & { updatedAt: number };
 type PlayableTrack = Track & { playlists?: string[] };
@@ -86,6 +90,7 @@ const uiDictionary: Record<
 > = {
   en: {
     ...discoveryCopy.en,
+    ...updatesCopy.en,
     "핵심": "Core", "도구": "Tools", "탐색": "Discover", "연결": "Links", "전체 모드": "Full mode", "기본 모드": "Default mode",
     "채널 탐색":"Channel explorer", "메이저 남":"Mainstream men", "우타이테 남":"Male utaite", "메이저 여":"Mainstream women", "우타이테 여":"Female utaite", "토픽":"Topic", "플레이리스트":"Playlist",
     "숨은 곡 Pick": "Hidden gems Pick",
@@ -302,6 +307,7 @@ const uiDictionary: Record<
   },
   ja: {
     ...discoveryCopy.ja,
+    ...updatesCopy.ja,
     "핵심": "メイン", "도구": "ツール", "탐색": "発見", "연결": "リンク", "전체 모드": "全画面モード", "기본 모드": "通常モード",
     "채널 탐색":"チャンネル探索", "메이저 남":"メジャー・男性", "우타이테 남":"歌い手・男性", "메이저 여":"メジャー・女性", "우타이테 여":"歌い手・女性", "토픽":"トピック", "플레이리스트":"プレイリスト",
     "숨은 곡 Pick": "隠れた名曲Pick",
@@ -529,8 +535,12 @@ function translatedStaticText(
   if (!trimmed) return value;
   const dictionary = uiDictionary[language];
   let translated = dictionary[trimmed];
+  if(!translated && trimmed.includes(" · ")) {
+    const parts=trimmed.split(" · ");
+    if(parts.some(part=>dictionary[part]))translated=parts.map(part=>dictionary[part]||translateCounts(part,language)).join(" · ");
+  }
   if (!translated) {
-    translated = trimmed
+    translated = translateCounts(trimmed,language)
       .replace(/^([\d,]+)곡 후보 중 ([\d,]+)곡을 골랐어요\.$/,language==='ja'?'候補$1曲から$2曲を選びました。':'Picked $2 songs from $1 candidates.')
       .replace(/^(.+) · 사이트에서 듣기$/,language==='ja'?'$1 · サイトで再生':'$1 · Play here')
       .replace(/^([\d,]+)명 미만$/,language==='ja'?'$1人未満':'Under $1 subscribers')
@@ -633,7 +643,7 @@ const pageCopy: Record<
   { eyebrow: string; title: string; description: string }
 > = {
   pick: {
-    eyebrow: "CURATED BY SOTERIA",
+    eyebrow: "CURATED BY soteria_room",
     title: "오늘은 어떤 음악일까요.",
     description: "한 번 더 듣고, 고르고, 다듬어 둔 큐레이션.",
   },
@@ -650,7 +660,7 @@ const pageCopy: Record<
   kawaii: {
     eyebrow: "KAWAII VOICE PLAYLIST",
     title: "카와보 시리즈",
-    description: "room부터 괴멸적 카와보 플리까지.",
+    description: "자극적인 카와보 플리들",
   },
 };
 // 새 기능은 이 목록과 아래 TabsContent를 추가하면 독립 탭으로 확장할 수 있습니다.
@@ -662,13 +672,17 @@ const modules = [
   { id: "kawaii", name: "카와보 시리즈", icon: ListMusic },
   { id: "search", name: "재생목록 검색기", icon: Search, group: "도구" },
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
-  { id: "worldcup", name: "음악 월드컵", icon: Trophy },
   { id: "thumbnail", name: "썸네일 추출기", icon: ImageIcon },
+  { id: "worldcup", name: "음악 월드컵", icon: Trophy },
   { id: "small", name: "채널 탐색", icon: Sparkles, group: "탐색" },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "connected", name: "연결된 공간", icon: BookOpen, group: "연결" },
   { id: "settings", name: "가져오기 · 동기화", icon: Settings2, group: "관리" },
 ];
+const moduleGroups=modules.reduce<{name:string;items:typeof modules}[]>((groups,module)=>{
+  if(module.group)groups.push({name:module.group,items:[]});
+  groups[groups.length-1].items.push(module);return groups;
+},[]);
 async function request(
   path: string,
   input?: object,
@@ -707,7 +721,7 @@ function RoomContent() {
     [filter, setFilter] = useState("all"),
     [sort, setSort] = useState("month");
   const [selected, setSelected] = useState<Saved | null>(null);
-  const [channelStart,setChannelStart]=useState<"recommend"|"archive">("recommend");
+  const [channelStart,setChannelStart]=useState<"random"|"archive">("archive");
   const [playing, setPlaying] = useState<PlayableTrack | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [quietSync, setQuietSync] = useState(false);
@@ -735,6 +749,9 @@ function RoomContent() {
   const [adminDraft, setAdminDraft] = useState("");
   const [adminChecking, setAdminChecking] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [collapsedGroups,setCollapsedGroups]=useState<Record<string,boolean>>({});
+  useEffect(()=>{try {const saved=JSON.parse(localStorage.getItem("room-nav-groups")||"{}");if(saved&&typeof saved==="object")setCollapsedGroups(saved);}catch{}},[]);
+  function toggleGroup(group:string){setCollapsedGroups(current=>{const next={...current,[group]:!current[group]};localStorage.setItem("room-nav-groups",JSON.stringify(next));return next;});}
   const [nextSync, setNextSync] = useState(0);
   const [featuredId, setFeaturedId] = useState(""),
     [cupVisited, setCupVisited] = useState(false),
@@ -865,6 +882,7 @@ function RoomContent() {
         const data = await request("/api/sync", {retry:retryOnly,automatic:quiet,stage,continuing:steps>0}, {adminKey});
         if (run !== syncRun.current) break;
         acceptSync(data);
+        if (data.cooldown) {setNotice("요청 간격을 지키고 있어요. 잠시 후 남은 목록을 이어서 가져와 주세요.");await reload();break;}
         if (data.paused) { setNotice(data.stopReason || "동기화를 중단했어요."); await reload(); break; }
         if (data.waiting) {
           if (!quiet) setNotice("이미 서버에서 갱신 중이에요. 저장된 음악은 바로 이용할 수 있어요.");
@@ -877,7 +895,11 @@ function RoomContent() {
             : data.cached ? "오늘의 동기화가 이미 완료되어 최신 저장 목록을 불러왔어요." : "채널 동기화를 마쳤어요.");
           break;
         }
-        if (++steps % 10 === 0) await reload();
+        ++steps;
+        if(stage==="secondary" && steps>=SECONDARY_BATCH_SIZE){await reload();setNotice(`2개 목록을 처리했어요. 남은 ${data.pending.length}개는 다음 실행에서 이어서 가져옵니다.`);break;}
+        if(steps%10===0)await reload();
+        if(stage==="secondary")await new Promise(resolve=>setTimeout(resolve,SECONDARY_STEP_DELAY+500));
+        if(run!==syncRun.current)break;
       }
     } catch (e) { if (!quiet) setError((e as Error).message); }
     finally { if(run === syncRun.current) {lock.current = false; setSyncing(false);} }
@@ -1114,7 +1136,7 @@ function RoomContent() {
           </button>
           <span className="cover-count">
             <ListMusic size={14} />
-            {playlistCount(p)}곡
+            {`${playlistCount(p)}곡`}
           </span>
           <button
             className="cover-open"
@@ -1147,7 +1169,7 @@ function RoomContent() {
         </button>
         <p>
           <span>
-            {playlistCount(p)}곡 ·{" "}
+            {`${playlistCount(p)}곡`} ·{" "}
             {p.views == null
               ? "조회수 미제공"
               : `${p.views.toLocaleString()}회 조회`}
@@ -1228,23 +1250,13 @@ function RoomContent() {
         </a>
         <div className="sidebar-caption">나의 음악 보관실</div>
         <TabsList className="room-nav" aria-label="프로젝트 선택">
-          {modules.map((m) => (
-            <div className="nav-entry" key={m.id}>
-              {m.group && (
-                <div className="nav-group">
-                  {m.group}
-                  <ChevronDown size={12} />
-                </div>
-              )}
-              <TabsTrigger value={m.id} className="room-nav-item">
-                <m.icon size={18} />
-                <span>{m.name}</span>
-              </TabsTrigger>
-            </div>
-          ))}
+          {moduleGroups.map(group=><div className="nav-section" key={group.name}>
+            <button type="button" className="nav-group" aria-expanded={!collapsedGroups[group.name]} aria-controls={`nav-${group.name}`} onClick={()=>toggleGroup(group.name)}>{group.name}<ChevronDown size={14} className={collapsedGroups[group.name] ? "group-collapsed" : ""}/></button>
+            <div id={`nav-${group.name}`} hidden={!!collapsedGroups[group.name]}>{group.items.map(m=><TabsTrigger key={m.id} value={m.id} className="room-nav-item"><m.icon size={18}/><span>{m.name}</span></TabsTrigger>)}</div>
+          </div>)}
         </TabsList>
         <div className="sidebar-bottom">
-          <div className="source-avatar">s.</div>
+          <div className="source-avatar"><img src="/soteria-avatar.jpg" alt="soteria_room" width="44" height="44"/></div>
           <div className="source-links">
             <strong>soteria_room</strong>
             <a
@@ -1267,9 +1279,9 @@ function RoomContent() {
           <SheetContent side="left" className="mobile-room-menu">
             <SheetTitle>SOTERIA ROOM</SheetTitle>
             <SheetDescription>듣고 싶은 음악, 해보고 싶은 프로젝트를 골라보세요.</SheetDescription>
-            <nav aria-label="전체 메뉴">{modules.map(m => <div key={m.id}>
-              {m.group && <h2>{m.group}</h2>}
-              <button aria-current={tab === m.id ? "page" : undefined} onClick={() => navigate(m.id)}><m.icon size={19}/>{m.name}{tab === m.id && <Check size={16}/>}</button>
+            <nav aria-label="전체 메뉴">{moduleGroups.map(group=><div key={group.name}>
+              <button type="button" className="nav-group mobile-nav-group" aria-expanded={!collapsedGroups[group.name]} onClick={()=>toggleGroup(group.name)}>{group.name}<ChevronDown size={14} className={collapsedGroups[group.name] ? "group-collapsed" : ""}/></button>
+              <div hidden={!!collapsedGroups[group.name]}>{group.items.map(m=><button key={m.id} aria-current={tab===m.id ? "page":undefined} onClick={()=>navigate(m.id)}><m.icon size={19}/>{m.name}{tab===m.id&&<Check size={16}/>}</button>)}</div>
             </div>)}</nav>
             <a href={linkPage} target="_blank" rel="noreferrer">soteria_room · 링크 프로필 <ArrowUpRight size={16}/></a>
           </SheetContent>
@@ -1308,6 +1320,8 @@ function RoomContent() {
               className="icon-button"
               onClick={() => navigate("settings")}
               aria-label="재생목록 추가"
+              disabled={!adminKey}
+              title={!adminKey ? "관리자 전용 기능입니다." : "재생목록 추가"}
             >
               <Plus size={20} />
             </button>
@@ -1356,6 +1370,8 @@ function RoomContent() {
                 </div>
                 <button
                   className="room-button subtle"
+                  disabled={!adminKey}
+                  title={!adminKey ? "관리자 전용 기능입니다." : "재생목록 추가"}
                   onClick={() => navigate("settings")}
                 >
                   <Plus size={17} />
@@ -1462,7 +1478,7 @@ function RoomContent() {
                 <div className="section-title">
                   <h2>
                     {id === "archive"
-                      ? "분류해서 꺼내 듣기"
+                      ? "분류된 목록"
                       : id === "recap"
                         ? "재생목록"
                         : id === "kawaii"
@@ -1574,7 +1590,7 @@ function RoomContent() {
                         <option value="all">전체 연도</option>
                         {years.map((y) => (
                           <option key={y} value={y}>
-                            {y}년
+                            {`${y}년`}
                           </option>
                         ))}
                       </select>
@@ -1591,7 +1607,7 @@ function RoomContent() {
                             String(i + 1).padStart(2, "0"),
                           ).map((m) => (
                             <option key={m} value={m}>
-                              {Number(m)}월
+                              {`${Number(m)}월`}
                             </option>
                           ))}
                         </select>
@@ -1719,7 +1735,7 @@ function RoomContent() {
               <div>
                 <div className="room-eyebrow">YOUTUBE PLAYLIST SEARCHER</div>
                 <h1>그 노래, 어디 있었더라.</h1>
-                <p>제목, 채널 이름, 재생목록 이름으로 모든 곡을 찾아요.</p>
+                <p>노래 제목, 채널 이름, 재생목록 이름으로 모든 곡을 찾아요.<br/>추천 커버곡 찾기에 좋습니다.</p>
               </div>
             </div>
             <div className="scope-control">
@@ -1786,7 +1802,7 @@ function RoomContent() {
           </TabsContent>
           <TabsContent value="thumbnail"><ThumbnailExtractor/></TabsContent>
           <TabsContent value="random">
-            <RandomDiscovery key={`discovery-${archiveRevision}`} library={library} adminKey={adminKey} />
+            <RandomDiscovery key={`discovery-${archiveRevision}`} library={library} adminKey={adminKey} language={language} />
           </TabsContent>
           <TabsContent value="bottle">
             <SongBottleLite adminKey={adminKey} />
@@ -1897,7 +1913,7 @@ function RoomContent() {
                   />
                   실패한 것만 다시 가져오기
                 </button>
-                <button className="room-button subtle" disabled={syncing || stopping || !adminKey} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화 (대용량)</button>
+                <button className="room-button subtle" disabled={syncing || stopping || !adminKey} onClick={() => void synchronize(true,false,false,"secondary")}>2차 월별·연간 수집 동기화 (대용량)</button><p className="room-note">한 번에 2개씩 순차로 가져와요. 남은 목록은 다음 실행에서 이어집니다.</p>
                 <div className="sync-stage-switch"><button disabled={syncing || stopping} aria-pressed={syncStage === "primary"} onClick={()=>void request("/api/sync?stage=primary").then(acceptSync).catch(e=>setError(e.message))}>1차 기록</button><button disabled={syncing || stopping} aria-pressed={syncStage === "secondary"} onClick={()=>void request("/api/sync?stage=secondary").then(acceptSync).catch(e=>setError(e.message))}>2차 기록</button></div>
                 <small>{syncStage === "primary" ? "1차 큐레이션" : "2차 월별·연간 수집"} 진행 기록</small>
                 <button className="room-button subtle" disabled={stopping || syncPaused || !adminKey} onClick={()=>void stopSynchronization()}>{stopping ? "중단 중…" : "동기화 중단"}</button>
@@ -1922,9 +1938,7 @@ function RoomContent() {
                 </div>
                 <h2>링크로 직접 가져오기</h2>
                 <p>
-                  내 보관실에 수동으로 저장할 재생목록만 관리자 키로 추가해요.
-                  방문자가 자기 목록을 시험할 때는 왼쪽의 링크 추출기나 월드컵에서
-                  일회성으로 불러옵니다.
+                  관리자 전용 기능입니다. 관리 잠금을 열면 재생목록을 보관실에 추가할 수 있어요.
                 </p>
                 <form onSubmit={importOne}>
                   <label htmlFor="import-url">YouTube 재생목록 주소</label>

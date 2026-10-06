@@ -113,8 +113,7 @@ export default function HiddenPick({adminKey=""}:{adminKey?:string}) {
       {data && !busy && (
         <>
           <small>
-            선택 범위에서 {data.known.toLocaleString()}곡 정보 확인 · 조건에 맞는{" "}
-            {data.total.toLocaleString()}곡
+            {`선택 범위에서 ${data.known.toLocaleString()}곡 정보 확인 · 조건에 맞는 ${data.total.toLocaleString()}곡`}
             {data.checkedAt > 0 &&
               ` · ${new Date(data.checkedAt).toLocaleDateString("ko-KR")} 기준`}
           </small>

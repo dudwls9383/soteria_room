@@ -370,7 +370,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
           aria-label="임시 듣기 목록"
         >
           <div className="listening-heading">
-            <strong className="notranslate" translate="no">
+            <strong className={current ? "notranslate" : undefined} translate={current ? "no" : undefined}>
               {current?.title || "임시 듣기 목록"}
             </strong>
             <div className="player-mode-picker" ref={modePicker}

@@ -158,10 +158,11 @@ async function fetchTimed(url: string, init: RequestInit = {}) {
 export async function readPlaylist(
   id: string,
   key?: string,
+  pageDelayMs = 0,
 ): Promise<Playlist> {
   // Music-generated Recap IDs resolve on the public page but are absent from
   // the Data API response. Route them directly, never bypass quota errors.
-  if (key && !/^LR(?:SR|YR)/.test(id)) return readOfficial(id, key);
+  if (key && !/^LR(?:SR|YR)/.test(id)) return readOfficial(id, key, pageDelayMs);
   const response = await fetchTimed(
     `https://www.youtube.com/playlist?list=${encodeURIComponent(id)}&hl=ko`,
     {
@@ -197,6 +198,7 @@ export async function readPlaylist(
         "재생목록의 나머지 곡을 불러오지 못했어요. 다시 시도해 주세요.",
       );
     seen.add(continuation);
+    if(pageDelayMs)await new Promise(resolve=>setTimeout(resolve,pageDelayMs));
     const next = await fetchTimed(
       "https://www.youtube.com/youtubei/v1/browse?prettyPrint=false",
       {
@@ -228,7 +230,7 @@ export async function readPlaylist(
     );
   return { id, title, tracks, ...parseMeta(data) };
 }
-async function readOfficial(id: string, key: string): Promise<Playlist> {
+async function readOfficial(id: string, key: string, pageDelayMs = 0): Promise<Playlist> {
   const call = async (path: string, params: Record<string, string>) => {
     const res = await fetchTimed(
       `https://www.googleapis.com/youtube/v3/${path}?${new URLSearchParams({ ...params, key })}`,
@@ -236,7 +238,7 @@ async function readOfficial(id: string, key: string): Promise<Playlist> {
     const data: any = await res.json();
     if (!res.ok)
       throw new Error(
-        data.error?.errors?.[0]?.reason === "quotaExceeded"
+        res.status===429 ? "YouTube가 요청을 제한했어요 (HTTP 429). 잠시 후 다시 시도해 주세요." : data.error?.errors?.[0]?.reason === "quotaExceeded"
           ? "오늘의 유튜브 조회 한도에 도달했어요. 잠시 후 다시 시도해 주세요."
           : "재생목록을 불러오지 못했어요. 공개 설정과 링크를 확인해 주세요.",
       );
@@ -253,6 +255,7 @@ async function readOfficial(id: string, key: string): Promise<Playlist> {
         "목록의 나머지를 확인하지 못했어요. 기존 저장 내용은 유지됩니다.",
       );
     tokens.add(token);
+    if(pageDelayMs)await new Promise(resolve=>setTimeout(resolve,pageDelayMs));
     const page = await call("playlistItems", {
       part: "snippet,status",
       playlistId: id,

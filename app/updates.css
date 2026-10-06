@@ -1,0 +1,12 @@
+/* Shared multilingual UI font; seasonal colors remain independent. */
+@font-face{font-family:SUIT;src:url('/fonts/SUIT-Variable.woff2') format('woff2');font-weight:100 900;font-display:swap}
+:root{--room-ui-font:SUIT,"Noto Sans JP","Yu Gothic","Hiragino Kaku Gothic ProN",system-ui,sans-serif}
+body,button,input,select,textarea,.room-heading h1,.room-heading h2,.room-body h2,.room-body h3,.listening-room{font-family:var(--room-ui-font)}
+.nav-section{width:100%}.nav-group{width:100%;background:none;border:0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;text-align:left}.nav-group svg{transition:transform .2s}.nav-group .group-collapsed{transform:rotate(90deg)}
+.room-nav [hidden],.mobile-room-menu [hidden]{display:none!important}
+.mobile-room-header>button{order:-1}.mobile-room-menu nav .mobile-nav-group{font-size:13px;font-weight:700;justify-content:space-between}
+.source-avatar{overflow:hidden}.source-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.featured-overlay{background:linear-gradient(90deg,#163443c2,#25495866 48%,#3155660d)}
+.icon-button:disabled{opacity:.4;cursor:not-allowed}
+/* Fill the desktop stage while retaining the video aspect ratio and queue. */
+@media(min-width:761px){.listening-room.theater .listening-body{container-type:size;align-items:center;justify-content:center;overflow:hidden;max-width:none}.listening-room.theater .listening-stage{width:min(100%,calc(100cqh * 16 / 9));max-width:none;flex:none}}

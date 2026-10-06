@@ -5,7 +5,7 @@ import { readPlaylist } from "./youtube";
 import { ensureMeta } from "./playlist-meta";
 import { kindOf } from "./collections";
 import series from "./series.json";
-import { emptySync, syncAction, canSkipPlaylist, SYNC_DAY, SYNC_RETRY_DELAY, type SyncState, type SyncStage, isRateLimited } from "./sync-policy";
+import { emptySync, syncAction, syncCooldown, canSkipPlaylist, SYNC_DAY, SYNC_RETRY_DELAY, SECONDARY_STEP_DELAY, type SyncState, type SyncStage, isRateLimited } from "./sync-policy";
 
 export async function ensureSync() {
   await database().prepare("CREATE TABLE IF NOT EXISTS channel_sync (id TEXT PRIMARY KEY, state TEXT NOT NULL, owner TEXT, lease_until INTEGER NOT NULL DEFAULT 0)").run();
@@ -17,7 +17,7 @@ export async function syncStatus(stage: SyncStage = "primary") {
   await ensureSync();
   const row = await database().prepare(`SELECT state,lease_until FROM channel_sync WHERE id='${stage}'`).first<{state:string;lease_until:number}>();
   const state: SyncState = JSON.parse(row!.state);
-  return { ...state, stage, busy: row!.lease_until > Date.now(), nextSyncAt: state.startedAt ? state.startedAt + SYNC_DAY : 0, retryAt: 0 };
+  return { ...state, stage, busy: row!.lease_until > Date.now(), nextSyncAt: state.startedAt ? state.startedAt + SYNC_DAY : 0, retryAt: state.nextStepAt || 0 };
 }
 
 // One request handles one playlist. The persisted queue survives closed tabs;
@@ -31,6 +31,8 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
   const row = await db.prepare(`SELECT state FROM channel_sync WHERE id='${stage}'`).first<{state:string}>();
   const state: SyncState = JSON.parse(row!.state);
   try {
+    // Persist spacing across admin tabs and rapid retries.
+    if(syncCooldown(state,now,stage))return {...(await syncStatus(stage)),cooldown:true,busy:false};
     if ((state.paused && (automatic || continuing)) || (automatic && stage === "secondary")) return {...(await syncStatus(stage)),cached:true,busy:false};
     state.paused = false;
     state.stopReason = undefined;
@@ -67,7 +69,7 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
     const item = state.pending[0];
     let playlist;
     try {
-      playlist = await readPlaylist(item.id, (env as any).YOUTUBE_API_KEY);
+      playlist = await readPlaylist(item.id, (env as any).YOUTUBE_API_KEY, stage==="secondary" ? ((env as any).YOUTUBE_API_KEY ? 300 : 1500) : 0);
       if (!playlist.tracks.length) {
         const prior = await db.prepare("SELECT json_array_length(tracks) AS count FROM playlists WHERE id=?").bind(item.id).first<{count:number}>();
         if (prior?.count) throw new Error("곡 목록이 비어 있어 기존 자료를 유지했어요. 공개 상태를 다시 확인해 주세요.");
@@ -76,6 +78,7 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
       playlist = undefined;
       if (isRateLimited(error)) {
         state.paused = true;
+        if(stage==="secondary")state.nextStepAt=Date.now()+SYNC_RETRY_DELAY;
         state.stopReason = "YouTube 요청 제한(HTTP 429)으로 중단했어요. 남은 목록은 보존되며 자동 재개하지 않습니다.";
         state.logs = [...(state.logs || []),{at:Date.now(),message:state.stopReason}].slice(-12);
         await db.prepare(`UPDATE channel_sync SET state=?,owner=NULL,lease_until=0 WHERE id='${stage}' AND owner=?`).bind(JSON.stringify(state),owner).run();
@@ -85,6 +88,7 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
     }
     state.pending.shift();
     state.done++;
+    if(stage==="secondary")state.nextStepAt=Date.now()+SECONDARY_STEP_DELAY;
     state.logs = [...(state.logs || []), {at:Date.now(),message:`${playlist ? "완료" : "실패"} · ${item.title}`}].slice(-12);
     if (!state.pending.length) {
       state.finishedAt = Date.now();
@@ -104,7 +108,7 @@ export async function syncStep(retry: boolean, automatic = false, stage: SyncSta
   } catch (error) {
     // Discovery failures are throttled too, without erasing a prior good library.
     if (!state.pending.length || isRateLimited(error)) {
-      if (isRateLimited(error)) { state.paused=true; state.stopReason="YouTube 요청 제한(HTTP 429)으로 중단했어요. 자동 재개하지 않습니다."; state.logs=[...(state.logs || []),{at:Date.now(),message:state.stopReason}].slice(-12); }
+      if (isRateLimited(error)) { if(stage==="secondary")state.nextStepAt=Date.now()+SYNC_RETRY_DELAY; state.paused=true; state.stopReason="YouTube 요청 제한(HTTP 429)으로 중단했어요. 자동 재개하지 않습니다."; state.logs=[...(state.logs || []),{at:Date.now(),message:state.stopReason}].slice(-12); }
       state.startedAt = now - SYNC_DAY + SYNC_RETRY_DELAY;
       await db.prepare(`UPDATE channel_sync SET state=? WHERE id='${stage}' AND owner=?`).bind(JSON.stringify(state),owner).run();
     }

@@ -1,15 +1,19 @@
 // Shared bulk-sync policy: admins refresh the fixed source on a daily schedule.
 export const SYNC_DAY = 24 * 60 * 60 * 1000;
 export const SYNC_RETRY_DELAY = 5 * 60 * 1000;
+export const SECONDARY_BATCH_SIZE = 2;
+export const SECONDARY_STEP_DELAY = 8000;
 export type SyncStage = "primary" | "secondary";
 export type SyncItem = { id: string; title: string; thumbnail: string; count?: number; firstId?: string; error?: string };
 export type SyncState = {
   startedAt: number; lastSuccessAt: number; finishedAt: number;
   stopReason?: string;
+  nextStepAt?: number;
   logs?: {at:number;message:string}[];
   total: number; done: number; pending: SyncItem[]; failures: SyncItem[]; skipped?: number; paused?: boolean; manifestVersion?: number;
 };
 export const emptySync = (): SyncState => ({ startedAt: 0, lastSuccessAt: 0, finishedAt: 0, total: 0, done: 0, pending: [], failures: [] });
+export function syncCooldown(state:SyncState,now:number,stage:SyncStage){return stage==="secondary" && (state.nextStepAt||0)>now ? state.nextStepAt! : 0;}
 export function syncAction(state: SyncState, now: number, retry: boolean, stage: SyncStage = "primary") {
   if (state.pending.length) return "continue";
   if (retry) return state.failures.length ? "retry" : "cached";

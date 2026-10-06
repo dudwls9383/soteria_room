@@ -462,7 +462,7 @@ export default function Home({
                     <h2>재생목록 가져오기</h2>
                     <ListMusic size={21} />
                   </div>
-                  <label htmlFor="playlist-url">유튜브 재생목록 링크</label>
+                  <label htmlFor="playlist-url">유튜브 재생목록 링크 입력 후 불러오기 클릭</label>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -561,7 +561,7 @@ export default function Home({
                     </select>
                   </div>
                   <p className="help">
-                    재생목록에서 무작위로 {size}곡을 뽑아 대진을 만들어요.
+                    {`재생목록에서 무작위로 ${size}곡을 뽑아 대진을 만들어요.`}
                   </p>
                   <button
                     className="primary start-button"

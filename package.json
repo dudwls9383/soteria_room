@@ -14,7 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "local": "node scripts/local-start.mjs",
     "db:init": "node scripts/local-init.mjs",
-    "test": "node --experimental-strip-types --test tests/tournament.test.ts tests/archive.test.ts tests/discovery.test.ts tests/sync-library.test.ts tests/video-facts.test.ts tests/posts.test.ts"
+    "test": "node --experimental-strip-types --test tests/tournament.test.ts tests/archive.test.ts tests/discovery.test.ts tests/sync-library.test.ts tests/video-facts.test.ts tests/posts.test.ts tests/refinement.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

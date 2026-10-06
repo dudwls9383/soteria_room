@@ -1,7 +1,8 @@
 "use client";
 import { useRoomAudio } from "./room-experience";
 import SongBottleIllustration from "./song-bottle-illustration";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { youtubeVideoId } from "../lib/thumbnails";
 import type { FormEvent } from "react";
 import { Check, Copy, ExternalLink, LoaderCircle, Play, Send, Trash2, X } from "lucide-react";
 import { useAutoDismissMessage } from "./use-auto-dismiss-message";
@@ -19,11 +20,7 @@ type Recommendation = {
 const emptyForm = { nickname: "", title: "", artist: "", url: "", note: "" };
 
 function videoId(url: string) {
-  return (
-    url.match(/youtu\.be\/([\w-]{6,})/)?.[1] ||
-    url.match(/[?&]v=([\w-]{6,})/)?.[1] ||
-    ""
-  );
+  return youtubeVideoId(url)||"";
 }
 
 function shareLine(item: Recommendation) {
@@ -40,6 +37,33 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
   const audio=useRoomAudio();
   const [items, setItems] = useState<Recommendation[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [metadataState,setMetadataState]=useState("");
+  const lastAutofill=useRef({title:"",artist:""});
+  const manualEdits=useRef({title:false,artist:false});
+  useEffect(()=>{
+    const id=youtubeVideoId(form.url);
+    setMetadataState("");
+    if(!id)return;
+    const controller=new AbortController();
+    const timer=setTimeout(async()=>{
+      setMetadataState("영상 정보를 확인하는 중…");
+      try {
+        const response=await fetch(`/api/video-preview?url=${encodeURIComponent(form.url)}`,{signal:controller.signal});
+        const data=await response.json() as {title:string;artist:string;error?:string};
+        if(!response.ok)throw new Error(data.error);
+        if(controller.signal.aborted)return;
+        setForm(current=>{
+          if(youtubeVideoId(current.url)!==id)return current;
+          const title=!manualEdits.current.title && (!current.title || current.title===lastAutofill.current.title) ? data.title : current.title;
+          const artist=!manualEdits.current.artist && (!current.artist || current.artist===lastAutofill.current.artist) ? data.artist : current.artist;
+          lastAutofill.current={title:data.title,artist:data.artist};
+          return {...current,title,artist};
+        });
+        setMetadataState("영상 제목과 채널 이름을 가져왔어요. 필요하면 수정하세요.");
+      }catch(e){if(!controller.signal.aborted)setMetadataState((e as Error).message||"영상 정보를 가져오지 못했어요. 직접 입력해 주세요.");}
+    },500);
+    return ()=>{clearTimeout(timer);controller.abort();};
+  },[form.url]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useAutoDismissMessage();
   const [notice, setNotice] = useAutoDismissMessage();
@@ -84,6 +108,7 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
       };
       if (!response.ok) throw new Error(data.error);
       setForm(emptyForm);
+      manualEdits.current={title:false,artist:false};lastAutofill.current={title:"",artist:""};
       setNotice("추천을 병에 담아 보냈어요.");
       await load();
     } catch (event) {
@@ -149,29 +174,6 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
             />
           </label>
           <label>
-            곡 제목
-            <input
-              value={form.title}
-              onChange={(event) =>
-                setForm({ ...form, title: event.target.value })
-              }
-              maxLength={120}
-              placeholder="추천하고 싶은 곡"
-              required
-            />
-          </label>
-          <label>
-            아티스트
-            <input
-              value={form.artist}
-              onChange={(event) =>
-                setForm({ ...form, artist: event.target.value })
-              }
-              maxLength={80}
-              placeholder="선택"
-            />
-          </label>
-          <label>
             YouTube 링크
             <input
               value={form.url}
@@ -183,6 +185,31 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
               required
             />
           </label>
+          <p className="room-note" role="status">{metadataState || "링크를 붙이면 영상 제목과 채널 이름을 자동으로 가져와요."}</p>
+          <label>
+            곡 제목
+            <input
+              value={form.title}
+              onChange={(event) =>
+                {manualEdits.current.title=true;setForm({ ...form, title: event.target.value });}
+              }
+              maxLength={120}
+              placeholder="추천하고 싶은 곡"
+              required
+            />
+          </label>
+          <label>
+            아티스트
+            <input
+              value={form.artist}
+              onChange={(event) =>
+                {manualEdits.current.artist=true;setForm({ ...form, artist: event.target.value });}
+              }
+              maxLength={80}
+              placeholder="선택"
+            />
+          </label>
+
           <label>
             짧은 메모
             <textarea
@@ -191,7 +218,7 @@ export default function SongBottleLite({adminKey=""}:{adminKey?:string}) {
                 setForm({ ...form, note: event.target.value })
               }
               maxLength={240}
-              placeholder="어떤 순간에 들으면 좋은지 남겨주세요"
+              placeholder="받을 사람에게 전할 짧은 메모"
             />
           </label>
           <button className="room-button" disabled={busy}>
