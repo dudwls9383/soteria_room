@@ -146,6 +146,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
       );
   }
   function play(track: Track) {
+    window.dispatchEvent(new Event("room-youtube-play"));
     failed.current.delete(track.id);
     setFailures((old) => {
       const n = { ...old };
@@ -250,6 +251,7 @@ export default function RoomExperience({ children }: { children: ReactNode }) {
             player.current?.setVolume(volume);
           },
           onStateChange: (e: { data: number }) => {
+            if(e.data===1)window.dispatchEvent(new Event("room-youtube-play"));
             setPaused(e.data !== 1);
             if (e.data === 1) setError("");
             if (e.data === 0) next();

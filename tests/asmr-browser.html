@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>ASMR audio graph verification</title><button id="run">Verify mono routing</button><pre id="result">Ready</pre><script type="module">
+import {connectMonoToSide} from '/lib/asmr-audio.ts';
+document.getElementById('run').onclick=async()=>{
+ const results=[];
+ for(const input of [0,1])for(const ear of ['left','right']){
+  const c=new OfflineAudioContext(2,512,8000),buffer=c.createBuffer(2,512,8000);
+  buffer.getChannelData(input).fill(.4);const source=c.createBufferSource();source.buffer=buffer;connectMonoToSide(c,source,ear,1);source.start();
+  const output=await c.startRendering(),l=output.getChannelData(0)[200],r=output.getChannelData(1)[200];
+  const expected=ear==='left'?[.2,0]:[0,.2];if(Math.abs(l-expected[0])>1e-5||Math.abs(r-expected[1])>1e-5)throw new Error(`Routing failed: ${input},${ear},${l},${r}`);
+  results.push(`PASS input-channel=${input} ear=${ear} L=${l.toFixed(4)} R=${r.toFixed(4)}`);
+ }
+ document.getElementById('result').textContent=results.join('\n');
+};
+</script>

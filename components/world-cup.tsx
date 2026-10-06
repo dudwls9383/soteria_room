@@ -672,7 +672,7 @@ export default function Home({
                   ) : (
                     <button
                       className="play-cover"
-                      onClick={() => { audio.suspend(); setPlaying(track.id); }}
+                      onClick={() => { window.dispatchEvent(new Event("room-youtube-play")); audio.suspend(); setPlaying(track.id); }}
                       aria-label={`${track.title} 재생`}
                     >
                       {cover(track)}

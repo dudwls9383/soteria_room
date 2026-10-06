@@ -53,6 +53,8 @@ import ThumbnailExtractor from "../components/thumbnail-extractor";
 import ConnectedSpaces from "../components/connected-spaces";
 import {SECONDARY_BATCH_SIZE,SECONDARY_STEP_DELAY} from "../lib/sync-policy";
 import {updatesCopy} from "../lib/updates-copy";
+import AsmrPlayer from "../components/asmr-player";
+import "./asmr.css";
 import {translateCounts} from "../lib/translate-counts";
 import {discoveryCopy} from "../lib/discovery-copy";
 import {
@@ -677,6 +679,7 @@ const modules = [
   { id: "extract", name: "재생목록 링크 추출기", icon: Copy },
   { id: "thumbnail", name: "썸네일 추출기", icon: ImageIcon },
   { id: "worldcup", name: "음악 월드컵", icon: Trophy },
+  { id: "asmr", name: "좌우 ASMR 플레이어", icon: Headphones },
   { id: "small", name: "채널 탐색", icon: Sparkles, group: "탐색" },
   { id: "bottle", name: "곡추천 병", icon: MessageCircle },
   { id: "connected", name: "연결된 공간", icon: BookOpen, group: "연결" },
@@ -757,6 +760,7 @@ function RoomContent() {
   useEffect(()=>{try {const saved=JSON.parse(localStorage.getItem("room-nav-groups")||"{}");if(saved&&typeof saved==="object")setCollapsedGroups(saved);}catch{}},[]);
   function toggleGroup(group:string){setCollapsedGroups(current=>{const next={...current,[group]:!current[group]};localStorage.setItem("room-nav-groups",JSON.stringify(next));return next;});}
   const [nextSync, setNextSync] = useState(0);
+  const [asmrVisited,setAsmrVisited]=useState(false);
   const [featuredId, setFeaturedId] = useState(""),
     [cupVisited, setCupVisited] = useState(false),
     [cupPlaylist, setCupPlaylist] = useState<Playlist | null>(null);
@@ -827,6 +831,7 @@ function RoomContent() {
     setSelected(null);
     setPlaying(null);
     if (id === "worldcup") setCupVisited(true);
+    if (id === "asmr") setAsmrVisited(true);
     history.replaceState(null, "", `#${id}`);
   }
   function selectLanguage(nextLanguage: TranslateLanguage) {
@@ -940,7 +945,7 @@ function RoomContent() {
     if(hash==="blog"||hash==="somunia"||hash==="moesound"){
       setConnectedSource(hash);setTab("connected");history.replaceState(null,"","#connected");
     }
-    if(hash==="asmr"){setTab("small");setChannelStart("archive");history.replaceState(null,"","#small");}
+    if(hash==="asmr")setAsmrVisited(true);
     if (modules.some((m) => m.id === hash)) {
       setTab(hash);
       if (hash === "worldcup") setCupVisited(true);
@@ -1841,6 +1846,9 @@ function RoomContent() {
                 active={tab === "worldcup"}
               />
             )}
+          </TabsContent>
+          <TabsContent value="asmr" forceMount hidden={tab!=="asmr"}>
+            {asmrVisited&&<AsmrPlayer language={language}/>}
           </TabsContent>
           <TabsContent value="connected">
             <ConnectedSpaces language={language} initialSource={connectedSource}/>

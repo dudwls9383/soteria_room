@@ -1,6 +1,7 @@
 // UI labels only. Imported music titles and channel names keep their original language.
 export const updatesCopy={
  en:{
+  '좌우 ASMR 플레이어':'Dual ASMR player',
   '목록의 곡을 담고 재생 · 최대 500곡':'Add playlist songs and play · up to 500 songs',
   '월드컵에 사용할 저장된 재생목록':'Saved playlist for the tournament',
   '관리자 확인됨':'Admin verified','확인 중':'Checking','2차는 수동으로만 실행합니다.':'Secondary sync runs manually only.',
@@ -43,6 +44,7 @@ export const updatesCopy={
   '메이저 남':'Mainstream male','우타이테 남':'Male utaite','메이저 여':'Mainstream female','우타이테 여':'Female utaite','작곡가':'Composers','토픽':'Topic','플레이리스트':'Playlists','일본':'Japan','한국':'Korea',
  },
  ja:{
+  '좌우 ASMR 플레이어':'左右ASMRプレーヤー',
   '목록의 곡을 담고 재생 · 최대 500곡':'曲をリストに追加して再生・最大500曲',
   '월드컵에 사용할 저장된 재생목록':'トーナメント用の保存済みプレイリスト',
   '관리자 확인됨':'管理者確認済み','확인 중':'確認中','2차는 수동으로만 실행합니다.':'2次同期は手動のみです。',
